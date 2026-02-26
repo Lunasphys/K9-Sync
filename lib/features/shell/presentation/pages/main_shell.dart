@@ -1,71 +1,49 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
-import '../bloc/shell_bloc.dart';
-import '../../../welcome/presentation/pages/welcome_screen.dart';
-import '../../../alerts/presentation/pages/alerts_screen.dart';
-import '../../../placeholder/presentation/pages/placeholder_screen.dart';
-
-/// Main shell with bottom navigation. Uses [ShellBloc] for selected tab index.
+/// Shell principal avec bottom navigation, piloté par Go Router (StatefulShellRoute).
+/// [navigationShell] est fourni par Go Router pour changer d'onglet et afficher le contenu.
 class MainShell extends StatelessWidget {
-  const MainShell({super.key});
+  const MainShell({super.key, required this.navigationShell});
 
-  static const List<_NavItem> navItems = [
-    _NavItem(icon: Icons.home_outlined, label: 'Maison'),
-    _NavItem(icon: Icons.map_outlined, label: 'Carte'),
-    _NavItem(icon: Icons.notifications_outlined, label: 'Alertes'),
-    _NavItem(icon: Icons.pets, label: 'Profil animal'),
-    _NavItem(icon: Icons.person_outline, label: 'Profil'),
+  final StatefulNavigationShell navigationShell;
+
+  static const List<ShellNavItem> navItems = [
+    ShellNavItem(icon: Icons.home_outlined, label: 'Maison', path: '/home/accueil'),
+    ShellNavItem(icon: Icons.map_outlined, label: 'Carte', path: '/home/carte'),
+    ShellNavItem(icon: Icons.notifications_outlined, label: 'Alertes', path: '/home/alertes'),
+    ShellNavItem(icon: Icons.pets, label: 'Profil animal', path: '/home/chiens'),
+    ShellNavItem(icon: Icons.person_outline, label: 'Profil', path: '/home/profil'),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => ShellBloc(),
-      child: const _MainShellView(),
+    return Scaffold(
+      body: navigationShell,
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: navigationShell.currentIndex,
+        onTap: (index) => _onItemTapped(context, index),
+        items: navItems
+            .map(
+              (e) => BottomNavigationBarItem(
+                icon: Icon(e.icon),
+                label: e.label,
+              ),
+            )
+            .toList(),
+      ),
     );
+  }
+
+  void _onItemTapped(BuildContext context, int index) {
+    navigationShell.goBranch(index);
   }
 }
 
-class _MainShellView extends StatelessWidget {
-  const _MainShellView();
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<ShellBloc, ShellState>(
-      buildWhen: (prev, curr) => prev.selectedIndex != curr.selectedIndex,
-      builder: (context, state) {
-        return Scaffold(
-          body: IndexedStack(
-            index: state.selectedIndex,
-            children: const [
-              WelcomeScreen(),
-              PlaceholderScreen(title: 'Carte', icon: Icons.map_outlined),
-              AlertsScreen(),
-              PlaceholderScreen(title: 'Profil animal', icon: Icons.pets),
-              PlaceholderScreen(title: 'Profil utilisateur', icon: Icons.person_outline),
-            ],
-          ),
-          bottomNavigationBar: BottomNavigationBar(
-            currentIndex: state.selectedIndex,
-            onTap: (index) => context.read<ShellBloc>().add(ShellTabSelected(index)),
-            items: MainShell.navItems
-                .map(
-                  (e) => BottomNavigationBarItem(
-                    icon: Icon(e.icon),
-                    label: e.label,
-                  ),
-                )
-                .toList(),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _NavItem {
+/// Élément de la bottom nav (Go Router path par onglet).
+class ShellNavItem {
   final IconData icon;
   final String label;
-  const _NavItem({required this.icon, required this.label});
+  final String path;
+  const ShellNavItem({required this.icon, required this.label, required this.path});
 }

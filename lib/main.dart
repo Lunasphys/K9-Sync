@@ -1,21 +1,12 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
-import 'core/theme/app_theme.dart';
-import 'core/router/app_router.dart';
+import 'app.dart';
+import 'injection.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  setupDependencies();
   runApp(const K9SyncApp());
-}
-
-class K9SyncApp extends StatelessWidget {
-  const K9SyncApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'K9 Sync',
-      theme: AppTheme.light,
-      routerConfig: createAppRouter(),
-    );
-  }
 }

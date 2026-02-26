@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.10.8
+  sdk: ^3.10.0
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -30,22 +30,64 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
   cupertino_icons: ^1.0.8
   equatable: ^2.0.5
   flutter_bloc: ^9.0.0
   go_router: ^14.6.2
+  get_it: ^8.0.2
+
+  # Firebase (MVP 100 % Firebase)
+  firebase_core: ^3.8.1
+  firebase_auth: ^5.3.4
+  cloud_firestore: ^5.6.0
+  firebase_storage: ^12.3.6
+  firebase_messaging: ^15.1.6
+
+  # State management (directive MVP)
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Modèles
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+
+  # Carte GPS (OpenStreetMap, pas de clé API)
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+
+  # GPS téléphone
+  geolocator: ^13.0.2
+
+  # Santé (Galaxy Fit3 via Health Connect)
+  health: ^10.2.0
+
+  # Stockage local offline
+  hive_flutter: ^1.1.0
+
+  # Notifications locales
+  flutter_local_notifications: ^18.0.1
+
+  # Graphiques
+  fl_chart: ^0.69.0
+
+  # Export PDF
+  pdf: ^3.11.1
+  printing: ^5.13.4
+
+  # Utilitaires
+  intl: ^0.19.0
+  uuid: ^4.5.1
+  connectivity_plus: ^6.1.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  build_runner: ^2.4.14
+  freezed: ^2.5.7
+  json_serializable: ^6.8.0
+  riverpod_generator: ^2.6.3
+  mockito: ^5.4.5
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

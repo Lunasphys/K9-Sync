@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:k9sync/core/theme/app_theme.dart';
-import 'package:k9sync/core/router/app_router.dart';
+import 'package:k9sync/presentation/router/route_guards.dart';
 
 /// K9 Sync welcome / onboarding screen (Figma design).
 class WelcomeScreen extends StatelessWidget {
