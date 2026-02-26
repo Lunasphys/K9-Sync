@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../domain/entities/dog.dart';
+import '_parsers.dart';
 
-/// DTO Dog — Firestore dogs/{dogId} ou users/{userId}/dogs/{dogId}.
+/// DTO Dog — Firestore ou REST (Prisma camelCase, weightKg Decimal).
 class DogModel {
   final String id;
   final String name;
@@ -29,6 +30,37 @@ class DogModel {
     required this.createdAt,
     required this.updatedAt,
   });
+
+  /// REST API : Prisma Decimal weightKg en String, tableaux allergies/characterTraits.
+  static DogModel fromJson(Map<String, dynamic> json) {
+    return DogModel(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      breed: json['breed'] as String?,
+      birthDate: parseDateTime(json['birthDate']),
+      weight: parseDecimal(json['weightKg']),
+      sex: json['sex'] as String?,
+      allergies: parseStringList(json['allergies']),
+      characterTraits: parseStringList(json['characterTraits']),
+      photoUrl: json['photoUrl'] as String?,
+      createdAt: parseDateTimeRequired(json['createdAt']),
+      updatedAt: parseDateTimeRequired(json['updatedAt']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        if (breed != null) 'breed': breed,
+        if (birthDate != null) 'birthDate': birthDate!.toIso8601String(),
+        if (weight != null) 'weightKg': weight,
+        if (sex != null) 'sex': sex,
+        'allergies': allergies,
+        'characterTraits': characterTraits,
+        if (photoUrl != null) 'photoUrl': photoUrl,
+        'createdAt': createdAt.toIso8601String(),
+        'updatedAt': updatedAt.toIso8601String(),
+      };
 
   static DogModel fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};

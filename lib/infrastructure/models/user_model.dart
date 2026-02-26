@@ -2,8 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../domain/entities/user.dart';
 import '../../domain/enums/subscription_plan.dart';
+import '_parsers.dart';
 
-/// DTO User — Firestore users/{userId}.
+/// DTO User — Firestore ou REST (Prisma camelCase).
 class UserModel {
   final String id;
   final String email;
@@ -24,6 +25,31 @@ class UserModel {
     required this.createdAt,
     required this.updatedAt,
   });
+
+  /// REST API : body user depuis login/register/refresh ou GET /users/me (Prisma camelCase).
+  static UserModel fromJson(Map<String, dynamic> json) {
+    return UserModel(
+      id: json['id'] as String,
+      email: json['email'] as String,
+      firstName: json['firstName'] as String,
+      lastName: json['lastName'] as String,
+      phone: json['phone'] as String?,
+      subscriptionPlan: (json['subscriptionPlan'] as String?) ?? 'free',
+      createdAt: parseDateTimeRequired(json['createdAt']),
+      updatedAt: parseDateTimeRequired(json['updatedAt']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'email': email,
+        'firstName': firstName,
+        'lastName': lastName,
+        if (phone != null) 'phone': phone,
+        'subscriptionPlan': subscriptionPlan,
+        'createdAt': createdAt.toIso8601String(),
+        'updatedAt': updatedAt.toIso8601String(),
+      };
 
   static UserModel fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};

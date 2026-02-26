@@ -40,7 +40,7 @@ class WelcomeScreen extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () => context.push(AppRoutes.signIn),
                   child: const Text('Se connecter'),
                 ),
               ),
@@ -48,7 +48,7 @@ class WelcomeScreen extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  onPressed: () {},
+                  onPressed: () => context.push(AppRoutes.register),
                   child: const Text('Créer un compte'),
                 ),
               ),
@@ -82,7 +82,7 @@ class WelcomeScreen extends StatelessWidget {
               ),
               const SizedBox(height: 28),
               TextButton(
-                onPressed: () {},
+                onPressed: () => context.push(AppRoutes.forgotPassword),
                 child: Text(
                   'Mot de passe oublié ?',
                   style: TextStyle(color: Colors.grey.shade700),

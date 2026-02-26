@@ -12,7 +12,7 @@ class MainShell extends StatelessWidget {
     ShellNavItem(icon: Icons.home_outlined, label: 'Maison', path: '/home/accueil'),
     ShellNavItem(icon: Icons.map_outlined, label: 'Carte', path: '/home/carte'),
     ShellNavItem(icon: Icons.notifications_outlined, label: 'Alertes', path: '/home/alertes'),
-    ShellNavItem(icon: Icons.pets, label: 'Profil animal', path: '/home/chiens'),
+    ShellNavItem(icon: Icons.favorite_outline, label: 'Santé', path: '/home/sante'),
     ShellNavItem(icon: Icons.person_outline, label: 'Profil', path: '/home/profil'),
   ];
 

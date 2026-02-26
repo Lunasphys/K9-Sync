@@ -6,7 +6,7 @@ import '../../../core/debug/debug_logger.dart';
 import '../../../core/errors/auth_error.dart';
 import '../../models/user_model.dart';
 
-/// Datasource auth MVP : Firebase Auth + Firestore users/{userId}.
+/// Datasource auth : Firebase (MVP) ou REST (backend).
 abstract class AuthRemoteDatasource {
   Future<AuthResponse> register({
     required String email,
@@ -18,13 +18,22 @@ abstract class AuthRemoteDatasource {
   Future<void> logout();
   Future<void> forgotPassword({required String email});
   Future<UserModel?> getUserProfile(String uid);
+  /// Profil courant (REST : GET /users/me ; Firebase : getUserProfile(uid)).
+  Future<UserModel?> getMe();
+  /// Refresh JWT (REST : POST /auth/refresh ; Firebase : getIdToken(true)).
+  Future<AuthResponse> refreshToken();
 }
 
 class AuthResponse {
   final UserModel user;
   final String accessToken;
+  final String refreshToken;
 
-  AuthResponse({required this.user, required this.accessToken});
+  AuthResponse({
+    required this.user,
+    required this.accessToken,
+    this.refreshToken = '',
+  });
 }
 
 class AuthRemoteDatasourceFirebase implements AuthRemoteDatasource {
@@ -106,5 +115,22 @@ class AuthRemoteDatasourceFirebase implements AuthRemoteDatasource {
     final doc = await _firestore.collection(FirebaseConstants.users).doc(uid).get();
     if (!doc.exists) return null;
     return UserModel.fromFirestore(doc);
+  }
+
+  @override
+  Future<UserModel?> getMe() async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return null;
+    return getUserProfile(uid);
+  }
+
+  @override
+  Future<AuthResponse> refreshToken() async {
+    final user = _auth.currentUser;
+    if (user == null) throw AuthError.invalidCredentials();
+    final token = await user.getIdToken(true);
+    final model = await getUserProfile(user.uid);
+    if (model == null) throw AuthError.invalidCredentials();
+    return AuthResponse(user: model, accessToken: token ?? '', refreshToken: '');
   }
 }

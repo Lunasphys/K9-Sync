@@ -1,0 +1,130 @@
+// K9 Sync — PostgreSQL schema. Aligns with Flutter api_constants and domain.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  passwordHash      String    @map("password_hash")
+  firstName         String    @map("first_name")
+  lastName          String    @map("last_name")
+  phone             String?
+  subscriptionPlan  String    @default("free") @map("subscription_plan")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  refreshTokens RefreshToken[]
+  dogUsers     DogUser[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   // bcrypt hash
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Dog {
+  id        String   @id @default(uuid())
+  name      String
+  breed     String?
+  birthDate DateTime? @map("birth_date")
+  avatarUrl String?   @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  collar   Collar?
+  dogUsers DogUser[]
+  alerts   Alert[]
+}
+
+model DogUser {
+  id     String   @id @default(uuid())
+  dogId  String   @map("dog_id")
+  userId String   @map("user_id")
+  role   String   @default("owner") // owner | family | viewer
+  createdAt DateTime @default(now()) @map("created_at")
+
+  dog  Dog  @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([dogId, userId])
+  @@index([userId])
+}
+
+model Collar {
+  id           String   @id @default(uuid())
+  serialNumber String   @unique @map("serial_number")
+  dogId        String   @unique @map("dog_id")
+  batteryLevel Int?     @map("battery_level")
+  firmwareVersion String? @map("firmware_version")
+  lastSeenAt   DateTime? @map("last_seen_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  dog            Dog           @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  gpsLocations   GpsLocation[]
+  healthRecords  HealthRecord[]
+}
+
+model GpsLocation {
+  id         String   @id @default(uuid())
+  collarId   String   @map("collar_id")
+  latitude   Float
+  longitude  Float
+  accuracy   Float?
+  recordedAt DateTime @map("recorded_at")
+  syncedAt  DateTime @default(now()) @map("synced_at")
+  trailId   String?   @map("trail_id")
+
+  collar Collar @relation(fields: [collarId], references: [id], onDelete: Cascade)
+  @@index([collarId, recordedAt])
+  @@index([trailId])
+}
+
+model Trail {
+  id          String   @id @default(uuid())
+  collarId    String   @map("collar_id")
+  startedAt   DateTime @map("started_at")
+  endedAt     DateTime @map("ended_at")
+  distanceM   Int      @map("distance_m")
+  durationS   Int      @map("duration_s")
+  pointsCount Int      @map("points_count")
+}
+
+model HealthRecord {
+  id             String   @id @default(uuid())
+  collarId       String   @map("collar_id")
+  heartRate      Int?     @map("heart_rate")
+  temperature    Float?
+  anomalyDetected Boolean @default(false) @map("anomaly_detected")
+  anomalyType    String?  @map("anomaly_type")
+  recordedAt     DateTime @map("recorded_at")
+  syncedAt       DateTime @default(now()) @map("synced_at")
+
+  collar Collar @relation(fields: [collarId], references: [id], onDelete: Cascade)
+  @@index([collarId, recordedAt])
+}
+
+model Alert {
+  id        String   @id @default(uuid())
+  dogId     String   @map("dog_id")
+  type      String   // security | health | activity
+  title     String
+  body      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  dog Dog @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  @@index([dogId])
+}

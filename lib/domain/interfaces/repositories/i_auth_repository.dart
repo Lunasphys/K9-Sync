@@ -13,6 +13,8 @@ abstract interface class IAuthRepository {
   Future<void> logout();
   Future<void> forgotPassword({required String email});
   Future<User?> getCurrentUser();
+  /// Vérifie le stockage (token) de façon asynchrone. À appeler au démarrage pour que [isLoggedIn] reflète l’état réel (REST).
+  Future<void> ensureAuthChecked();
   bool get isLoggedIn;
   /// For API interceptor (current JWT). Null if not logged in.
   String? get accessToken;

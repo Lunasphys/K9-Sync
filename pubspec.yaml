@@ -58,8 +58,8 @@ dependencies:
   # GPS téléphone
   geolocator: ^13.0.2
 
-  # Santé (Galaxy Fit3 via Health Connect)
-  health: ^10.2.0
+  # Santé (Galaxy Fit3 via Health Connect) — 13.x pour embedding Android à jour
+  health: ^13.0.0
 
   # Stockage local offline
   hive_flutter: ^1.1.0
@@ -74,8 +74,13 @@ dependencies:
   pdf: ^3.11.1
   printing: ^5.13.4
 
+  # REST API (migration Firestore → backend)
+  dio: ^5.7.0
+  flutter_secure_storage: ^9.2.2
+
   # Utilitaires
   intl: ^0.19.0
+  google_fonts: ^6.2.1
   uuid: ^4.5.1
   connectivity_plus: ^6.1.1
 

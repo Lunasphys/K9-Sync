@@ -24,4 +24,26 @@ class NetworkError extends AppError {
           userMessage: 'Erreur serveur. Réessayez plus tard.',
           context: {'status': statusCode},
         );
+
+  const NetworkError.rateLimited()
+      : super(
+          code: 'NET_004',
+          message: 'Too many requests',
+          userMessage: 'Trop de requêtes. Réessayez dans un moment.',
+        );
+
+  NetworkError.notFound({required String path})
+      : super(
+          code: 'NET_005',
+          message: 'Not found: $path',
+          userMessage: 'Ressource introuvable.',
+          context: {'path': path},
+        );
+
+  const NetworkError.cancelled()
+      : super(
+          code: 'NET_006',
+          message: 'Request cancelled',
+          userMessage: null,
+        );
 }

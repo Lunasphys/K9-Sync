@@ -17,4 +17,11 @@ class BusinessError extends AppError {
           userMessage: 'Le rayon de la zone doit être d\'au moins 10 mètres.',
           context: {'radius': radiusM},
         );
+
+  BusinessError.validationFailed({required String message})
+      : super(
+          code: 'BIZ_001',
+          message: message,
+          userMessage: message,
+        );
 }

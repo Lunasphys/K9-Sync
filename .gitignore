@@ -43,3 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Firebase Admin SDK key (NEVER commit – server use only)
+*firebase-adminsdk*.json
+*-firebase-adminsdk-*.json
