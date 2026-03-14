@@ -1,7 +1,14 @@
 import Fastify from 'fastify';
+import path from 'path';
 import cors from '@fastify/cors';
+import fastifyMultipart from '@fastify/multipart';
+import fastifyStatic from '@fastify/static';
 import { loadEnv } from './config/env.js';
 import { authRoutes } from './presentation/routes/auth.routes.js';
+import { userRoutes } from './presentation/routes/user.routes.js';
+import { dogRoutes } from './presentation/routes/dog.routes.js';
+import { uploadRoutes } from './presentation/routes/upload.routes.js';
+import { gpsActivityRoutes } from './presentation/routes/gps_activity_routes.js';
 import { logger } from './shared/logger.js';
 import { AppError } from './shared/errors.js';
 
@@ -24,10 +31,23 @@ export async function buildApp() {
 
   await app.register(cors, { origin: true });
 
+  await app.register(fastifyMultipart, {
+    limits: { fileSize: 5 * 1024 * 1024 },
+  });
+
+  await app.register(fastifyStatic, {
+    root: path.join(process.cwd(), 'uploads'),
+    prefix: '/uploads/',
+  });
+
   // Flutter baseUrl = https://api.k9sync.app/v1 → routes /v1/auth/*, /v1/dogs/*, etc.
   const rawPrefix = (env.API_PREFIX || 'v1').trim();
   const prefix = rawPrefix.startsWith('/') ? rawPrefix : `/${rawPrefix}`;
   await app.register(authRoutes, { prefix: `${prefix}/auth` });
+  await app.register(userRoutes, { prefix: `${prefix}/users` });
+  await app.register(dogRoutes, { prefix });
+  await app.register(uploadRoutes, { prefix });
+  await app.register(gpsActivityRoutes, { prefix });
 
   // Test: GET /v1/health
   app.get(`${prefix}/health`, async () => ({ ok: true, message: 'K9 Sync API' }));

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 
 import '../../domain/entities/user.dart';
@@ -9,7 +11,8 @@ import '../storage/secure_storage.dart';
 class AuthRepositoryImpl implements IAuthRepository {
   AuthRepositoryImpl(this._remote, [FirebaseAuth? auth, SecureStorage? secureStorage])
       : _auth = auth,
-        _secureStorage = secureStorage {
+        _secureStorage = secureStorage,
+        _sessionController = StreamController<bool>.broadcast() {
     assert(
       (auth != null) != (secureStorage != null),
       'Exactly one of auth (Firebase) or secureStorage (REST) must be provided.',
@@ -19,11 +22,21 @@ class AuthRepositoryImpl implements IAuthRepository {
   final AuthRemoteDatasource _remote;
   final FirebaseAuth? _auth;
   final SecureStorage? _secureStorage;
+  final StreamController<bool> _sessionController;
 
   bool get _isRest => _secureStorage != null;
 
-  /// Cache pour REST : mis à jour par [ensureAuthChecked], [login] et [logout].
+  /// Cache pour REST : mis à jour par [ensureAuthChecked], [login], [logout] et [invalidateSession].
   bool _cachedLoggedIn = false;
+
+  @override
+  Stream<bool> get sessionStream => _sessionController.stream;
+
+  @override
+  void invalidateSession() {
+    if (_isRest) _cachedLoggedIn = false;
+    _sessionController.add(false);
+  }
 
   @override
   bool get isLoggedIn {

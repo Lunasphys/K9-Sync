@@ -130,8 +130,29 @@ export class AuthController {
     });
   }
 
-  async logout(_req: FastifyRequest, reply: FastifyReply) {
-    // Client should discard tokens; optional: pass refreshToken to revoke
+  async logout(
+    req: FastifyRequest<{ Body: { refreshToken?: string } }>,
+    reply: FastifyReply,
+  ) {
+    const { refreshToken } = (req.body ?? {}) as { refreshToken?: string };
+
+    if (refreshToken) {
+      const tokens = await getPrisma().refreshToken.findMany({
+        where: {
+          userId: req.userId,
+          expiresAt: { gt: new Date() },
+        },
+      });
+
+      for (const stored of tokens) {
+        const match = await bcrypt.compare(refreshToken, stored.token);
+        if (match) {
+          await getPrisma().refreshToken.delete({ where: { id: stored.id } });
+          break;
+        }
+      }
+    }
+
     return reply.status(204).send();
   }
 

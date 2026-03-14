@@ -12,4 +12,7 @@ abstract interface class IMqttService {
   Future<void> publishLostMode(String collarSerial, {required bool active});
   Future<void> publishBeep(String collarSerial, {required int durationMs});
   bool get isConnected;
+
+  /// Emits true when connected, false when disconnected.
+  Stream<bool> get connectionState;
 }

@@ -37,10 +37,22 @@ class CreateDogParams {
 
 class UpdateDogParams {
   final String? name;
+  final String? breed;
+  final DateTime? birthDate;
   final double? weight;
+  final String? sex;
+  final List<String>? allergies;
   final String? photoUrl;
 
-  const UpdateDogParams({this.name, this.weight, this.photoUrl});
+  const UpdateDogParams({
+    this.name,
+    this.breed,
+    this.birthDate,
+    this.weight,
+    this.sex,
+    this.allergies,
+    this.photoUrl,
+  });
 }
 
 class UserDogAccess {

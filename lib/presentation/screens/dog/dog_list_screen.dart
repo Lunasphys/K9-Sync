@@ -1,29 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import 'package:k9sync/core/theme/app_theme.dart';
+import 'package:k9sync/domain/entities/dog.dart';
+import 'package:k9sync/domain/interfaces/repositories/i_dog_repository.dart';
+import 'package:k9sync/injection.dart';
 import 'package:k9sync/presentation/router/route_guards.dart';
 
-/// Mes chiens (mockup light) : cartes chien en ligne/hors ligne, résumé global, accès rapides (MVP 1 chien).
-class DogListScreen extends StatelessWidget {
+// Fetch dogs from GET /dogs
+final dogsProvider = FutureProvider<List<Dog>>((ref) async {
+  return getIt<IDogRepository>().getDogs();
+});
+
+class DogListScreen extends ConsumerWidget {
   const DogListScreen({super.key});
 
-  /// Pour la démo : true = plusieurs chiens, false = MVP 1 chien
-  static const bool _multiDog = true;
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dogsAsync = ref.watch(dogsProvider);
+
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.bg,
         elevation: 0,
         leading: IconButton(
-          icon: _backBtn(context),
-          onPressed: () => context.pop(),
+          icon: _BackBtn(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(AppRoutes.homeProfil);
+            }
+          },
         ),
-        title: Text(
-          _multiDog ? 'Mes chiens' : 'Mon chien',
-          style: const TextStyle(
+        title: const Text(
+          'Mes chiens',
+          style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w800,
             color: AppColors.text,
@@ -40,236 +54,135 @@ class DogListScreen extends StatelessWidget {
               ),
               child: const Icon(Icons.add, color: AppColors.blue, size: 20),
             ),
-            onPressed: () {},
+            onPressed: () {}, // TODO: add dog flow
           ),
           const SizedBox(width: 8),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (_multiDog) ...[
-              _dogCard(context, name: 'Bucky', breed: 'Golden Retriever · 3 ans', online: true, steps: '7 420 pas', progress: 0.74),
-              _dogCard(context, name: 'Luna', breed: 'Caniche · 5 ans', online: false, steps: null, progress: 0),
-              _addDogCard(context, title: 'Ajouter un chien', sub: 'Associer un nouveau collier'),
-            ] else ...[
-              _dogCard(context, name: 'Bucky', breed: 'Golden Retriever · 3 ans', online: true, steps: null, progress: null, chips: true),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(20, 8, 20, 8),
-                child: Text(
-                  'ACCÈS RAPIDES',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.5,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ),
-              _quickAccessRow(context, icon: Icons.location_on_outlined, title: 'Voir sur la carte', sub: 'Position en temps réel', onTap: () => context.push(AppRoutes.map)),
-              _divider(),
-              _quickAccessRow(context, icon: Icons.favorite_border, title: 'Données de santé', sub: 'FC, température, activité', onTap: () => context.push(AppRoutes.healthDashboard)),
-              _divider(),
-              _quickAccessRow(context, icon: Icons.people_outline, title: 'Accès partagés', sub: 'Famille, dog-sitter', onTap: () => context.push('/dogs/dog1/shared-access')),
-              _addDogCard(context, title: 'Ajouter un 2e chien', sub: 'Associer un nouveau collier', compact: true),
-            ],
-            if (_multiDog) ...[
-              _divider(),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(20, 12, 20, 8),
-                child: Text(
-                  'RÉSUMÉ GLOBAL',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.5,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Expanded(child: _miniStat('Colliers actifs', '1 / 2', AppColors.greenStatus)),
-                    const SizedBox(width: 8),
-                    Expanded(child: _miniStat('Alertes non lues', '3', AppColors.orange)),
-                  ],
-                ),
-              ),
-            ],
-          ],
+      body: dogsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => _ErrorBody(
+          message: e.toString(),
+          onRetry: () => ref.invalidate(dogsProvider),
         ),
+        data: (dogs) => _DogListBody(dogs: dogs),
       ),
     );
   }
+}
 
-  Widget _backBtn(BuildContext context) {
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border.all(color: AppColors.border, width: 1),
-        borderRadius: BorderRadius.circular(12),
+// ── Body ──────────────────────────────────────────────────────────────────────
+
+class _DogListBody extends StatelessWidget {
+  final List<Dog> dogs;
+  const _DogListBody({required this.dogs});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (dogs.isEmpty)
+            _EmptyState()
+          else ...[
+            ...dogs.map((dog) => _DogCard(dog: dog)),
+          ],
+          _AddDogCard(),
+        ],
       ),
-      child: const Icon(Icons.arrow_back, size: 18, color: AppColors.textMuted),
     );
   }
+}
 
-  Widget _dogCard(
-    BuildContext context, {
-    required String name,
-    required String breed,
-    required bool online,
-    String? steps,
-    double? progress,
-    bool chips = false,
-  }) {
+// ── Dog card ──────────────────────────────────────────────────────────────────
+
+class _DogCard extends StatelessWidget {
+  final Dog dog;
+  const _DogCard({required this.dog});
+
+  @override
+  Widget build(BuildContext context) {
+    // Collar online status — not available from /dogs directly, show neutral
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Material(
         color: AppColors.cardBg,
         borderRadius: AppDimensions.borderRadius,
         child: InkWell(
-          onTap: () => context.push('/dogs/dog1'),
+          onTap: () => context.push('/dogs/${dog.id}'),
           borderRadius: AppDimensions.borderRadius,
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              border: Border.all(color: AppColors.border, width: 1),
+              color: AppColors.cardBg,
+              border: Border.all(color: AppColors.border, width: 2),
               borderRadius: AppDimensions.borderRadius,
               boxShadow: [AppDimensions.cardShadowSm],
             ),
             child: Row(
               children: [
-                Stack(
-                  children: [
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [AppColors.blue, AppColors.blueLight],
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Center(child: Text('🐕', style: TextStyle(fontSize: 28))),
-                    ),
-                    if (online)
-                      Positioned(
-                        bottom: 1,
-                        right: 1,
-                        child: Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: AppColors.greenStatus,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
+                // Avatar
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: AppColors.cream,
+                    border: Border.all(color: AppColors.border, width: 2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: dog.photoUrl != null && dog.photoUrl!.isNotEmpty
+                      ? ClipOval(
+                          child: Image.network(
+                            dog.photoUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Center(
+                              child: Text('🐕',
+                                  style: TextStyle(fontSize: 28)),
+                            ),
                           ),
-                        ),
-                      ),
-                  ],
+                        )
+                      : const Center(
+                          child: Text('🐕',
+                              style: TextStyle(fontSize: 28))),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Text(
-                            name,
-                            style: const TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: online ? AppColors.greenMint : AppColors.surface,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              online ? '● En ligne' : 'Hors ligne',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: online ? AppColors.greenStatus : AppColors.textMuted,
-                              ),
-                            ),
-                          ),
-                        ],
+                      Text(
+                        dog.name,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.text,
+                        ),
                       ),
                       const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          breed,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textMuted,
-                            fontWeight: FontWeight.w500,
+                      if (dog.breed != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            _breedAge(dog),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textMuted,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
-                      ),
-                      if (chips) ...[
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            _chip('🔋 87%', AppColors.blueLight),
-                            const SizedBox(width: 6),
-                            _chip('♥ 82 bpm', AppColors.greenMint),
-                          ],
-                        ),
-                      ],
-                      if (steps != null || progress != null) ...[
-                        const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Activité aujourd'hui",
-                              style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-                            ),
-                            Text(
-                              steps ?? '—',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: online ? AppColors.greenStatus : AppColors.textMuted,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 3),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(3),
-                          child: LinearProgressIndicator(
-                            value: progress ?? 0,
-                            backgroundColor: AppColors.surface,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              online ? AppColors.greenStatus : AppColors.surface,
-                            ),
-                            minHeight: 6,
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right, color: AppColors.textMuted, size: 20),
+                const Icon(Icons.chevron_right,
+                    color: AppColors.textMuted, size: 20),
               ],
             ),
           ),
@@ -278,59 +191,56 @@ class DogListScreen extends StatelessWidget {
     );
   }
 
-  Widget _chip(String label, Color bg) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
-    );
+  String _breedAge(Dog dog) {
+    final parts = <String>[];
+    if (dog.breed != null) parts.add(dog.breed!);
+    if (dog.birthDate != null) {
+      final age = DateTime.now().year - dog.birthDate!.year;
+      parts.add('$age ans');
+    }
+    return parts.join(' · ');
   }
+}
 
-  Widget _addDogCard(BuildContext context, {required String title, required String sub, bool compact = false}) {
+// ── Add dog card ──────────────────────────────────────────────────────────────
+
+class _AddDogCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, compact ? 18 : 4, 16, compact ? 0 : 20),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
       child: Container(
-        padding: EdgeInsets.all(compact ? 14 : 16),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.cardBg,
           border: Border.all(color: AppColors.border, width: 2),
           borderRadius: AppDimensions.borderRadius,
         ),
         child: Row(
           children: [
             Container(
-              width: compact ? 44 : 64,
-              height: compact ? 44 : 64,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(compact ? 14 : 20),
+                color: AppColors.blueLight,
+                borderRadius: BorderRadius.circular(14),
               ),
-              child: const Center(child: Text('➕', style: TextStyle(fontSize: 24))),
+              child: const Center(
+                  child: Text('➕', style: TextStyle(fontSize: 22))),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: compact ? 14 : 15,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.text,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    sub,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
+                  const Text('Ajouter un chien',
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.text)),
+                  Text('Associer un nouveau collier',
+                      style: TextStyle(
+                          fontSize: 12, color: AppColors.textMuted)),
                 ],
               ),
             ),
@@ -339,102 +249,74 @@ class DogListScreen extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _quickAccessRow(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String sub,
-    VoidCallback? onTap,
-  }) {
-    return Material(
-      color: AppColors.cardBg,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
-          child: Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: AppColors.blueLight,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, size: 18, color: AppColors.blue),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.text,
-                      ),
-                    ),
-                    Text(
-                      sub,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right, color: AppColors.textMuted, size: 20),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+// ── Empty state ───────────────────────────────────────────────────────────────
 
-  Widget _divider() {
-    return Container(
-      height: 1,
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      color: AppColors.border,
-    );
-  }
-
-  Widget _miniStat(String label, String value, Color valueColor) {
-    return Container(
-      padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border.all(color: AppColors.border, width: 1),
-        borderRadius: AppDimensions.borderRadiusSm,
-        boxShadow: [AppDimensions.cardShadowSm],
-      ),
+class _EmptyState extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(40),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label.toUpperCase(),
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1,
-              color: AppColors.textMuted,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: valueColor,
-            ),
-          ),
+          const Text('🐾', style: TextStyle(fontSize: 48)),
+          const SizedBox(height: 16),
+          const Text('Aucun chien pour l\'instant',
+              style:
+                  TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 8),
+          Text('Ajoutez votre premier chien ci-dessous',
+              style:
+                  TextStyle(fontSize: 13, color: AppColors.textMuted)),
         ],
       ),
+    );
+  }
+}
+
+// ── Error ─────────────────────────────────────────────────────────────────────
+
+class _ErrorBody extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _ErrorBody({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('😕', style: TextStyle(fontSize: 48)),
+          const SizedBox(height: 16),
+          Text(message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 16),
+          ElevatedButton(
+              onPressed: onRetry, child: const Text('Réessayer')),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Back button ───────────────────────────────────────────────────────────────
+
+class _BackBtn extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: AppColors.cardBg,
+        border: Border.all(color: AppColors.border, width: 2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Icon(Icons.arrow_back,
+          size: 18, color: AppColors.textMuted),
     );
   }
 }

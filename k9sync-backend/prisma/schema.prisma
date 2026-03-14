@@ -36,13 +36,17 @@ model RefreshToken {
 }
 
 model Dog {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   name      String
   breed     String?
   birthDate DateTime? @map("birth_date")
+  weight    Decimal?
+  sex       String?
+  allergies String[]  @default([])
+  photoUrl  String?   @map("photo_url")
   avatarUrl String?   @map("avatar_url")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
 
   collar   Collar?
   dogUsers DogUser[]
@@ -63,18 +67,36 @@ model DogUser {
 }
 
 model Collar {
-  id           String   @id @default(uuid())
-  serialNumber String   @unique @map("serial_number")
-  dogId        String   @unique @map("dog_id")
-  batteryLevel Int?     @map("battery_level")
-  firmwareVersion String? @map("firmware_version")
-  lastSeenAt   DateTime? @map("last_seen_at")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id             String    @id @default(uuid())
+  serialNumber   String    @unique @map("serial_number")
+  dogId          String    @unique @map("dog_id")
+  batteryLevel   Int?      @map("battery_level")
+  firmwareVersion String?  @map("firmware_version")
+  lastSeenAt     DateTime? @map("last_seen_at")
+  isOnline       Boolean   @default(true) @map("is_online")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  dog            Dog           @relation(fields: [dogId], references: [id], onDelete: Cascade)
-  gpsLocations   GpsLocation[]
-  healthRecords  HealthRecord[]
+  dog             Dog             @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  gpsLocations    GpsLocation[]
+  healthRecords   HealthRecord[]
+  activityRecords ActivityRecord[]
+}
+
+model ActivityRecord {
+  id              String   @id @default(uuid())
+  collarId        String   @map("collar_id")
+  steps           Int      @default(0)
+  activeMinutes   Int      @default(0) @map("active_minutes")
+  restMinutes     Int      @default(0) @map("rest_minutes")
+  sleepPhase      String   @default("awake") @map("sleep_phase")
+  anomalyDetected Boolean  @default(false) @map("anomaly_detected")
+  anomalyType     String?  @map("anomaly_type")
+  recordedAt     DateTime @map("recorded_at")
+  syncedAt       DateTime @default(now()) @map("synced_at")
+
+  collar Collar @relation(fields: [collarId], references: [id], onDelete: Cascade)
+  @@index([collarId, recordedAt])
 }
 
 model GpsLocation {

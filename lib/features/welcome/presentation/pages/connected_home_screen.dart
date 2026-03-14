@@ -40,42 +40,41 @@ class _ConnectedHomeScreenState extends State<ConnectedHomeScreen> {
     final greeting = _firstName != null && _firstName!.isNotEmpty
         ? 'Bienvenue, $_firstName !'
         : 'Bienvenue !';
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            children: [
-              const SizedBox(height: 32),
-              _buildLogo(),
-              const SizedBox(height: 32),
-              Text(
-                greeting,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.text,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Utilise le menu en bas pour accéder à la Carte, Alertes, Santé et Profil.',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppColors.textMuted,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              _quickLink(context, Icons.map_outlined, 'Carte', AppRoutes.homeCarte),
-              const SizedBox(height: 12),
-              _quickLink(context, Icons.pets, 'Mes chiens', AppRoutes.dogList),
-              const SizedBox(height: 12),
-              _quickLink(context, Icons.favorite_outline, 'Santé', AppRoutes.homeSante),
-              const SizedBox(height: 12),
-              _quickLink(context, Icons.person_outline, 'Profil', AppRoutes.homeProfil),
-            ],
-          ),
+    // No Scaffold here — the shell (MainShell) already provides one
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          children: [
+            const SizedBox(height: 32),
+            _buildLogo(),
+            const SizedBox(height: 32),
+            Text(
+              greeting,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.text,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Utilise le menu en bas pour accéder à la Carte, Alertes, Santé et Profil.',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppColors.textMuted,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            _quickLink(context, Icons.map_outlined, 'Carte', AppRoutes.homeCarte),
+            const SizedBox(height: 12),
+            _quickLink(context, Icons.pets, 'Mes chiens', AppRoutes.dogList),
+            const SizedBox(height: 12),
+            _quickLink(context, Icons.favorite_outline, 'Santé', AppRoutes.homeSante),
+            const SizedBox(height: 12),
+            _quickLink(context, Icons.person_outline, 'Profil', AppRoutes.homeProfil),
+            const SizedBox(height: 24),
+          ],
         ),
       ),
     );
@@ -99,11 +98,40 @@ class _ConnectedHomeScreenState extends State<ConnectedHomeScreen> {
     );
   }
 
+  /// Pour les onglets du shell, on utilise goBranch pour que l'index de la bottom nav soit mis à jour.
+  void _navigateTo(BuildContext context, String path) {
+    final shell = StatefulNavigationShell.maybeOf(context);
+    final branchIndex = _shellPathToIndex(path);
+    if (shell != null && branchIndex != null) {
+      shell.goBranch(branchIndex);
+      context.go(path);
+    } else {
+      context.go(path);
+    }
+  }
+
+  static int? _shellPathToIndex(String path) {
+    switch (path) {
+      case AppRoutes.homeAccueil:
+        return 0;
+      case AppRoutes.homeCarte:
+        return 1;
+      case AppRoutes.homeAlertes:
+        return 2;
+      case AppRoutes.homeSante:
+        return 3;
+      case AppRoutes.homeProfil:
+        return 4;
+      default:
+        return null;
+    }
+  }
+
   Widget _quickLink(BuildContext context, IconData icon, String label, String path) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => context.go(path),
+        onTap: () => _navigateTo(context, path),
         borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),

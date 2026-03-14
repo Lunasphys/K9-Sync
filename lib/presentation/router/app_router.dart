@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 
 import 'route_guards.dart';
@@ -10,9 +11,10 @@ import '../screens/auth/login_screen.dart';
 import '../screens/auth/onboarding_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/auth/forgot_password_screen.dart';
+import '../screens/onboarding/dog_setup_screen.dart';
 import '../screens/auth/welcome_login_screen.dart';
 import '../screens/map/map_screen.dart';
-import '../screens/map/trail_history_screen.dart';
+import 'package:k9sync/presentation/screens/map/trail_history_screen.dart';
 import '../screens/map/trail_detail_screen.dart';
 import '../screens/map/lost_mode_screen.dart';
 import '../screens/health/health_dashboard_screen.dart';
@@ -20,6 +22,7 @@ import '../screens/health/activity_screen.dart';
 import '../screens/health/sleep_screen.dart';
 import '../screens/health/anomaly_screen.dart';
 import '../screens/dog/dog_list_screen.dart';
+import '../screens/dog/dog_edit_screen.dart';
 import '../screens/dog/dog_profile_screen.dart';
 import '../screens/dog/shared_access_screen.dart';
 import '../screens/dog/invite_user_screen.dart';
@@ -33,128 +36,148 @@ import '../screens/privacy/consent_screen.dart';
 import '../screens/vet/vet_journal_screen.dart';
 import '../screens/community/community_screen.dart';
 
-/// Configuration Go Router : routes, redirect auth, StatefulShellRoute pour la bottom nav.
-GoRouter createAppRouter({bool Function()? isLoggedIn}) {
+/// App router. Pass [isLoggedIn] and [sessionExpiredNotifier] from injection.
+///
+/// When [sessionExpiredNotifier] fires (token refresh failed in ApiInterceptor),
+/// GoRouter re-runs [redirect] via [refreshListenable]. Since isLoggedIn is
+/// now false (tokens cleared), authGuard redirects to /login automatically —
+/// no manual context.go() needed anywhere.
+GoRouter createAppRouter({
+  bool Function()? isLoggedIn,
+  Listenable? sessionExpiredNotifier,
+}) {
   final loggedIn = isLoggedIn ?? () => false;
+
   return GoRouter(
     initialLocation: AppRoutes.splash,
+    // Re-evaluate redirect whenever the notifier fires (session expired)
+    refreshListenable: sessionExpiredNotifier,
     redirect: (context, state) {
       final path = state.matchedLocation;
+
+      // Redirect bare /home to the default tab
+      if (path == AppRoutes.home || path == '${AppRoutes.home}/') {
+        return AppRoutes.homeAccueil;
+      }
+
       return authGuard(loggedIn(), path);
     },
     routes: [
-      // Auth & onboarding
-      GoRoute(path: AppRoutes.splash, builder: (context, state) => const SplashScreen()),
-      GoRoute(path: AppRoutes.onboarding, builder: (context, state) => const OnboardingScreen()),
-      GoRoute(path: AppRoutes.consent, builder: (context, state) => const ConsentScreen()),
-      GoRoute(path: AppRoutes.login, builder: (context, state) => const WelcomeLoginScreen()),
-      GoRoute(path: AppRoutes.signIn, builder: (context, state) => const LoginScreen()),
-      GoRoute(path: AppRoutes.register, builder: (context, state) => const RegisterScreen()),
-      GoRoute(path: AppRoutes.forgotPassword, builder: (context, state) => const ForgotPasswordScreen()),
+      // ── Auth & onboarding ───────────────────────────────────────────
+      GoRoute(path: AppRoutes.splash, builder: (c, s) => const SplashScreen()),
+      GoRoute(path: AppRoutes.onboarding, builder: (c, s) => const OnboardingScreen()),
+      GoRoute(path: AppRoutes.consent, builder: (c, s) => const ConsentScreen()),
+      GoRoute(path: AppRoutes.login, builder: (c, s) => const WelcomeLoginScreen()),
+      GoRoute(path: AppRoutes.signIn, builder: (c, s) => const LoginScreen()),
+      GoRoute(path: AppRoutes.register, builder: (c, s) => const RegisterScreen()),
+      GoRoute(path: AppRoutes.dogSetup, builder: (c, s) => const DogSetupScreen()),
+      GoRoute(path: AppRoutes.forgotPassword, builder: (c, s) => const ForgotPasswordScreen()),
 
-      // Zone connectée : shell avec 5 onglets (Go Router StatefulShellRoute)
-      GoRoute(
-        path: AppRoutes.home,
-        redirect: (context, state) {
-          final loc = state.matchedLocation;
-          if (loc == AppRoutes.home || loc == '${AppRoutes.home}/') {
-            return AppRoutes.homeAccueil;
-          }
-          return null;
-        },
-        routes: [
-          StatefulShellRoute.indexedStack(
-            builder: (context, state, navigationShell) => MainShell(navigationShell: navigationShell),
-            branches: [
-              StatefulShellBranch(
-                routes: [
-                  GoRoute(path: 'accueil', builder: (context, state) => const ConnectedHomeScreen()),
-                ],
+      // ── Main shell — 5-tab bottom nav ──────────────────────────────
+      // StatefulShellRoute must be a direct child of the root routes list.
+      // Wrapping it in a GoRoute('/home') causes goBranch to silently fail.
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            MainShell(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.homeAccueil,
+                builder: (c, s) => const ConnectedHomeScreen(),
               ),
-              StatefulShellBranch(
-                routes: [
-                  GoRoute(path: 'carte', builder: (context, state) => const MapScreen()),
-                ],
-              ),
-              StatefulShellBranch(
-                routes: [
-                  GoRoute(path: 'alertes', builder: (context, state) => const AlertsScreen()),
-                ],
-              ),
-              StatefulShellBranch(
-                routes: [
-                  GoRoute(path: 'sante', builder: (context, state) => const HealthDashboardScreen()),
-                ],
-              ),
-              StatefulShellBranch(
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.homeCarte,
+                builder: (c, s) => const MapScreen(),
                 routes: [
                   GoRoute(
-                    path: 'profil',
-                    builder: (context, state) => const SettingsScreen(),
+                    path: 'history',
+                    builder: (c, s) => const TrailHistoryScreen(),
                   ),
                 ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.homeAlertes,
+                builder: (c, s) => const AlertsScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.homeSante,
+                builder: (c, s) => const HealthDashboardScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.homeProfil,
+                builder: (c, s) => const SettingsScreen(),
               ),
             ],
           ),
         ],
       ),
 
-      // Routes plein écran (hors shell)
-      GoRoute(path: AppRoutes.pairing, builder: (context, state) => const PairingScreen()),
-      GoRoute(path: AppRoutes.map, builder: (context, state) => const MapScreen()),
+      // ── Full-screen routes (outside shell) ─────────────────────────
+      GoRoute(path: AppRoutes.pairing, builder: (c, s) => const PairingScreen()),
+      GoRoute(path: AppRoutes.map, builder: (c, s) => const MapScreen()),
       GoRoute(
         path: AppRoutes.trailHistory,
-        builder: (context, state) => const TrailHistoryScreen(),
+        builder: (c, s) => const TrailHistoryScreen(),
         routes: [
           GoRoute(
             path: 'detail',
-            builder: (context, state) => const TrailDetailScreen(),
+            builder: (c, s) => const TrailDetailScreen(),
           ),
         ],
       ),
-      GoRoute(path: AppRoutes.lostMode, builder: (context, state) => const LostModeScreen()),
-      GoRoute(path: AppRoutes.healthDashboard, builder: (context, state) => const HealthDashboardScreen()),
-      GoRoute(path: AppRoutes.activity, builder: (context, state) => const ActivityScreen()),
-      GoRoute(path: AppRoutes.sleep, builder: (context, state) => const SleepScreen()),
-      GoRoute(path: AppRoutes.anomaly, builder: (context, state) => const AnomalyScreen()),
-      GoRoute(path: AppRoutes.dogList, builder: (context, state) => const DogListScreen()),
+      GoRoute(path: AppRoutes.lostMode, builder: (c, s) => const LostModeScreen()),
+      GoRoute(path: AppRoutes.healthDashboard, builder: (c, s) => const HealthDashboardScreen()),
+      GoRoute(path: AppRoutes.activity, builder: (c, s) => const ActivityScreen()),
+      GoRoute(path: AppRoutes.sleep, builder: (c, s) => const SleepScreen()),
+      GoRoute(path: AppRoutes.anomaly, builder: (c, s) => const AnomalyScreen()),
+      GoRoute(path: AppRoutes.dogList, builder: (c, s) => const DogListScreen()),
       GoRoute(
         path: '/dogs/:dogId',
-        builder: (context, state) {
-          final dogId = state.pathParameters['dogId'];
-          return DogProfileScreen(dogId: dogId);
-        },
+        builder: (c, s) => DogProfileScreen(dogId: s.pathParameters['dogId']!),
         routes: [
           GoRoute(
+            path: 'edit',
+            builder: (c, s) => DogEditScreen(dogId: s.pathParameters['dogId']!),
+          ),
+          GoRoute(
             path: 'shared-access',
-            builder: (context, state) {
-              final dogId = state.pathParameters['dogId'];
-              return SharedAccessScreen(dogId: dogId);
-            },
+            builder: (c, s) => SharedAccessScreen(dogId: s.pathParameters['dogId']!),
           ),
           GoRoute(
             path: 'invite',
-            builder: (context, state) {
-              final dogId = state.pathParameters['dogId'];
-              return InviteUserScreen(dogId: dogId);
-            },
+            builder: (c, s) => InviteUserScreen(dogId: s.pathParameters['dogId']!),
           ),
         ],
       ),
       GoRoute(
         path: '/collar/:collarId',
-        builder: (context, state) {
-          final collarId = state.pathParameters['collarId'];
-          return CollarStatusScreen(collarId: collarId);
-        },
+        builder: (c, s) => CollarStatusScreen(collarId: s.pathParameters['collarId']!),
       ),
-      GoRoute(path: AppRoutes.alertsList, builder: (context, state) => const AlertsListScreen()),
-      GoRoute(path: AppRoutes.notificationSettings, builder: (context, state) => const NotificationSettingsScreen()),
-      GoRoute(path: AppRoutes.settings, builder: (context, state) => const SettingsScreen()),
-      GoRoute(path: AppRoutes.subscription, builder: (context, state) => const SubscriptionScreen()),
-      GoRoute(path: AppRoutes.privacy, builder: (context, state) => const PrivacyScreen()),
-      GoRoute(path: AppRoutes.vet, builder: (context, state) => const VetJournalScreen()),
-      GoRoute(path: AppRoutes.community, builder: (context, state) => const CommunityScreen()),
+      GoRoute(path: AppRoutes.alertsList, builder: (c, s) => const AlertsListScreen()),
+      GoRoute(path: AppRoutes.notificationSettings, builder: (c, s) => const NotificationSettingsScreen()),
+      GoRoute(path: AppRoutes.settings, builder: (c, s) => const SettingsScreen()),
+      GoRoute(path: AppRoutes.subscription, builder: (c, s) => const SubscriptionScreen()),
+      GoRoute(path: AppRoutes.privacy, builder: (c, s) => const PrivacyScreen()),
+      GoRoute(path: AppRoutes.vet, builder: (c, s) => const VetJournalScreen()),
+      GoRoute(path: AppRoutes.community, builder: (c, s) => const CommunityScreen()),
     ],
   );
 }
+

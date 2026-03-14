@@ -18,6 +18,13 @@ abstract interface class IAuthRepository {
   bool get isLoggedIn;
   /// For API interceptor (current JWT). Null if not logged in.
   String? get accessToken;
+
+  /// Stream émis lorsque la session devient invalide (ex. après clearTokens dans l'intercepteur).
+  /// Écouter dans l'app pour rediriger vers /login.
+  Stream<bool> get sessionStream;
+
+  /// Marque la session comme expirée (isLoggedIn → false) et émet false sur [sessionStream].
+  void invalidateSession();
 }
 
 /// Result of login/register/refresh.

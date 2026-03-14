@@ -1,0 +1,2 @@
+# Dépendances pour collar_simulator.py (tests MQTT)
+paho-mqtt>=2.0.0

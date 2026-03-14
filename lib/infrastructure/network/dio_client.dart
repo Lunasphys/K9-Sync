@@ -11,6 +11,7 @@ class DioClient {
     String baseUrl = ApiConstants.baseUrl,
     int connectTimeoutMs = ApiConstants.timeoutMs,
     int receiveTimeoutMs = ApiConstants.timeoutMs,
+    void Function()? onSessionExpired,
   }) : _baseUrl = baseUrl {
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
@@ -33,6 +34,7 @@ class DioClient {
       getRefreshToken: secureStorage.getRefreshToken,
       setTokens: secureStorage.setTokens,
       clearTokens: secureStorage.clear,
+      onSessionExpired: onSessionExpired,
     );
     _dio.interceptors.add(interceptor);
   }

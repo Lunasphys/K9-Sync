@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 
+import 'application/health/sync_offline_health_use_case.dart';
 import 'domain/interfaces/repositories/i_auth_repository.dart';
 import 'domain/interfaces/repositories/i_dog_repository.dart';
 import 'domain/interfaces/repositories/i_gps_repository.dart';
@@ -13,8 +15,8 @@ import 'domain/interfaces/services/i_location_service.dart';
 import 'domain/interfaces/services/i_mqtt_service.dart';
 import 'infrastructure/datasources/remote/auth_remote_datasource.dart';
 import 'infrastructure/datasources/remote/auth_remote_datasource_rest.dart';
-import 'infrastructure/datasources/remote/dog_remote_datasource.dart';
 import 'infrastructure/datasources/remote/gps_remote_datasource_firestore.dart';
+import 'infrastructure/datasources/remote/health_remote_datasource.dart';
 import 'infrastructure/datasources/remote/health_remote_datasource_firestore.dart';
 import 'infrastructure/datasources/remote/alert_remote_datasource.dart';
 import 'infrastructure/datasources/local/gps_local_datasource.dart';
@@ -43,14 +45,18 @@ void setupDependencies({required bool firebaseAvailable}) {
 
   // Storage + réseau (auth REST)
   getIt.registerLazySingleton<SecureStorage>(() => SecureStorageImpl());
-  getIt.registerLazySingleton<DioClient>(() => DioClient(secureStorage: getIt<SecureStorage>()));
+  getIt.registerLazySingleton<DioClient>(() => DioClient(
+        secureStorage: getIt<SecureStorage>(),
+        onSessionExpired: () => getIt<IAuthRepository>().invalidateSession(),
+      ));
+  getIt.registerLazySingleton<Dio>(() => getIt<DioClient>().dio);
 
   // Datasources (Firestore optionnel pour tourner sans google-services.json)
   getIt.registerLazySingleton<AuthRemoteDatasource>(
     () => AuthRemoteDatasourceRest(getIt<DioClient>(), getIt<SecureStorage>()),
   );
-  getIt.registerLazySingleton<DogRemoteDatasource>(() => DogRemoteDatasource(firestore));
   getIt.registerLazySingleton<GpsRemoteDatasourceFirestore>(() => GpsRemoteDatasourceFirestore(firestore));
+  getIt.registerLazySingleton<HealthRemoteDatasource>(() => HealthRemoteDatasource(getIt<DioClient>()));
   getIt.registerLazySingleton<HealthRemoteDatasourceFirestore>(() => HealthRemoteDatasourceFirestore(firestore));
   getIt.registerLazySingleton<AlertRemoteDatasource>(() => AlertRemoteDatasource(firestore));
   getIt.registerLazySingleton<GpsLocalDatasource>(() => GpsLocalDatasourceImpl());
@@ -60,19 +66,18 @@ void setupDependencies({required bool firebaseAvailable}) {
   getIt.registerLazySingleton<IAuthRepository>(
     () => AuthRepositoryImpl(getIt<AuthRemoteDatasource>(), null, getIt<SecureStorage>()),
   );
-  getIt.registerLazySingleton<IDogRepository>(
-    () => DogRepositoryImpl(getIt<DogRemoteDatasource>(), getIt<IAuthRepository>()),
-  );
-  getIt.registerLazySingleton<IGpsRepository>(() => GpsRepositoryImpl(
-        getIt<GpsRemoteDatasourceFirestore>(),
-        getIt<GpsLocalDatasource>(),
-      ));
+  getIt.registerLazySingleton<IDogRepository>(() => DogRepositoryImpl());
+  getIt.registerLazySingleton<IGpsRepository>(() => GpsRepositoryImpl());
   getIt.registerLazySingleton<IHealthRepository>(
-      () => HealthRepositoryImpl(getIt<HealthRemoteDatasourceFirestore>()));
+      () => HealthRepositoryImpl(getIt<HealthRemoteDatasourceFirestore>(), getIt<HealthRemoteDatasource>()));
   getIt.registerLazySingleton<IAlertRepository>(
     () => AlertRepositoryImpl(getIt<AlertRemoteDatasource>(), getIt<IAuthRepository>()),
   );
   getIt.registerLazySingleton<ICollarRepository>(() => CollarRepositoryImpl());
+
+  // Use cases
+  getIt.registerLazySingleton<SyncOfflineHealthUseCase>(
+      () => SyncOfflineHealthUseCase(getIt<IHealthRepository>()));
 
   // Services
   getIt.registerLazySingleton<INotificationService>(() => FcmNotificationService());

@@ -1,9 +1,13 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:k9sync/core/errors/auth_error.dart';
 import 'package:k9sync/core/theme/app_theme.dart';
+import 'package:k9sync/domain/interfaces/repositories/i_auth_repository.dart';
+import 'package:k9sync/injection.dart';
 import 'package:k9sync/presentation/router/route_guards.dart';
 
-/// Formulaire de connexion : email + mot de passe (mockup style).
+/// Formulaire de connexion : email + mot de passe, appel IAuthRepository.login() puis redirect /home/accueil.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -16,12 +20,46 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submit() async {
+    setState(() => _errorMessage = null);
+    if (!_formKey.currentState!.validate()) return;
+
+    if (!getIt.isRegistered<IAuthRepository>()) {
+      setState(() => _errorMessage = 'Service non prêt. Redémarrez l\'application.');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      await getIt<IAuthRepository>().login(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+      if (!mounted) return;
+      context.go(AppRoutes.homeAccueil);
+    } on AuthError catch (e) {
+      if (!mounted) return;
+      setState(() => _errorMessage = e.userMessage ?? 'Erreur d\'authentification.');
+    } on DioException catch (e) {
+      if (!mounted) return;
+      final authErr = AuthError.fromDio(e);
+      setState(() => _errorMessage = authErr.userMessage ?? 'Impossible de se connecter.');
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _errorMessage = 'Impossible de se connecter. Vérifiez votre connexion.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -48,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             child: const Icon(Icons.arrow_back, size: 20),
           ),
-          onPressed: () => context.pop(),
+          onPressed: _isLoading ? null : () => context.pop(),
         ),
       ),
       body: SafeArea(
@@ -77,11 +115,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
+                if (_errorMessage != null) ...[
+                  _ErrorBanner(message: _errorMessage!),
+                  const SizedBox(height: 16),
+                ],
                 _buildLabel('Email'),
                 const SizedBox(height: 4),
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
+                  enabled: !_isLoading,
                   decoration: _inputDecoration(hint: 'votre@email.com'),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Champ requis';
@@ -95,6 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
+                  enabled: !_isLoading,
                   decoration: _inputDecoration(hint: '••••••••').copyWith(
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -113,15 +157,27 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 28),
                 SizedBox(
                   width: double.infinity,
+                  height: 52,
                   child: ElevatedButton(
-                    onPressed: _submit,
-                    child: const Text('Se connecter'),
+                    onPressed: _isLoading ? null : _submit,
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('Se connecter'),
                   ),
                 ),
                 const SizedBox(height: 16),
                 Center(
                   child: TextButton(
-                    onPressed: () => context.push(AppRoutes.forgotPassword),
+                    onPressed: _isLoading
+                        ? null
+                        : () => context.push(AppRoutes.forgotPassword),
                     child: Text(
                       'Mot de passe oublié ?',
                       style: TextStyle(
@@ -136,7 +192,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 8),
                 Center(
                   child: TextButton(
-                    onPressed: () => context.pop(),
+                    onPressed: _isLoading ? null : () => context.pop(),
                     child: Text(
                       'Retour',
                       style: TextStyle(
@@ -177,10 +233,44 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+}
 
-  void _submit() {
-    if (!_formKey.currentState!.validate()) return;
-    // TODO: appeler AuthRepository / LoginUseCase et rediriger vers home
-    // Pour l'instant on reste sur l'écran
+class _ErrorBanner extends StatelessWidget {
+  const _ErrorBanner({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.redLight,
+        border: Border.all(color: AppColors.redDanger, width: 2),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0xFFE84040),
+            offset: Offset(2, 2),
+            blurRadius: 0,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: AppColors.redDanger, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.redDanger,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

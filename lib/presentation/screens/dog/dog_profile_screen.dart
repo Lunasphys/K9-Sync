@@ -1,141 +1,102 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:k9sync/core/theme/app_theme.dart';
-import 'package:k9sync/presentation/router/route_guards.dart';
 
-/// Profil du chien (mockup) : bandeau orange, carte infos, stats, collier, lignes d’accès.
-class DogProfileScreen extends StatelessWidget {
-  const DogProfileScreen({super.key, this.dogId});
+import 'package:k9sync/core/theme/app_theme.dart';
+import 'package:k9sync/domain/entities/dog.dart';
+import 'package:k9sync/presentation/providers/dog_provider.dart';
+
+/// Dog profile screen — reads GET /dogs/:dogId via [dogProvider].
+/// Navigates to DogEditScreen on the edit button.
+class DogProfileScreen extends ConsumerWidget {
   final String? dogId;
+  const DogProfileScreen({super.key, required this.dogId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (dogId == null) {
+      return const _ErrorScaffold(message: 'Identifiant chien manquant.');
+    }
+
+    final state = ref.watch(dogProvider(dogId!));
+
+    return Scaffold(
+      backgroundColor: AppColors.bg,
+      appBar: AppBar(
+        backgroundColor: AppColors.cardBg,
+        surfaceTintColor: Colors.transparent,
+        title: Text(
+          state.dog?.name ?? 'Profil',
+          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(2),
+          child: Container(height: 2, color: AppColors.border),
+        ),
+        actions: [
+          if (state.dog != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: TextButton(
+                onPressed: () => context.push('/dogs/$dogId/edit'),
+                child: Text(
+                  'Modifier',
+                  style: TextStyle(
+                    color: AppColors.orange,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+      body: switch (state.status) {
+        DogLoadStatus.initial || DogLoadStatus.loading => const Center(
+            child: CircularProgressIndicator(),
+          ),
+        DogLoadStatus.error => _ErrorBody(
+            message: state.errorMessage ?? 'Erreur inconnue.',
+            onRetry: () => ref.read(dogProvider(dogId!).notifier).load(),
+          ),
+        _ => _ProfileBody(dog: state.dog!),
+      },
+    );
+  }
+}
+
+// ── Profile body ──────────────────────────────────────────────────────────────
+
+class _ProfileBody extends StatelessWidget {
+  final Dog dog;
+  const _ProfileBody({required this.dog});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(context),
-                _buildCard(),
-                _buildStats(),
-                _buildCollarBar(),
-                _buildSection('Informations'),
-                _profileRow(
-                    icon: '🏥',
-                    title: 'Journal vétérinaire',
-                    value: '3 entrées',
-                    onTap: () => context.push(AppRoutes.vet)),
-                _profileRow(
-                    icon: '💉',
-                    title: 'Vaccins & Rappels',
-                    value: 'À jour',
-                    onTap: () {}),
-                _profileRow(
-                    icon: '⚠️',
-                    title: 'Allergies',
-                    value: 'Poulet',
-                    onTap: () {}),
-                _buildSection('Accès partagés'),
-                _profileRow(
-                    icon: '👨‍👩‍👧',
-                    title: 'Famille',
-                    value: '2 personnes',
-                    onTap: () {}),
-                _profileRow(
-                    icon: '🏠',
-                    title: 'Dog-sitter',
-                    value: 'Expire 15 mai',
-                    onTap: () {}),
-                const SizedBox(height: 24),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 60),
-      decoration: const BoxDecoration(
-        color: AppColors.orange,
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              const Text(
-                'Mon chien',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                ),
-              ),
-              const Spacer(),
-              IconButton(
-                icon: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    border: Border.all(color: AppColors.border, width: 2),
-                    shape: BoxShape.circle,
-                    boxShadow: [AppDimensions.cardShadowSm],
-                  ),
-                  child: const Icon(Icons.edit, size: 18),
-                ),
-                onPressed: () {},
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Stack(
-            alignment: Alignment.bottomRight,
-            children: [
-              Container(
-                width: 90,
-                height: 90,
-                decoration: BoxDecoration(
-                  color: AppColors.cream,
-                  border: Border.all(color: Colors.white, width: 3),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      offset: const Offset(4, 4),
-                      blurRadius: 0,
-                    ),
-                  ],
-                ),
-                child: const Center(
-                    child: Text('🐕', style: TextStyle(fontSize: 50))),
-              ),
-              Container(
-                width: 26,
-                height: 26,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: AppColors.border, width: 2),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.camera_alt, size: 12),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCard() {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, -36, 16, 0),
+    return ListView(
       padding: const EdgeInsets.all(16),
+      children: [
+        _AvatarCard(dog: dog),
+        const SizedBox(height: 16),
+        _InfoSection(dog: dog),
+        const SizedBox(height: 16),
+        _AllergiesSection(allergies: dog.allergies),
+        const SizedBox(height: 16),
+        _ActionsSection(dogId: dog.id),
+      ],
+    );
+  }
+}
+
+// ── Avatar card ───────────────────────────────────────────────────────────────
+
+class _AvatarCard extends StatelessWidget {
+  final Dog dog;
+  const _AvatarCard({required this.dog});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.cardBg,
         border: Border.all(color: AppColors.border, width: 2),
@@ -144,31 +105,69 @@ class DogProfileScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const Text(
-            'Bucky',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
+          // Avatar — photo or emoji fallback
+          Container(
+            width: 90,
+            height: 90,
+            decoration: BoxDecoration(
+              color: AppColors.cream,
+              border: Border.all(color: AppColors.border, width: 2),
+              shape: BoxShape.circle,
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Beagle · Mâle · 3 ans',
-            style: TextStyle(
-              fontSize: 13,
-              color: AppColors.textMuted,
-              fontWeight: FontWeight.w600,
-            ),
+            child: dog.photoUrl != null && dog.photoUrl!.isNotEmpty
+                ? ClipOval(
+                    child: Image.network(
+                      dog.photoUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Center(
+                        child: Text('🐕', style: TextStyle(fontSize: 44)),
+                      ),
+                    ),
+                  )
+                : const Center(
+                    child: Text('🐕', style: TextStyle(fontSize: 44)),
+                  ),
           ),
           const SizedBox(height: 14),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            alignment: WrapAlignment.center,
+          Text(
+            dog.name,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+          ),
+          if (dog.breed != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              dog.breed!,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textMuted,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          // Quick stats row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _chip('🎂 14 mars 2022'),
-              _chip('⚡ Très actif', orange: true),
-              _chip('12.4 kg'),
+              _QuickStat(
+                label: 'Âge',
+                value: dog.birthDate != null
+                    ? '${_ageInYears(dog.birthDate!)} ans'
+                    : '—',
+              ),
+              _Divider(),
+              _QuickStat(
+                label: 'Poids',
+                value: dog.weight != null
+                    ? '${dog.weight!.toStringAsFixed(1)} kg'
+                    : '—',
+              ),
+              _Divider(),
+              _QuickStat(
+                label: 'Sexe',
+                value: _sexLabel(dog.sex),
+              ),
             ],
           ),
         ],
@@ -176,194 +175,364 @@ class DogProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _chip(String text, {bool orange = false}) {
+  int _ageInYears(DateTime birth) {
+    final now = DateTime.now();
+    int age = now.year - birth.year;
+    if (now.month < birth.month ||
+        (now.month == birth.month && now.day < birth.day)) {
+      age--;
+    }
+    return age;
+  }
+
+  String _sexLabel(DogSex? sex) {
+    return switch (sex) {
+      DogSex.male => '♂ Mâle',
+      DogSex.female => '♀ Femelle',
+      _ => '—',
+    };
+  }
+}
+
+class _QuickStat extends StatelessWidget {
+  final String label;
+  final String value;
+  const _QuickStat({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: AppColors.textMuted,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Divider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(width: 1, height: 28, color: AppColors.border);
+  }
+}
+
+// ── Info section ──────────────────────────────────────────────────────────────
+
+class _InfoSection extends StatelessWidget {
+  final Dog dog;
+  const _InfoSection({required this.dog});
+
+  @override
+  Widget build(BuildContext context) {
+    return _Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionHeader('Informations'),
+          const SizedBox(height: 12),
+          _InfoRow('Race', dog.breed ?? '—'),
+          _InfoRow(
+            'Date de naissance',
+            dog.birthDate != null
+                ? '${dog.birthDate!.day.toString().padLeft(2, '0')}/'
+                    '${dog.birthDate!.month.toString().padLeft(2, '0')}/'
+                    '${dog.birthDate!.year}'
+                : '—',
+          ),
+          _InfoRow(
+            'Poids',
+            dog.weight != null
+                ? '${dog.weight!.toStringAsFixed(1)} kg'
+                : '—',
+          ),
+          _InfoRow('Sexe', _sexFull(dog.sex)),
+        ],
+      ),
+    );
+  }
+
+  String _sexFull(DogSex? sex) => switch (sex) {
+        DogSex.male => 'Mâle',
+        DogSex.female => 'Femelle',
+        _ => '—',
+      };
+}
+
+class _InfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+  const _InfoRow(this.label, this.value);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.textMuted,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Allergies section ─────────────────────────────────────────────────────────
+
+class _AllergiesSection extends StatelessWidget {
+  final List<String> allergies;
+  const _AllergiesSection({required this.allergies});
+
+  @override
+  Widget build(BuildContext context) {
+    return _Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionHeader('Allergies'),
+          const SizedBox(height: 12),
+          if (allergies.isEmpty)
+            Text(
+              'Aucune allergie connue.',
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.textMuted,
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: allergies
+                  .map((a) => _AllergyChip(label: a))
+                  .toList(),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AllergyChip extends StatelessWidget {
+  final String label;
+  const _AllergyChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: orange ? AppColors.orangeLight : AppColors.bg,
-        border: Border.all(color: AppColors.border, width: 2),
+        color: const Color(0xFFFFF3E0),
+        border: Border.all(color: AppColors.orange, width: 2),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStats() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      child: Row(
-        children: [
-          _stat('4.2km', 'Ce mois'),
-          _stat('82', 'Score santé'),
-          _stat('3', 'Alertes'),
-        ],
-      ),
-    );
-  }
-
-  Widget _stat(String value, String label) {
-    return Expanded(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: AppColors.bg,
-          border: Border.all(color: AppColors.border, width: 2),
-          borderRadius: AppDimensions.borderRadiusSm,
-          boxShadow: [AppDimensions.cardShadowSm],
-        ),
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textMuted,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCollarBar() {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.cardBg,
-        border: Border.all(color: AppColors.border, width: 2),
-        borderRadius: AppDimensions.borderRadiusSm,
-        boxShadow: [AppDimensions.cardShadowSm],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.bg,
-              border: Border.all(color: AppColors.border, width: 2),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Center(
-                child: Text('📡', style: TextStyle(fontSize: 18))),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'K9 Sync Pro · #4421',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                Text(
-                  'Batterie',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textMuted,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            '72%',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: AppColors.greenStatus,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSection(String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-      child: Text(
-        title.toUpperCase(),
+        label,
         style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w900,
-          color: AppColors.textMuted,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
-
-  Widget _profileRow({
-    required String icon,
-    required String title,
-    required String value,
-    VoidCallback? onTap,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
-      child: Material(
-        color: AppColors.cardBg,
-        borderRadius: AppDimensions.borderRadiusSm,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: AppDimensions.borderRadiusSm,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.border, width: 2),
-              borderRadius: AppDimensions.borderRadiusSm,
-              boxShadow: [AppDimensions.cardShadowSm],
-            ),
-            child: Row(
-              children: [
-                Text(icon, style: const TextStyle(fontSize: 20)),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Icon(Icons.chevron_right, color: AppColors.textMuted),
-              ],
-            ),
-          ),
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+          color: AppColors.orange,
         ),
       ),
     );
   }
 }
+
+// ── Actions section ───────────────────────────────────────────────────────────
+
+class _ActionsSection extends StatelessWidget {
+  final String dogId;
+  const _ActionsSection({required this.dogId});
+
+  @override
+  Widget build(BuildContext context) {
+    return _Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionHeader('Actions'),
+          const SizedBox(height: 12),
+          _ActionTile(
+            icon: '📋',
+            label: 'Accès partagés',
+            subtitle: 'Famille, dog-sitter',
+            onTap: () => context.push('/dogs/$dogId/shared-access'),
+          ),
+          const SizedBox(height: 8),
+          _ActionTile(
+            icon: '📡',
+            label: 'Statut du collier',
+            subtitle: 'Batterie, connexion, firmware',
+            onTap: () => context.push('/collar/$dogId'),
+          ),
+          const SizedBox(height: 8),
+          _ActionTile(
+            icon: '📄',
+            label: 'Exporter les données santé',
+            subtitle: 'Rapport PDF pour le vétérinaire',
+            onTap: () {
+              // PDF export — to implement
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionTile extends StatelessWidget {
+  final String icon;
+  final String label;
+  final String subtitle;
+  final VoidCallback onTap;
+  const _ActionTile({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.bg,
+          border: Border.all(color: AppColors.border, width: 2),
+          borderRadius: AppDimensions.borderRadiusSm,
+        ),
+        child: Row(
+          children: [
+            Text(icon, style: const TextStyle(fontSize: 22)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w900)),
+                  Text(subtitle,
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textMuted,
+                          fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: AppColors.textMuted, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Shared widgets ────────────────────────────────────────────────────────────
+
+class _Card extends StatelessWidget {
+  final Widget child;
+  const _Card({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBg,
+        border: Border.all(color: AppColors.border, width: 2),
+        borderRadius: AppDimensions.borderRadius,
+        boxShadow: [AppDimensions.cardShadow],
+      ),
+      child: child,
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  const _SectionHeader(this.title);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+    );
+  }
+}
+
+class _ErrorBody extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _ErrorBody({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('😕', style: TextStyle(fontSize: 48)),
+          const SizedBox(height: 16),
+          Text(message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 16),
+          ElevatedButton(onPressed: onRetry, child: const Text('Réessayer')),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorScaffold extends StatelessWidget {
+  final String message;
+  const _ErrorScaffold({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Profil')),
+      body: Center(
+        child: Text(message,
+            style: const TextStyle(fontWeight: FontWeight.w800)),
+      ),
+    );
+  }
+}
+

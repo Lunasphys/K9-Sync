@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../core/constants/api_constants.dart';
 
 /// Intercepteur Dio : injection du token (sauf /auth/*), sur 401 appel POST /auth/refresh puis retry.
+/// Si pas de refresh token ou refresh échoue, appelle [onSessionExpired] après [clearTokens].
 class ApiInterceptor extends Interceptor {
   ApiInterceptor({
     required this.dio,
@@ -11,6 +12,7 @@ class ApiInterceptor extends Interceptor {
     required this.getRefreshToken,
     required this.setTokens,
     required this.clearTokens,
+    this.onSessionExpired,
   });
 
   final Dio dio;
@@ -20,6 +22,8 @@ class ApiInterceptor extends Interceptor {
   final Future<String?> Function() getRefreshToken;
   final Future<void> Function({required String accessToken, required String refreshToken}) setTokens;
   final Future<void> Function() clearTokens;
+  /// Appelé après clearTokens() quand la session est invalide (pas de refresh ou refresh échoué).
+  final void Function()? onSessionExpired;
 
   static bool _isAuthPath(String path) {
     final p = path.contains('?') ? path.split('?').first : path;
@@ -50,6 +54,7 @@ class ApiInterceptor extends Interceptor {
     final refreshToken = await getRefreshToken();
     if (refreshToken == null || refreshToken.isEmpty) {
       await clearTokens();
+      onSessionExpired?.call();
       return handler.next(err);
     }
     try {
@@ -69,6 +74,7 @@ class ApiInterceptor extends Interceptor {
       }
     } catch (_) {
       await clearTokens();
+      onSessionExpired?.call();
     }
     handler.next(err);
   }
