@@ -30,16 +30,16 @@ class CollarModel extends Collar {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        if (dogId != null) 'dogId': dogId,
-        'serialNumber': serialNumber,
-        if (batteryLevel > 0) 'batteryLevel': batteryLevel,
-        if (firmwareVersion != null) 'firmwareVersion': firmwareVersion,
-        'isOnline': isOnline,
-        if (lastSeenAt != null) 'lastSeenAt': lastSeenAt!.toIso8601String(),
-        'createdAt': createdAt.toIso8601String(),
-        'updatedAt': updatedAt.toIso8601String(),
-      };
+    'id': id,
+    if (dogId != null) 'dogId': dogId,
+    'serialNumber': serialNumber,
+    if (batteryLevel > 0) 'batteryLevel': batteryLevel,
+    if (firmwareVersion != null) 'firmwareVersion': firmwareVersion,
+    'isOnline': isOnline,
+    if (lastSeenAt != null) 'lastSeenAt': lastSeenAt!.toIso8601String(),
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+  };
 }
 
 /// Réponse GET /collars/:id/status (Prisma).
@@ -66,9 +66,9 @@ class CollarStatusModel {
   }
 
   CollarStatus toEntity() => CollarStatus(
-        battery: battery ?? 0,
-        isOnline: isOnline,
-        lastSeen: lastSeen,
-        firmware: firmware,
-      );
+    battery: battery ?? 0,
+    isOnline: isOnline,
+    lastSeen: lastSeen,
+    firmware: firmware,
+  );
 }

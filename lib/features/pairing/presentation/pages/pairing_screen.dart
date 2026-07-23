@@ -111,17 +111,17 @@ class PairingScreen extends StatelessWidget {
         const SizedBox(height: 24),
         Text(
           'Recherche du collier à proximité...',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
         Text(
           'Assurez-vous que le Bluetooth est activé',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey.shade600,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
           textAlign: TextAlign.center,
         ),
       ],
@@ -133,10 +133,7 @@ class PairingScreen extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: Text(
         title,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -155,7 +152,9 @@ class _DeviceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = signalStrong ? AppColors.cardBorderStrong : AppColors.cardBorderWeak;
+    final borderColor = signalStrong
+        ? AppColors.cardBorderStrong
+        : AppColors.cardBorderWeak;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -199,7 +198,9 @@ class _DeviceCard extends StatelessWidget {
                     Icon(
                       Icons.signal_cellular_alt,
                       size: 16,
-                      color: signalStrong ? AppColors.primary : Colors.green.shade300,
+                      color: signalStrong
+                          ? AppColors.primary
+                          : Colors.green.shade300,
                     ),
                   ],
                 ),

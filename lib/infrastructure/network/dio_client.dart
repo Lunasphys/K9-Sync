@@ -13,19 +13,29 @@ class DioClient {
     int receiveTimeoutMs = ApiConstants.timeoutMs,
     void Function()? onSessionExpired,
   }) : _baseUrl = baseUrl {
-    _dio = Dio(BaseOptions(
-      baseUrl: baseUrl,
-      connectTimeout: Duration(milliseconds: connectTimeoutMs),
-      receiveTimeout: Duration(milliseconds: receiveTimeoutMs),
-      headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
-    ));
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: baseUrl,
+        connectTimeout: Duration(milliseconds: connectTimeoutMs),
+        receiveTimeout: Duration(milliseconds: receiveTimeoutMs),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ),
+    );
 
-    _dioPlain = Dio(BaseOptions(
-      baseUrl: baseUrl,
-      connectTimeout: Duration(milliseconds: connectTimeoutMs),
-      receiveTimeout: Duration(milliseconds: receiveTimeoutMs),
-      headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
-    ));
+    _dioPlain = Dio(
+      BaseOptions(
+        baseUrl: baseUrl,
+        connectTimeout: Duration(milliseconds: connectTimeoutMs),
+        receiveTimeout: Duration(milliseconds: receiveTimeoutMs),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ),
+    );
 
     final interceptor = ApiInterceptor(
       dio: _dio,

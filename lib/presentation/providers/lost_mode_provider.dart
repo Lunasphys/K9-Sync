@@ -6,8 +6,9 @@ import 'package:k9sync/injection.dart';
 
 /// Global lost mode state — shared between LostModeScreen, main shell badge,
 /// and AlertsScreen banner.
-final lostModeProvider =
-    StateNotifierProvider<LostModeNotifier, bool>((ref) => LostModeNotifier());
+final lostModeProvider = StateNotifierProvider<LostModeNotifier, bool>(
+  (ref) => LostModeNotifier(),
+);
 
 class LostModeNotifier extends StateNotifier<bool> {
   static const _collarSerial = 'SIM001';
@@ -25,13 +26,10 @@ class LostModeNotifier extends StateNotifier<bool> {
         active: active,
       );
       state = active;
-      DebugLogger.collar(
-        'Lost mode ${active ? "activated" : "deactivated"}',
-      );
+      DebugLogger.collar('Lost mode ${active ? "activated" : "deactivated"}');
     } catch (e) {
       DebugLogger.collar('Lost mode publish failed: $e');
       // Do not update state if publish failed
     }
   }
 }
-

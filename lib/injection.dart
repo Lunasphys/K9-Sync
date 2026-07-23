@@ -45,42 +45,70 @@ void setupDependencies({required bool firebaseAvailable}) {
 
   // Storage + réseau (auth REST)
   getIt.registerLazySingleton<SecureStorage>(() => SecureStorageImpl());
-  getIt.registerLazySingleton<DioClient>(() => DioClient(
-        secureStorage: getIt<SecureStorage>(),
-        onSessionExpired: () => getIt<IAuthRepository>().invalidateSession(),
-      ));
+  getIt.registerLazySingleton<DioClient>(
+    () => DioClient(
+      secureStorage: getIt<SecureStorage>(),
+      onSessionExpired: () => getIt<IAuthRepository>().invalidateSession(),
+    ),
+  );
   getIt.registerLazySingleton<Dio>(() => getIt<DioClient>().dio);
 
   // Datasources (Firestore optionnel pour tourner sans google-services.json)
   getIt.registerLazySingleton<AuthRemoteDatasource>(
     () => AuthRemoteDatasourceRest(getIt<DioClient>(), getIt<SecureStorage>()),
   );
-  getIt.registerLazySingleton<GpsRemoteDatasourceFirestore>(() => GpsRemoteDatasourceFirestore(firestore));
-  getIt.registerLazySingleton<HealthRemoteDatasource>(() => HealthRemoteDatasource(getIt<DioClient>()));
-  getIt.registerLazySingleton<HealthRemoteDatasourceFirestore>(() => HealthRemoteDatasourceFirestore(firestore));
-  getIt.registerLazySingleton<AlertRemoteDatasource>(() => AlertRemoteDatasource(firestore));
-  getIt.registerLazySingleton<GpsLocalDatasource>(() => GpsLocalDatasourceImpl());
-  getIt.registerLazySingleton<HealthLocalDatasource>(() => HealthLocalDatasourceImpl());
+  getIt.registerLazySingleton<GpsRemoteDatasourceFirestore>(
+    () => GpsRemoteDatasourceFirestore(firestore),
+  );
+  getIt.registerLazySingleton<HealthRemoteDatasource>(
+    () => HealthRemoteDatasource(getIt<DioClient>()),
+  );
+  getIt.registerLazySingleton<HealthRemoteDatasourceFirestore>(
+    () => HealthRemoteDatasourceFirestore(firestore),
+  );
+  getIt.registerLazySingleton<AlertRemoteDatasource>(
+    () => AlertRemoteDatasource(firestore),
+  );
+  getIt.registerLazySingleton<GpsLocalDatasource>(
+    () => GpsLocalDatasourceImpl(),
+  );
+  getIt.registerLazySingleton<HealthLocalDatasource>(
+    () => HealthLocalDatasourceImpl(),
+  );
 
   // Repositories (auth REST : pas FirebaseAuth)
   getIt.registerLazySingleton<IAuthRepository>(
-    () => AuthRepositoryImpl(getIt<AuthRemoteDatasource>(), null, getIt<SecureStorage>()),
+    () => AuthRepositoryImpl(
+      getIt<AuthRemoteDatasource>(),
+      null,
+      getIt<SecureStorage>(),
+    ),
   );
   getIt.registerLazySingleton<IDogRepository>(() => DogRepositoryImpl());
   getIt.registerLazySingleton<IGpsRepository>(() => GpsRepositoryImpl());
   getIt.registerLazySingleton<IHealthRepository>(
-      () => HealthRepositoryImpl(getIt<HealthRemoteDatasourceFirestore>(), getIt<HealthRemoteDatasource>()));
+    () => HealthRepositoryImpl(
+      getIt<HealthRemoteDatasourceFirestore>(),
+      getIt<HealthRemoteDatasource>(),
+    ),
+  );
   getIt.registerLazySingleton<IAlertRepository>(
-    () => AlertRepositoryImpl(getIt<AlertRemoteDatasource>(), getIt<IAuthRepository>()),
+    () => AlertRepositoryImpl(
+      getIt<AlertRemoteDatasource>(),
+      getIt<IAuthRepository>(),
+    ),
   );
   getIt.registerLazySingleton<ICollarRepository>(() => CollarRepositoryImpl());
 
   // Use cases
   getIt.registerLazySingleton<SyncOfflineHealthUseCase>(
-      () => SyncOfflineHealthUseCase(getIt<IHealthRepository>()));
+    () => SyncOfflineHealthUseCase(getIt<IHealthRepository>()),
+  );
 
   // Services
-  getIt.registerLazySingleton<INotificationService>(() => FcmNotificationService());
+  getIt.registerLazySingleton<INotificationService>(
+    () => FcmNotificationService(),
+  );
   getIt.registerLazySingleton<IHealthDataService>(() => HealthConnectService());
   getIt.registerLazySingleton<ILocationService>(() => LocationService());
   getIt.registerLazySingleton<IMqttService>(() => MqttService());

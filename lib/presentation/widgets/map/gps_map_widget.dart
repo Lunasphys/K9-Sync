@@ -23,7 +23,10 @@ class GpsMapWidget extends StatelessWidget {
           children: [
             const Icon(Icons.map, size: 64),
             const SizedBox(height: 8),
-            Text('Carte (flutter_map)', style: Theme.of(context).textTheme.bodyLarge),
+            Text(
+              'Carte (flutter_map)',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
           ],
         ),
       ),

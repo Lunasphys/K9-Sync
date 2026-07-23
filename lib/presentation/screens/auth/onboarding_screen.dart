@@ -88,7 +88,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: s.circleColor,
-                            border: Border.all(color: AppColors.border, width: 3),
+                            border: Border.all(
+                              color: AppColors.border,
+                              width: 3,
+                            ),
                             boxShadow: [
                               BoxShadow(
                                 color: AppColors.border,
@@ -98,7 +101,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             ],
                           ),
                           child: Center(
-                            child: Text(s.emoji, style: const TextStyle(fontSize: 90)),
+                            child: Text(
+                              s.emoji,
+                              style: const TextStyle(fontSize: 90),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -148,7 +154,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               ? AppColors.orange
                               : Colors.grey.shade300,
                           borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: AppColors.border, width: 1.5),
+                          border: Border.all(
+                            color: AppColors.border,
+                            width: 1.5,
+                          ),
                         ),
                       ),
                     ),

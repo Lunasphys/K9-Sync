@@ -11,6 +11,5 @@ class GetHealthRecordsUseCase {
     String dogId, {
     required DateTime from,
     required DateTime to,
-  }) =>
-      _repo.getHealthHistory(dogId, from: from, to: to);
+  }) => _repo.getHealthHistory(dogId, from: from, to: to);
 }

@@ -12,10 +12,12 @@ abstract final class HealthUtils {
   static const int batteryCriticalPercent = 20;
 
   /// Check if heart rate is in normal range.
-  static bool isHeartRateNormal(int bpm) => bpm >= heartRateMin && bpm <= heartRateMax;
+  static bool isHeartRateNormal(int bpm) =>
+      bpm >= heartRateMin && bpm <= heartRateMax;
 
   /// Check if temperature is in normal range.
-  static bool isTemperatureNormal(double celsius) => celsius >= tempMin && celsius <= tempMax;
+  static bool isTemperatureNormal(double celsius) =>
+      celsius >= tempMin && celsius <= tempMax;
 
   /// Clamp heart rate to physical range (0–300 from schema).
   static int clampHeartRate(int bpm) {

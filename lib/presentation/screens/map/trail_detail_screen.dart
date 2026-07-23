@@ -76,10 +76,7 @@ class TrailDetailScreen extends StatelessWidget {
               children: [
                 Text(
                   'Grande sortie parc',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w900,
-                  ),
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
                 ),
                 Text(
                   'Hier · 17h30',
@@ -176,10 +173,7 @@ class TrailDetailScreen extends StatelessWidget {
                 children: [
                   TextSpan(
                     text: unit,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textMuted,
-                    ),
+                    style: TextStyle(fontSize: 11, color: AppColors.textMuted),
                   ),
                 ],
               ),
@@ -205,7 +199,11 @@ class TrailDetailScreen extends StatelessWidget {
         children: [
           Expanded(
             child: _healthCard(
-                '❤️ FC moy.', '118', ' bpm', AppColors.pinkLight),
+              '❤️ FC moy.',
+              '118',
+              ' bpm',
+              AppColors.pinkLight,
+            ),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -214,15 +212,18 @@ class TrailDetailScreen extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: _healthCard(
-                '🌡️ Temp. max', '38.7', '°C', AppColors.greenMint),
+              '🌡️ Temp. max',
+              '38.7',
+              '°C',
+              AppColors.greenMint,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _healthCard(
-      String label, String value, String unit, Color bgColor) {
+  Widget _healthCard(String label, String value, String unit, Color bgColor) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -245,17 +246,11 @@ class TrailDetailScreen extends StatelessWidget {
           Text.rich(
             TextSpan(
               text: value,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-              ),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
               children: [
                 TextSpan(
                   text: unit,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textMuted,
-                  ),
+                  style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                 ),
               ],
             ),

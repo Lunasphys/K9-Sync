@@ -10,6 +10,5 @@ class HealthConnectService implements IHealthDataService {
     DateTime from,
     DateTime to,
     List<String> typeIds,
-  ) async =>
-      [];
+  ) async => [];
 }

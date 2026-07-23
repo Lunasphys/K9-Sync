@@ -24,16 +24,16 @@ class WelcomeScreen extends StatelessWidget {
               Text(
                 'Bienvenue !',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
                 'Prêt pour une nouvelle aventure avec ton compagnon?',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.black87,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: Colors.black87),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
@@ -161,10 +161,7 @@ class WelcomeScreen extends StatelessWidget {
             ),
             child: const Text(
               'SALUT !',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
           ),
         ),

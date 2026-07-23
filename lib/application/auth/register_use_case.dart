@@ -11,11 +11,10 @@ class RegisterUseCase {
     required String password,
     required String firstName,
     required String lastName,
-  }) =>
-      _repo.register(
-        email: email,
-        password: password,
-        firstName: firstName,
-        lastName: lastName,
-      );
+  }) => _repo.register(
+    email: email,
+    password: password,
+    firstName: firstName,
+    lastName: lastName,
+  );
 }

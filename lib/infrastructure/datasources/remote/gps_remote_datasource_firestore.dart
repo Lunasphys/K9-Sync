@@ -10,13 +10,19 @@ class GpsRemoteDatasourceFirestore {
 
   CollectionReference<Map<String, dynamic>>? _gpsCol(String dogId) {
     if (_firestore == null) return null;
-    return _firestore.collection(FirebaseConstants.dogs).doc(dogId).collection(FirebaseConstants.gpsLocationsSub);
+    return _firestore
+        .collection(FirebaseConstants.dogs)
+        .doc(dogId)
+        .collection(FirebaseConstants.gpsLocationsSub);
   }
 
   Future<GpsLocationModel?> getLatest(String dogId) async {
     final col = _gpsCol(dogId);
     if (col == null) return null;
-    final snap = await col.orderBy('recordedAt', descending: true).limit(1).get();
+    final snap = await col
+        .orderBy('recordedAt', descending: true)
+        .limit(1)
+        .get();
     if (snap.docs.isEmpty) return null;
     return GpsLocationModel.fromFirestore(snap.docs.first);
   }
@@ -38,11 +44,19 @@ class GpsRemoteDatasourceFirestore {
     return snap.docs.map((d) => GpsLocationModel.fromFirestore(d)).toList();
   }
 
-  Future<void> addLocations(String dogId, List<GpsLocationModel> locations) async {
+  Future<void> addLocations(
+    String dogId,
+    List<GpsLocationModel> locations,
+  ) async {
     final col = _gpsCol(dogId);
     if (col == null) return;
     for (final loc in locations) {
-      await col.doc(loc.id).set(loc.toFirestore()..['recordedAt'] = Timestamp.fromDate(loc.recordedAt));
+      await col
+          .doc(loc.id)
+          .set(
+            loc.toFirestore()
+              ..['recordedAt'] = Timestamp.fromDate(loc.recordedAt),
+          );
     }
   }
 }

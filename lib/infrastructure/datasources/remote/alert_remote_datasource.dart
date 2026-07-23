@@ -16,11 +16,17 @@ class AlertRemoteDatasource {
         .collection(FirebaseConstants.alertsSub);
   }
 
-  Future<List<AlertModel>> getAlerts(String userId, {String? dogId, bool unreadOnly = false, int limit = 50}) async {
+  Future<List<AlertModel>> getAlerts(
+    String userId, {
+    String? dogId,
+    bool unreadOnly = false,
+    int limit = 50,
+  }) async {
     final col = _alertsCol(userId);
     if (col == null) return [];
     var query = col.orderBy('triggeredAt', descending: true).limit(limit);
-    if (dogId != null && dogId.isNotEmpty) query = query.where('dogId', isEqualTo: dogId);
+    if (dogId != null && dogId.isNotEmpty)
+      query = query.where('dogId', isEqualTo: dogId);
     if (unreadOnly) query = query.where('isRead', isEqualTo: false);
     final snap = await query.get();
     return snap.docs.map((d) => AlertModel.fromFirestore(d)).toList();

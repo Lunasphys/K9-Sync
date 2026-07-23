@@ -10,4 +10,6 @@ final currentUserProvider = FutureProvider<User?>((ref) async {
 });
 
 /// Repository auth (GetIt — MVP).
-final authRepositoryProvider = Provider<IAuthRepository>((ref) => getIt<IAuthRepository>());
+final authRepositoryProvider = Provider<IAuthRepository>(
+  (ref) => getIt<IAuthRepository>(),
+);

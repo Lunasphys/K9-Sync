@@ -35,14 +35,17 @@ class _AlertsView extends ConsumerWidget {
           builder: (context, state) {
             return Row(
               children: [
-                const Text('Alertes',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w900, fontSize: 18)),
+                const Text(
+                  'Alertes',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+                ),
                 if (state.unreadCount > 0) ...[
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 2),
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.red,
                       borderRadius: BorderRadius.circular(20),
@@ -50,9 +53,10 @@ class _AlertsView extends ConsumerWidget {
                     child: Text(
                       '${state.unreadCount}',
                       style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900),
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ),
                 ],
@@ -66,11 +70,12 @@ class _AlertsView extends ConsumerWidget {
             builder: (context, state) {
               if (state.unreadCount == 0) return const SizedBox.shrink();
               return TextButton(
-                onPressed: () => context
-                    .read<AlertsBloc>()
-                    .add(const AlertsAllMarkedRead()),
-                child: const Text('Tout lire',
-                    style: TextStyle(fontWeight: FontWeight.w800)),
+                onPressed: () =>
+                    context.read<AlertsBloc>().add(const AlertsAllMarkedRead()),
+                child: const Text(
+                  'Tout lire',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
               );
             },
           ),
@@ -86,8 +91,7 @@ class _AlertsView extends ConsumerWidget {
             if (isLost) const LostModeBanner(),
             // ── Tab row ──────────────────────────────────────────────
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: _TabRow(),
             ),
             // ── Alert list ───────────────────────────────────────────
@@ -97,13 +101,13 @@ class _AlertsView extends ConsumerWidget {
                   final alerts = state.visibleAlerts;
                   if (alerts.isEmpty) {
                     return _EmptyState(
-                        isPriorityTab: state.selectedTabIndex == 1);
+                      isPriorityTab: state.selectedTabIndex == 1,
+                    );
                   }
                   return ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     itemCount: alerts.length,
-                    separatorBuilder: (_, _) =>
-                        const SizedBox(height: 10),
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       return _AlertCard(alert: alerts[index]);
                     },
@@ -132,15 +136,16 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(isPriorityTab ? '✅' : '🔔',
-              style: const TextStyle(fontSize: 48)),
+          Text(
+            isPriorityTab ? '✅' : '🔔',
+            style: const TextStyle(fontSize: 48),
+          ),
           const SizedBox(height: 12),
           Text(
             isPriorityTab
                 ? 'Aucune alerte prioritaire'
                 : 'Aucune alerte pour l\'instant',
-            style: const TextStyle(
-                fontSize: 16, fontWeight: FontWeight.w900),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 6),
           Text(
@@ -148,9 +153,10 @@ class _EmptyState extends StatelessWidget {
                 ? 'Tout va bien !'
                 : 'Les alertes MQTT apparaîtront ici.',
             style: TextStyle(
-                fontSize: 13,
-                color: AppColors.textMuted,
-                fontWeight: FontWeight.w600),
+              fontSize: 13,
+              color: AppColors.textMuted,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -169,22 +175,16 @@ class _AlertCard extends StatelessWidget {
     final colors = _colorsFor(alert.category);
 
     return GestureDetector(
-      onTap: () => context
-          .read<AlertsBloc>()
-          .add(AlertMarkedRead(alert.id)),
+      onTap: () => context.read<AlertsBloc>().add(AlertMarkedRead(alert.id)),
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 300),
         opacity: alert.isRead ? 0.6 : 1.0,
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: alert.isRead
-                ? AppColors.cardBg
-                : colors.bg,
+            color: alert.isRead ? AppColors.cardBg : colors.bg,
             border: Border.all(
-              color: alert.isRead
-                  ? AppColors.border
-                  : colors.border,
+              color: alert.isRead ? AppColors.border : colors.border,
               width: 2,
             ),
             borderRadius: AppDimensions.borderRadius,
@@ -198,7 +198,9 @@ class _AlertCard extends StatelessWidget {
                   // Category badge
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 2),
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: colors.badge,
                       borderRadius: BorderRadius.circular(10),
@@ -206,33 +208,40 @@ class _AlertCard extends StatelessWidget {
                     child: Text(
                       _labelFor(alert.category),
                       style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 6),
                   if (alert.isPriority)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.red,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Text('PRIORITAIRE',
-                          style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white)),
+                      child: const Text(
+                        'PRIORITAIRE',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                   const Spacer(),
                   Text(
                     _ago(alert.triggeredAt),
                     style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textMuted,
-                        fontWeight: FontWeight.w600),
+                      fontSize: 11,
+                      color: AppColors.textMuted,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   if (!alert.isRead) ...[
                     const SizedBox(width: 6),
@@ -253,18 +262,17 @@ class _AlertCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w900,
-                  color: alert.isRead
-                      ? AppColors.textMuted
-                      : AppColors.text,
+                  color: alert.isRead ? AppColors.textMuted : AppColors.text,
                 ),
               ),
               const SizedBox(height: 3),
               Text(
                 alert.subtitle,
                 style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textMuted,
-                    fontWeight: FontWeight.w600),
+                  fontSize: 12,
+                  color: AppColors.textMuted,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
@@ -327,8 +335,11 @@ class _AlertColors {
   final Color bg;
   final Color border;
   final Color badge;
-  const _AlertColors(
-      {required this.bg, required this.border, required this.badge});
+  const _AlertColors({
+    required this.bg,
+    required this.border,
+    required this.badge,
+  });
 }
 
 // ── Tab row ───────────────────────────────────────────────────────────────────
@@ -344,17 +355,15 @@ class _TabRow extends StatelessWidget {
             _TabChip(
               label: 'Toutes',
               selected: state.selectedTabIndex == 0,
-              onTap: () => context
-                  .read<AlertsBloc>()
-                  .add(const AlertsTabChanged(0)),
+              onTap: () =>
+                  context.read<AlertsBloc>().add(const AlertsTabChanged(0)),
             ),
             const SizedBox(width: 10),
             _TabChip(
               label: 'Prioritaires',
               selected: state.selectedTabIndex == 1,
-              onTap: () => context
-                  .read<AlertsBloc>()
-                  .add(const AlertsTabChanged(1)),
+              onTap: () =>
+                  context.read<AlertsBloc>().add(const AlertsTabChanged(1)),
             ),
           ],
         );
@@ -368,18 +377,18 @@ class _TabChip extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _TabChip(
-      {required this.label,
-      required this.selected,
-      required this.onTap});
+  const _TabChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
           color: selected ? AppColors.orange : AppColors.cardBg,
           border: Border.all(
@@ -412,8 +421,7 @@ class _ConfigSection extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       decoration: BoxDecoration(
         color: AppColors.cardBg,
-        border:
-            Border(top: BorderSide(color: AppColors.border, width: 2)),
+        border: Border(top: BorderSide(color: AppColors.border, width: 2)),
       ),
       child: BlocBuilder<AlertsBloc, AlertsState>(
         buildWhen: (p, c) =>
@@ -427,9 +435,8 @@ class _ConfigSection extends StatelessWidget {
                 label: 'Mode Silencieux',
                 subtitle: 'Désactive les nouvelles alertes',
                 value: state.silentMode,
-                onChanged: (v) => context
-                    .read<AlertsBloc>()
-                    .add(AlertsSilentModeChanged(v)),
+                onChanged: (v) =>
+                    context.read<AlertsBloc>().add(AlertsSilentModeChanged(v)),
               ),
               const SizedBox(height: 8),
               _ConfigToggle(
@@ -437,9 +444,9 @@ class _ConfigSection extends StatelessWidget {
                 label: 'Suivi Temps Réel',
                 subtitle: 'Position GPS continue',
                 value: state.realtimeTracking,
-                onChanged: (v) => context
-                    .read<AlertsBloc>()
-                    .add(AlertsRealtimeTrackingChanged(v)),
+                onChanged: (v) => context.read<AlertsBloc>().add(
+                  AlertsRealtimeTrackingChanged(v),
+                ),
               ),
             ],
           );
@@ -467,8 +474,7 @@ class _ConfigToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: AppColors.bg,
         border: Border.all(color: AppColors.border, width: 2),
@@ -482,14 +488,21 @@ class _ConfigToggle extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label,
-                    style: const TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.w800)),
-                Text(subtitle,
-                    style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textMuted,
-                        fontWeight: FontWeight.w600)),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
           ),
@@ -556,4 +569,3 @@ class LostModeBanner extends ConsumerWidget {
     );
   }
 }
-

@@ -100,10 +100,7 @@ class _TrailCard extends StatelessWidget {
               borderRadius: BorderRadius.vertical(
                 top: Radius.circular(AppDimensions.radius - 2),
               ),
-              child: SizedBox(
-                height: 140,
-                child: _TrailMiniMap(trail: trail),
-              ),
+              child: SizedBox(height: 140, child: _TrailMiniMap(trail: trail)),
             ),
             Container(height: 2, color: AppColors.border),
             // Stats row
@@ -173,14 +170,21 @@ class _TrailCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(value,
-                      style: const TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w900)),
-                  Text(label,
-                      style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textMuted)),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -207,8 +211,18 @@ class _TrailCard extends StatelessWidget {
 
   String _formatDate(DateTime dt) {
     const months = [
-      'jan', 'fév', 'mar', 'avr', 'mai', 'jun',
-      'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'
+      'jan',
+      'fév',
+      'mar',
+      'avr',
+      'mai',
+      'jun',
+      'jul',
+      'aoû',
+      'sep',
+      'oct',
+      'nov',
+      'déc',
     ];
     final h = dt.hour.toString().padLeft(2, '0');
     final m = dt.minute.toString().padLeft(2, '0');
@@ -216,7 +230,8 @@ class _TrailCard extends StatelessWidget {
   }
 
   String _formatDuration(Duration d) {
-    if (d.inHours > 0) return '${d.inHours}h${d.inMinutes.remainder(60).toString().padLeft(2, '0')}';
+    if (d.inHours > 0)
+      return '${d.inHours}h${d.inMinutes.remainder(60).toString().padLeft(2, '0')}';
     return '${d.inMinutes}min${d.inSeconds.remainder(60).toString().padLeft(2, '0')}s';
   }
 
@@ -255,10 +270,7 @@ class _TrailMiniMap extends StatelessWidget {
       if (p.longitude > maxLng) maxLng = p.longitude;
     }
 
-    final center = LatLng(
-      (minLat + maxLat) / 2,
-      (minLng + maxLng) / 2,
-    );
+    final center = LatLng((minLat + maxLat) / 2, (minLng + maxLng) / 2);
 
     return IgnorePointer(
       child: FlutterMap(
@@ -353,7 +365,9 @@ class _TrailDetailSheet extends StatelessWidget {
                 Text(
                   _formatDate(trail.startedAt),
                   style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w900),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 const Spacer(),
                 IconButton(
@@ -382,20 +396,11 @@ class _TrailDetailSheet extends StatelessWidget {
                   'Distance',
                 ),
                 _divider(),
-                _bigStat(
-                  _formatDuration(trail.duration),
-                  'Durée',
-                ),
+                _bigStat(_formatDuration(trail.duration), 'Durée'),
                 _divider(),
-                _bigStat(
-                  '${trail.points.length}',
-                  'Points GPS',
-                ),
+                _bigStat('${trail.points.length}', 'Points GPS'),
                 _divider(),
-                _bigStat(
-                  '${_avgSpeed(trail)} km/h',
-                  'Vitesse moy.',
-                ),
+                _bigStat('${_avgSpeed(trail)} km/h', 'Vitesse moy.'),
               ],
             ),
           ),
@@ -407,27 +412,40 @@ class _TrailDetailSheet extends StatelessWidget {
   Widget _bigStat(String value, String label) {
     return Column(
       children: [
-        Text(value,
-            style:
-                const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-        Text(label,
-            style: TextStyle(
-                fontSize: 11,
-                color: AppColors.textMuted,
-                fontWeight: FontWeight.w700)),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: AppColors.textMuted,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ],
     );
   }
 
   Widget _divider() {
-    return Container(
-        width: 2, height: 36, color: AppColors.border);
+    return Container(width: 2, height: 36, color: AppColors.border);
   }
 
   String _formatDate(DateTime dt) {
     const months = [
-      'jan', 'fév', 'mar', 'avr', 'mai', 'jun',
-      'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'
+      'jan',
+      'fév',
+      'mar',
+      'avr',
+      'mai',
+      'jun',
+      'jul',
+      'aoû',
+      'sep',
+      'oct',
+      'nov',
+      'déc',
     ];
     final h = dt.hour.toString().padLeft(2, '0');
     final m = dt.minute.toString().padLeft(2, '0');
@@ -435,14 +453,14 @@ class _TrailDetailSheet extends StatelessWidget {
   }
 
   String _formatDuration(Duration d) {
-    if (d.inHours > 0) return '${d.inHours}h${d.inMinutes.remainder(60).toString().padLeft(2, '0')}';
+    if (d.inHours > 0)
+      return '${d.inHours}h${d.inMinutes.remainder(60).toString().padLeft(2, '0')}';
     return '${d.inMinutes}min';
   }
 
   String _avgSpeed(Trail t) {
     if (t.duration.inSeconds == 0) return '–';
-    final kmh = (t.distanceMeters / 1000) /
-        (t.duration.inSeconds / 3600);
+    final kmh = (t.distanceMeters / 1000) / (t.duration.inSeconds / 3600);
     return kmh.toStringAsFixed(1);
   }
 }

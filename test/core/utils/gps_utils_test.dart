@@ -4,7 +4,10 @@ import 'package:k9sync/core/utils/gps_utils.dart';
 void main() {
   group('GpsUtils.distanceMeters', () {
     test('same point returns 0', () {
-      expect(GpsUtils.distanceMeters(45.75, 4.83, 45.75, 4.83), closeTo(0, 1e-6));
+      expect(
+        GpsUtils.distanceMeters(45.75, 4.83, 45.75, 4.83),
+        closeTo(0, 1e-6),
+      );
     });
 
     test('1 degree of longitude at the equator is ~111.19 km', () {
@@ -20,19 +23,25 @@ void main() {
       expect(GpsUtils.distanceMeters(0, 0, 0, 180), closeTo(20015086.80, 1));
     });
 
-    test('Paris to Lyon matches an independently computed great-circle distance', () {
-      expect(
-        GpsUtils.distanceMeters(48.8566, 2.3522, 45.7578, 4.8320),
-        closeTo(391976.70, 1),
-      );
-    });
+    test(
+      'Paris to Lyon matches an independently computed great-circle distance',
+      () {
+        expect(
+          GpsUtils.distanceMeters(48.8566, 2.3522, 45.7578, 4.8320),
+          closeTo(391976.70, 1),
+        );
+      },
+    );
 
-    test('Paris to London matches an independently computed great-circle distance', () {
-      expect(
-        GpsUtils.distanceMeters(48.8566, 2.3522, 51.5074, -0.1278),
-        closeTo(343556.06, 1),
-      );
-    });
+    test(
+      'Paris to London matches an independently computed great-circle distance',
+      () {
+        expect(
+          GpsUtils.distanceMeters(48.8566, 2.3522, 51.5074, -0.1278),
+          closeTo(343556.06, 1),
+        );
+      },
+    );
 
     test('is symmetric — distance A→B equals distance B→A', () {
       final ab = GpsUtils.distanceMeters(45.7578, 4.8320, 48.8566, 2.3522);
@@ -40,13 +49,16 @@ void main() {
       expect(ab, closeTo(ba, 1e-6));
     });
 
-    test('small displacement (~11m) stays in a plausible walking-distance range', () {
-      // ~0.0001 deg of latitude is roughly 11m — sanity-checks the formula at
-      // collar/GPS-tracking scale, not just planetary scale.
-      final d = GpsUtils.distanceMeters(45.7578, 4.8320, 45.7579, 4.8320);
-      expect(d, greaterThan(5));
-      expect(d, lessThan(20));
-    });
+    test(
+      'small displacement (~11m) stays in a plausible walking-distance range',
+      () {
+        // ~0.0001 deg of latitude is roughly 11m — sanity-checks the formula at
+        // collar/GPS-tracking scale, not just planetary scale.
+        final d = GpsUtils.distanceMeters(45.7578, 4.8320, 45.7579, 4.8320);
+        expect(d, greaterThan(5));
+        expect(d, lessThan(20));
+      },
+    );
   });
 
   group('GpsUtils.bearing', () {

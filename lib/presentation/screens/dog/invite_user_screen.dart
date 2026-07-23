@@ -31,7 +31,11 @@ class _InviteUserScreenState extends State<InviteUserScreen> {
               border: Border.all(color: AppColors.border, width: 1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.arrow_back, size: 18, color: AppColors.textMuted),
+            child: const Icon(
+              Icons.arrow_back,
+              size: 18,
+              color: AppColors.textMuted,
+            ),
           ),
           onPressed: () => context.pop(),
         ),
@@ -54,7 +58,10 @@ class _InviteUserScreenState extends State<InviteUserScreen> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
                       border: Border.all(color: AppColors.border, width: 1),
@@ -148,16 +155,19 @@ class _InviteUserScreenState extends State<InviteUserScreen> {
               ],
             ),
           ),
-          if (_showConfirmModal) _ConfirmRgpdModal(
-            onConfirm: () {
-              setState(() => _showConfirmModal = false);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Invitation envoyée (à brancher API)')),
-              );
-              context.pop();
-            },
-            onCancel: () => setState(() => _showConfirmModal = false),
-          ),
+          if (_showConfirmModal)
+            _ConfirmRgpdModal(
+              onConfirm: () {
+                setState(() => _showConfirmModal = false);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Invitation envoyée (à brancher API)'),
+                  ),
+                );
+                context.pop();
+              },
+              onCancel: () => setState(() => _showConfirmModal = false),
+            ),
         ],
       ),
     );
@@ -206,7 +216,11 @@ class _InviteUserScreenState extends State<InviteUserScreen> {
             if (valid)
               Icon(Icons.check, size: 16, color: AppColors.greenStatus)
             else
-              Icon(Icons.calendar_today_outlined, size: 16, color: AppColors.textMuted),
+              Icon(
+                Icons.calendar_today_outlined,
+                size: 16,
+                color: AppColors.textMuted,
+              ),
           ],
         ),
       ),
@@ -326,10 +340,20 @@ class _ConfirmRgpdModal extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Expanded(child: GestureDetector(onTap: onCancel, child: const SizedBox.expand())),
+            Expanded(
+              child: GestureDetector(
+                onTap: onCancel,
+                child: const SizedBox.expand(),
+              ),
+            ),
             Container(
               width: double.infinity,
-              padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).padding.bottom + 20),
+              padding: EdgeInsets.fromLTRB(
+                20,
+                20,
+                20,
+                MediaQuery.of(context).padding.bottom + 20,
+              ),
               decoration: const BoxDecoration(
                 color: AppColors.cardBg,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -348,10 +372,7 @@ class _ConfirmRgpdModal extends StatelessWidget {
                   const SizedBox(height: 20),
                   const Text(
                     'Avant de confirmer 🔒',
-                    style: TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 6),
                   const Text.rich(
@@ -379,7 +400,9 @@ class _ConfirmRgpdModal extends StatelessWidget {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: AppColors.orangeLight,
-                      border: Border.all(color: AppColors.orange.withOpacity(0.3)),
+                      border: Border.all(
+                        color: AppColors.orange.withOpacity(0.3),
+                      ),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Row(
@@ -447,13 +470,7 @@ class _ConfirmRgpdModal extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            key,
-            style: TextStyle(
-              fontSize: 13,
-              color: AppColors.textMuted,
-            ),
-          ),
+          Text(key, style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
           Text(
             value,
             style: const TextStyle(

@@ -6,5 +6,6 @@ class MarkAlertReadUseCase {
   MarkAlertReadUseCase(this._repo);
   final IAlertRepository _repo;
 
-  Future<Alert> call(String dogId, String alertId) => _repo.markAsRead(dogId, alertId);
+  Future<Alert> call(String dogId, String alertId) =>
+      _repo.markAsRead(dogId, alertId);
 }

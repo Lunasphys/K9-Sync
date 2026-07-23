@@ -9,7 +9,11 @@ abstract interface class IDogRepository {
   Future<Dog> updateDog(String dogId, UpdateDogParams params);
   Future<void> deleteDog(String dogId);
   Future<List<UserDogAccess>> getDogUsers(String dogId);
-  Future<void> inviteUser(String dogId, {required String email, required UserDogRole role});
+  Future<void> inviteUser(
+    String dogId, {
+    required String email,
+    required UserDogRole role,
+  });
   Future<void> removeUser(String dogId, String userId);
 }
 

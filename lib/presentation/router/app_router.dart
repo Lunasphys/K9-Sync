@@ -65,13 +65,31 @@ GoRouter createAppRouter({
     routes: [
       // ── Auth & onboarding ───────────────────────────────────────────
       GoRoute(path: AppRoutes.splash, builder: (c, s) => const SplashScreen()),
-      GoRoute(path: AppRoutes.onboarding, builder: (c, s) => const OnboardingScreen()),
-      GoRoute(path: AppRoutes.consent, builder: (c, s) => const ConsentScreen()),
-      GoRoute(path: AppRoutes.login, builder: (c, s) => const WelcomeLoginScreen()),
+      GoRoute(
+        path: AppRoutes.onboarding,
+        builder: (c, s) => const OnboardingScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.consent,
+        builder: (c, s) => const ConsentScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.login,
+        builder: (c, s) => const WelcomeLoginScreen(),
+      ),
       GoRoute(path: AppRoutes.signIn, builder: (c, s) => const LoginScreen()),
-      GoRoute(path: AppRoutes.register, builder: (c, s) => const RegisterScreen()),
-      GoRoute(path: AppRoutes.dogSetup, builder: (c, s) => const DogSetupScreen()),
-      GoRoute(path: AppRoutes.forgotPassword, builder: (c, s) => const ForgotPasswordScreen()),
+      GoRoute(
+        path: AppRoutes.register,
+        builder: (c, s) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.dogSetup,
+        builder: (c, s) => const DogSetupScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.forgotPassword,
+        builder: (c, s) => const ForgotPasswordScreen(),
+      ),
 
       // ── Main shell — 5-tab bottom nav ──────────────────────────────
       // StatefulShellRoute must be a direct child of the root routes list.
@@ -130,24 +148,39 @@ GoRouter createAppRouter({
       ),
 
       // ── Full-screen routes (outside shell) ─────────────────────────
-      GoRoute(path: AppRoutes.pairing, builder: (c, s) => const PairingScreen()),
+      GoRoute(
+        path: AppRoutes.pairing,
+        builder: (c, s) => const PairingScreen(),
+      ),
       GoRoute(path: AppRoutes.map, builder: (c, s) => const MapScreen()),
       GoRoute(
         path: AppRoutes.trailHistory,
         builder: (c, s) => const TrailHistoryScreen(),
         routes: [
-          GoRoute(
-            path: 'detail',
-            builder: (c, s) => const TrailDetailScreen(),
-          ),
+          GoRoute(path: 'detail', builder: (c, s) => const TrailDetailScreen()),
         ],
       ),
-      GoRoute(path: AppRoutes.lostMode, builder: (c, s) => const LostModeScreen()),
-      GoRoute(path: AppRoutes.healthDashboard, builder: (c, s) => const HealthDashboardScreen()),
-      GoRoute(path: AppRoutes.activity, builder: (c, s) => const ActivityScreen()),
+      GoRoute(
+        path: AppRoutes.lostMode,
+        builder: (c, s) => const LostModeScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.healthDashboard,
+        builder: (c, s) => const HealthDashboardScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.activity,
+        builder: (c, s) => const ActivityScreen(),
+      ),
       GoRoute(path: AppRoutes.sleep, builder: (c, s) => const SleepScreen()),
-      GoRoute(path: AppRoutes.anomaly, builder: (c, s) => const AnomalyScreen()),
-      GoRoute(path: AppRoutes.dogList, builder: (c, s) => const DogListScreen()),
+      GoRoute(
+        path: AppRoutes.anomaly,
+        builder: (c, s) => const AnomalyScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.dogList,
+        builder: (c, s) => const DogListScreen(),
+      ),
       GoRoute(
         path: '/dogs/:dogId',
         builder: (c, s) => DogProfileScreen(dogId: s.pathParameters['dogId']!),
@@ -158,26 +191,46 @@ GoRouter createAppRouter({
           ),
           GoRoute(
             path: 'shared-access',
-            builder: (c, s) => SharedAccessScreen(dogId: s.pathParameters['dogId']!),
+            builder: (c, s) =>
+                SharedAccessScreen(dogId: s.pathParameters['dogId']!),
           ),
           GoRoute(
             path: 'invite',
-            builder: (c, s) => InviteUserScreen(dogId: s.pathParameters['dogId']!),
+            builder: (c, s) =>
+                InviteUserScreen(dogId: s.pathParameters['dogId']!),
           ),
         ],
       ),
       GoRoute(
         path: '/collar/:collarId',
-        builder: (c, s) => CollarStatusScreen(collarId: s.pathParameters['collarId']!),
+        builder: (c, s) =>
+            CollarStatusScreen(collarId: s.pathParameters['collarId']!),
       ),
-      GoRoute(path: AppRoutes.alertsList, builder: (c, s) => const AlertsListScreen()),
-      GoRoute(path: AppRoutes.notificationSettings, builder: (c, s) => const NotificationSettingsScreen()),
-      GoRoute(path: AppRoutes.settings, builder: (c, s) => const SettingsScreen()),
-      GoRoute(path: AppRoutes.subscription, builder: (c, s) => const SubscriptionScreen()),
-      GoRoute(path: AppRoutes.privacy, builder: (c, s) => const PrivacyScreen()),
+      GoRoute(
+        path: AppRoutes.alertsList,
+        builder: (c, s) => const AlertsListScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.notificationSettings,
+        builder: (c, s) => const NotificationSettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.settings,
+        builder: (c, s) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.subscription,
+        builder: (c, s) => const SubscriptionScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.privacy,
+        builder: (c, s) => const PrivacyScreen(),
+      ),
       GoRoute(path: AppRoutes.vet, builder: (c, s) => const VetJournalScreen()),
-      GoRoute(path: AppRoutes.community, builder: (c, s) => const CommunityScreen()),
+      GoRoute(
+        path: AppRoutes.community,
+        builder: (c, s) => const CommunityScreen(),
+      ),
     ],
   );
 }
-

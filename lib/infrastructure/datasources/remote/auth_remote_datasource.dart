@@ -18,8 +18,10 @@ abstract class AuthRemoteDatasource {
   Future<void> logout();
   Future<void> forgotPassword({required String email});
   Future<UserModel?> getUserProfile(String uid);
+
   /// Profil courant (REST : GET /users/me ; Firebase : getUserProfile(uid)).
   Future<UserModel?> getMe();
+
   /// Refresh JWT (REST : POST /auth/refresh ; Firebase : getIdToken(true)).
   Future<AuthResponse> refreshToken();
 }
@@ -49,7 +51,10 @@ class AuthRemoteDatasourceFirebase implements AuthRemoteDatasource {
     required String lastName,
   }) async {
     try {
-      final cred = await _auth.createUserWithEmailAndPassword(email: email, password: password);
+      final cred = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
       final uid = cred.user!.uid;
       final userModel = UserModel(
         id: uid,
@@ -79,11 +84,20 @@ class AuthRemoteDatasourceFirebase implements AuthRemoteDatasource {
   }
 
   @override
-  Future<AuthResponse> login({required String email, required String password}) async {
+  Future<AuthResponse> login({
+    required String email,
+    required String password,
+  }) async {
     try {
-      final cred = await _auth.signInWithEmailAndPassword(email: email, password: password);
+      final cred = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
       final uid = cred.user!.uid;
-      final userDoc = await _firestore.collection(FirebaseConstants.users).doc(uid).get();
+      final userDoc = await _firestore
+          .collection(FirebaseConstants.users)
+          .doc(uid)
+          .get();
       if (!userDoc.exists) throw AuthError.invalidCredentials();
       final userModel = UserModel.fromFirestore(userDoc);
       final token = await cred.user!.getIdToken();
@@ -112,7 +126,10 @@ class AuthRemoteDatasourceFirebase implements AuthRemoteDatasource {
 
   @override
   Future<UserModel?> getUserProfile(String uid) async {
-    final doc = await _firestore.collection(FirebaseConstants.users).doc(uid).get();
+    final doc = await _firestore
+        .collection(FirebaseConstants.users)
+        .doc(uid)
+        .get();
     if (!doc.exists) return null;
     return UserModel.fromFirestore(doc);
   }
@@ -131,6 +148,10 @@ class AuthRemoteDatasourceFirebase implements AuthRemoteDatasource {
     final token = await user.getIdToken(true);
     final model = await getUserProfile(user.uid);
     if (model == null) throw AuthError.invalidCredentials();
-    return AuthResponse(user: model, accessToken: token ?? '', refreshToken: '');
+    return AuthResponse(
+      user: model,
+      accessToken: token ?? '',
+      refreshToken: '',
+    );
   }
 }

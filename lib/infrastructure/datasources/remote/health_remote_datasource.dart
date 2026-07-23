@@ -9,7 +9,10 @@ class HealthRemoteDatasource {
   /// POST /dogs/:dogId/health/sync with body { records: [...] }.
   /// Each record: heartRate, temperature, steps, activeMinutes, anomalyDetected, anomalyType, recordedAt (ISO).
   /// Returns synced count from response.
-  Future<int> syncHealth(String dogId, List<Map<String, dynamic>> records) async {
+  Future<int> syncHealth(
+    String dogId,
+    List<Map<String, dynamic>> records,
+  ) async {
     final res = await _dio.dio.post<Map<String, dynamic>>(
       ApiConstants.healthSync(dogId),
       data: {'records': records},

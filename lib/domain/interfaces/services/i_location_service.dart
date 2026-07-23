@@ -17,10 +17,13 @@ class LocationPosition {
 abstract interface class ILocationService {
   /// Demande les permissions et retourne true si accordées.
   Future<bool> requestPermission();
+
   /// Dernière position connue (stream ou one-shot).
   Future<LocationPosition?> getLastPosition();
+
   /// Stream des positions en temps réel (pour carte live).
   Stream<LocationPosition> get positionStream;
+
   /// Vérifie si le service est disponible.
   bool get isServiceEnabled;
 }

@@ -19,12 +19,19 @@ class HealthRemoteDatasourceFirestore {
   Future<HealthRecordModel?> getLatest(String dogId) async {
     final col = _healthCol(dogId);
     if (col == null) return null;
-    final snap = await col.orderBy('recordedAt', descending: true).limit(1).get();
+    final snap = await col
+        .orderBy('recordedAt', descending: true)
+        .limit(1)
+        .get();
     if (snap.docs.isEmpty) return null;
     return HealthRecordModel.fromFirestore(snap.docs.first);
   }
 
-  Future<List<HealthRecordModel>> getHistory(String dogId, {required DateTime from, required DateTime to}) async {
+  Future<List<HealthRecordModel>> getHistory(
+    String dogId, {
+    required DateTime from,
+    required DateTime to,
+  }) async {
     final col = _healthCol(dogId);
     if (col == null) return [];
     final snap = await col

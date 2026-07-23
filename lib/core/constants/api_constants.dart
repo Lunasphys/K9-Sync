@@ -2,7 +2,11 @@
 abstract final class ApiConstants {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://api.k9sync.app/v1',
+    // Previous value: 'https://api.k9sync.app/v1' (prod)
+    // 10.0.2.2 is the Android emulator's special alias for the host
+    // machine's localhost — points to the local backend (npm run dev,
+    // port 3002) for local testing on the emulator.
+    defaultValue: 'http://10.0.2.2:3002/v1',
   );
   static const int timeoutMs = 10000;
 
@@ -18,7 +22,8 @@ abstract final class ApiConstants {
   static String dogById(String id) => '/dogs/$id';
   static String dogUsers(String dogId) => '/dogs/$dogId/users';
   static String dogInvite(String dogId) => '/dogs/$dogId/invite';
-  static String dogRemoveUser(String dogId, String userId) => '/dogs/$dogId/users/$userId';
+  static String dogRemoveUser(String dogId, String userId) =>
+      '/dogs/$dogId/users/$userId';
 
   // Collars
   static String collarById(String id) => '/collars/$id';
@@ -29,7 +34,8 @@ abstract final class ApiConstants {
   static String gpsLatest(String dogId) => '/dogs/$dogId/gps/latest';
   static String gpsHistory(String dogId) => '/dogs/$dogId/gps/history';
   static String gpsTrails(String dogId) => '/dogs/$dogId/gps/trails';
-  static String gpsTrailById(String dogId, String trailId) => '/dogs/$dogId/gps/trails/$trailId';
+  static String gpsTrailById(String dogId, String trailId) =>
+      '/dogs/$dogId/gps/trails/$trailId';
   static String gpsSync(String dogId) => '/dogs/$dogId/gps/sync';
 
   // Health (under dog)
@@ -37,14 +43,17 @@ abstract final class ApiConstants {
   static String healthHistory(String dogId) => '/dogs/$dogId/health/history';
   static String healthActivity(String dogId) => '/dogs/$dogId/health/activity';
   static String healthSleep(String dogId) => '/dogs/$dogId/health/sleep';
-  static String healthAnomalies(String dogId) => '/dogs/$dogId/health/anomalies';
+  static String healthAnomalies(String dogId) =>
+      '/dogs/$dogId/health/anomalies';
   static String healthSync(String dogId) => '/dogs/$dogId/health/sync';
   static String healthExport(String dogId) => '/dogs/$dogId/health/export';
 
   // Alerts (under dog)
   static String alerts(String dogId) => '/dogs/$dogId/alerts';
-  static String alertById(String dogId, String alertId) => '/dogs/$dogId/alerts/$alertId';
-  static String alertRead(String dogId, String alertId) => '/dogs/$dogId/alerts/$alertId/read';
+  static String alertById(String dogId, String alertId) =>
+      '/dogs/$dogId/alerts/$alertId';
+  static String alertRead(String dogId, String alertId) =>
+      '/dogs/$dogId/alerts/$alertId/read';
   static String alertsReadAll(String dogId) => '/dogs/$dogId/alerts/read-all';
 
   // User

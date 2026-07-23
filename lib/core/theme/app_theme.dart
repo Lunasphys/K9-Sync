@@ -43,18 +43,22 @@ class AppDimensions {
   static const double radius = 18;
   static const double radiusSm = 12;
   static const double shadowOffset = 3;
-  static const BorderRadius borderRadius = BorderRadius.all(Radius.circular(radius));
-  static const BorderRadius borderRadiusSm = BorderRadius.all(Radius.circular(radiusSm));
+  static const BorderRadius borderRadius = BorderRadius.all(
+    Radius.circular(radius),
+  );
+  static const BorderRadius borderRadiusSm = BorderRadius.all(
+    Radius.circular(radiusSm),
+  );
   static BoxShadow get cardShadow => BoxShadow(
-        color: AppColors.border,
-        offset: const Offset(shadowOffset, shadowOffset),
-        blurRadius: 0,
-      );
+    color: AppColors.border,
+    offset: const Offset(shadowOffset, shadowOffset),
+    blurRadius: 0,
+  );
   static BoxShadow get cardShadowSm => BoxShadow(
-        color: AppColors.border,
-        offset: const Offset(2, 2),
-        blurRadius: 0,
-      );
+    color: AppColors.border,
+    offset: const Offset(2, 2),
+    blurRadius: 0,
+  );
 }
 
 class AppTheme {
@@ -73,14 +77,32 @@ class AppTheme {
         elevation: 0,
         backgroundColor: AppColors.bg,
         foregroundColor: AppColors.text,
-        titleTextStyle: GoogleFonts.nunito(fontSize: 18, fontWeight: FontWeight.w800),
+        titleTextStyle: GoogleFonts.nunito(
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+        ),
       ),
       textTheme: GoogleFonts.nunitoTextTheme().copyWith(
-        bodyLarge: GoogleFonts.nunito(fontSize: 14, fontWeight: FontWeight.w600),
-        bodyMedium: GoogleFonts.nunito(fontSize: 13, fontWeight: FontWeight.w600),
-        titleLarge: GoogleFonts.nunito(fontSize: 22, fontWeight: FontWeight.w900),
-        titleMedium: GoogleFonts.nunito(fontSize: 16, fontWeight: FontWeight.w800),
-        labelLarge: GoogleFonts.nunito(fontSize: 16, fontWeight: FontWeight.w800),
+        bodyLarge: GoogleFonts.nunito(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+        bodyMedium: GoogleFonts.nunito(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+        titleLarge: GoogleFonts.nunito(
+          fontSize: 22,
+          fontWeight: FontWeight.w900,
+        ),
+        titleMedium: GoogleFonts.nunito(
+          fontSize: 16,
+          fontWeight: FontWeight.w800,
+        ),
+        labelLarge: GoogleFonts.nunito(
+          fontSize: 16,
+          fontWeight: FontWeight.w800,
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -93,7 +115,10 @@ class AppTheme {
           ),
           elevation: 0,
           shadowColor: AppColors.border,
-          textStyle: GoogleFonts.nunito(fontSize: 16, fontWeight: FontWeight.w800),
+          textStyle: GoogleFonts.nunito(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -101,11 +126,16 @@ class AppTheme {
           foregroundColor: AppColors.text,
           side: const BorderSide(color: AppColors.border, width: 2),
           padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(50),
+          ),
           backgroundColor: AppColors.cream,
           elevation: 0,
           shadowColor: AppColors.border,
-          textStyle: GoogleFonts.nunito(fontSize: 16, fontWeight: FontWeight.w800),
+          textStyle: GoogleFonts.nunito(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+          ),
         ),
       ),
       cardTheme: CardThemeData(
@@ -135,7 +165,10 @@ class AppTheme {
           borderRadius: AppDimensions.borderRadiusSm,
           borderSide: const BorderSide(color: AppColors.orange, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 13,
+        ),
       ),
     );
   }

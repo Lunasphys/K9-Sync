@@ -6,6 +6,9 @@ class DetectAnomalyUseCase {
 
   DetectAnomalyUseCase(this._repo);
 
-  Future<List<AnomalyRecord>> call(String dogId, {DateTime? from, DateTime? to}) =>
-      _repo.getAnomalies(dogId, from: from, to: to);
+  Future<List<AnomalyRecord>> call(
+    String dogId, {
+    DateTime? from,
+    DateTime? to,
+  }) => _repo.getAnomalies(dogId, from: from, to: to);
 }

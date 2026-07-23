@@ -41,15 +41,15 @@ class UserModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'email': email,
-        'firstName': firstName,
-        'lastName': lastName,
-        if (phone != null) 'phone': phone,
-        'subscriptionPlan': subscriptionPlan,
-        'createdAt': createdAt.toIso8601String(),
-        'updatedAt': updatedAt.toIso8601String(),
-      };
+    'id': id,
+    'email': email,
+    'firstName': firstName,
+    'lastName': lastName,
+    if (phone != null) 'phone': phone,
+    'subscriptionPlan': subscriptionPlan,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+  };
 
   static UserModel fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
@@ -66,34 +66,34 @@ class UserModel {
   }
 
   Map<String, dynamic> toFirestore() => {
-        'email': email,
-        'firstName': firstName,
-        'lastName': lastName,
-        'phone': phone,
-        'subscriptionPlan': subscriptionPlan,
-        'createdAt': Timestamp.fromDate(createdAt),
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
+    'email': email,
+    'firstName': firstName,
+    'lastName': lastName,
+    'phone': phone,
+    'subscriptionPlan': subscriptionPlan,
+    'createdAt': Timestamp.fromDate(createdAt),
+    'updatedAt': FieldValue.serverTimestamp(),
+  };
 
   static UserModel fromEntity(User e) => UserModel(
-        id: e.id,
-        email: e.email,
-        firstName: e.firstName,
-        lastName: e.lastName,
-        phone: e.phone,
-        subscriptionPlan: e.subscriptionPlan.name,
-        createdAt: e.createdAt,
-        updatedAt: e.updatedAt,
-      );
+    id: e.id,
+    email: e.email,
+    firstName: e.firstName,
+    lastName: e.lastName,
+    phone: e.phone,
+    subscriptionPlan: e.subscriptionPlan.name,
+    createdAt: e.createdAt,
+    updatedAt: e.updatedAt,
+  );
 
   User toEntity() => User(
-        id: id,
-        email: email,
-        firstName: firstName,
-        lastName: lastName,
-        phone: phone,
-        subscriptionPlan: SubscriptionPlan.values.byName(subscriptionPlan),
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-      );
+    id: id,
+    email: email,
+    firstName: firstName,
+    lastName: lastName,
+    phone: phone,
+    subscriptionPlan: SubscriptionPlan.values.byName(subscriptionPlan),
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+  );
 }

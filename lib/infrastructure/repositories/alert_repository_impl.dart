@@ -9,12 +9,22 @@ class AlertRepositoryImpl implements IAlertRepository {
   final AlertRemoteDatasource _remote;
   final IAuthRepository _authRepo;
 
-  Future<String> get _userId async => (await _authRepo.getCurrentUser())?.id ?? '';
+  Future<String> get _userId async =>
+      (await _authRepo.getCurrentUser())?.id ?? '';
 
   @override
-  Future<List<Alert>> getAlerts(String dogId, {bool unreadOnly = false, int limit = 50}) async {
+  Future<List<Alert>> getAlerts(
+    String dogId, {
+    bool unreadOnly = false,
+    int limit = 50,
+  }) async {
     final uid = await _userId;
-    final list = await _remote.getAlerts(uid, dogId: dogId, unreadOnly: unreadOnly, limit: limit);
+    final list = await _remote.getAlerts(
+      uid,
+      dogId: dogId,
+      unreadOnly: unreadOnly,
+      limit: limit,
+    );
     return list.map((e) => e.toEntity()).toList();
   }
 

@@ -19,7 +19,9 @@ class DogRemoteDatasource {
   Future<List<DogModel>> getDogs(String userId) async {
     final col = _dogsCol(userId);
     if (col == null) return [];
-    final snap = await col.orderBy(FirebaseConstants.updatedAt, descending: true).get();
+    final snap = await col
+        .orderBy(FirebaseConstants.updatedAt, descending: true)
+        .get();
     return snap.docs.map((d) => DogModel.fromFirestore(d)).toList();
   }
 
@@ -33,20 +35,23 @@ class DogRemoteDatasource {
 
   Future<DogModel> createDog(String userId, Map<String, dynamic> data) async {
     final col = _dogsCol(userId);
-    if (col == null) throw UnimplementedError('Firebase non configuré : ajoutez google-services.json');
+    if (col == null)
+      throw UnimplementedError(
+        'Firebase non configuré : ajoutez google-services.json',
+      );
     final ref = col.doc();
     final now = FieldValue.serverTimestamp();
-    final payload = {
-      ...data,
-      'createdAt': now,
-      'updatedAt': now,
-    };
+    final payload = {...data, 'createdAt': now, 'updatedAt': now};
     await ref.set(payload);
     final doc = await ref.get();
     return DogModel.fromFirestore(doc);
   }
 
-  Future<DogModel> updateDog(String userId, String dogId, Map<String, dynamic> data) async {
+  Future<DogModel> updateDog(
+    String userId,
+    String dogId,
+    Map<String, dynamic> data,
+  ) async {
     final col = _dogsCol(userId);
     if (col == null) throw UnimplementedError('Firebase non configuré');
     final ref = col.doc(dogId);

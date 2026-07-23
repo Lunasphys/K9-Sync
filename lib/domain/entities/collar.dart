@@ -25,7 +25,17 @@ class Collar extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, dogId, serialNumber, batteryLevel, firmwareVersion, isOnline, lastSeenAt, createdAt, updatedAt];
+  List<Object?> get props => [
+    id,
+    dogId,
+    serialNumber,
+    batteryLevel,
+    firmwareVersion,
+    isOnline,
+    lastSeenAt,
+    createdAt,
+    updatedAt,
+  ];
 }
 
 /// Collar status (battery, online, last seen).

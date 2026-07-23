@@ -76,7 +76,7 @@ class AlertsBloc extends Bloc<AlertsEvent, AlertsState> {
     final severity = json['severity'] as String? ?? 'normal';
     final triggeredAt =
         DateTime.tryParse(json['triggeredAt'] as String? ?? '') ??
-            DateTime.now();
+        DateTime.now();
 
     return AlertItem(
       id: '${triggeredAt.millisecondsSinceEpoch}_$type',
@@ -127,12 +127,14 @@ class AlertsBloc extends Bloc<AlertsEvent, AlertsState> {
       emit(state.copyWith(selectedTabIndex: event.index));
 
   void _onSilentModeChanged(
-          AlertsSilentModeChanged event, Emitter<AlertsState> emit) =>
-      emit(state.copyWith(silentMode: event.enabled));
+    AlertsSilentModeChanged event,
+    Emitter<AlertsState> emit,
+  ) => emit(state.copyWith(silentMode: event.enabled));
 
   void _onRealtimeTrackingChanged(
-          AlertsRealtimeTrackingChanged event, Emitter<AlertsState> emit) =>
-      emit(state.copyWith(realtimeTracking: event.enabled));
+    AlertsRealtimeTrackingChanged event,
+    Emitter<AlertsState> emit,
+  ) => emit(state.copyWith(realtimeTracking: event.enabled));
 
   void _onAlertReceived(AlertReceived event, Emitter<AlertsState> emit) {
     if (state.silentMode) return;
@@ -158,8 +160,7 @@ class AlertsBloc extends Bloc<AlertsEvent, AlertsState> {
     }
   }
 
-  void _onAlertMarkedRead(
-      AlertMarkedRead event, Emitter<AlertsState> emit) {
+  void _onAlertMarkedRead(AlertMarkedRead event, Emitter<AlertsState> emit) {
     final updated = state.alerts
         .map((a) => a.id == event.alertId ? a.copyWith(isRead: true) : a)
         .toList();
@@ -174,10 +175,12 @@ class AlertsBloc extends Bloc<AlertsEvent, AlertsState> {
     });
   }
 
-  void _onAllMarkedRead(
-      AlertsAllMarkedRead event, Emitter<AlertsState> emit) {
-    emit(state.copyWith(
-        alerts: state.alerts.map((a) => a.copyWith(isRead: true)).toList()));
+  void _onAllMarkedRead(AlertsAllMarkedRead event, Emitter<AlertsState> emit) {
+    emit(
+      state.copyWith(
+        alerts: state.alerts.map((a) => a.copyWith(isRead: true)).toList(),
+      ),
+    );
     _getDogId().then((dogId) async {
       if (dogId == null) return;
       try {

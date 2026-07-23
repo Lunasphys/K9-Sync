@@ -52,12 +52,12 @@ class DogProfileScreen extends ConsumerWidget {
       ),
       body: switch (state.status) {
         DogLoadStatus.initial || DogLoadStatus.loading => const Center(
-            child: CircularProgressIndicator(),
-          ),
+          child: CircularProgressIndicator(),
+        ),
         DogLoadStatus.error => _ErrorBody(
-            message: state.errorMessage ?? 'Erreur inconnue.',
-            onRetry: () => ref.read(dogProvider(dogId!).notifier).load(),
-          ),
+          message: state.errorMessage ?? 'Erreur inconnue.',
+          onRetry: () => ref.read(dogProvider(dogId!).notifier).load(),
+        ),
         _ => _ProfileBody(dog: state.dog!),
       },
     );
@@ -121,8 +121,8 @@ class _AvatarCard extends StatelessWidget {
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) =>
                           const Center(
-                        child: Text('🐕', style: TextStyle(fontSize: 44)),
-                      ),
+                            child: Text('🐕', style: TextStyle(fontSize: 44)),
+                          ),
                     ),
                   )
                 : const Center(
@@ -164,10 +164,7 @@ class _AvatarCard extends StatelessWidget {
                     : '—',
               ),
               _Divider(),
-              _QuickStat(
-                label: 'Sexe',
-                value: _sexLabel(dog.sex),
-              ),
+              _QuickStat(label: 'Sexe', value: _sexLabel(dog.sex)),
             ],
           ),
         ],
@@ -247,15 +244,13 @@ class _InfoSection extends StatelessWidget {
             'Date de naissance',
             dog.birthDate != null
                 ? '${dog.birthDate!.day.toString().padLeft(2, '0')}/'
-                    '${dog.birthDate!.month.toString().padLeft(2, '0')}/'
-                    '${dog.birthDate!.year}'
+                      '${dog.birthDate!.month.toString().padLeft(2, '0')}/'
+                      '${dog.birthDate!.year}'
                 : '—',
           ),
           _InfoRow(
             'Poids',
-            dog.weight != null
-                ? '${dog.weight!.toStringAsFixed(1)} kg'
-                : '—',
+            dog.weight != null ? '${dog.weight!.toStringAsFixed(1)} kg' : '—',
           ),
           _InfoRow('Sexe', _sexFull(dog.sex)),
         ],
@@ -264,10 +259,10 @@ class _InfoSection extends StatelessWidget {
   }
 
   String _sexFull(DogSex? sex) => switch (sex) {
-        DogSex.male => 'Mâle',
-        DogSex.female => 'Femelle',
-        _ => '—',
-      };
+    DogSex.male => 'Mâle',
+    DogSex.female => 'Femelle',
+    _ => '—',
+  };
 }
 
 class _InfoRow extends StatelessWidget {
@@ -295,10 +290,7 @@ class _InfoRow extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-              ),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
             ),
           ),
         ],
@@ -334,9 +326,7 @@ class _AllergiesSection extends StatelessWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: allergies
-                  .map((a) => _AllergyChip(label: a))
-                  .toList(),
+              children: allergies.map((a) => _AllergyChip(label: a)).toList(),
             ),
         ],
       ),
@@ -442,14 +432,21 @@ class _ActionTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label,
-                      style: const TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w900)),
-                  Text(subtitle,
-                      style: TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textMuted,
-                          fontWeight: FontWeight.w600)),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textMuted,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -509,9 +506,11 @@ class _ErrorBody extends StatelessWidget {
         children: [
           const Text('😕', style: TextStyle(fontSize: 48)),
           const SizedBox(height: 16),
-          Text(message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.w800)),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
           const SizedBox(height: 16),
           ElevatedButton(onPressed: onRetry, child: const Text('Réessayer')),
         ],
@@ -529,10 +528,11 @@ class _ErrorScaffold extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Profil')),
       body: Center(
-        child: Text(message,
-            style: const TextStyle(fontWeight: FontWeight.w800)),
+        child: Text(
+          message,
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
       ),
     );
   }
 }
-

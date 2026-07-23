@@ -33,7 +33,10 @@ void main() {
     });
 
     test('collarLostMode builds the correct path', () {
-      expect(ApiConstants.collarLostMode('SIM001'), '/collars/SIM001/lost-mode');
+      expect(
+        ApiConstants.collarLostMode('SIM001'),
+        '/collars/SIM001/lost-mode',
+      );
     });
   });
 
@@ -64,7 +67,10 @@ void main() {
     });
 
     test('healthAnomalies is nested under the dog', () {
-      expect(ApiConstants.healthAnomalies('dog-1'), '/dogs/dog-1/health/anomalies');
+      expect(
+        ApiConstants.healthAnomalies('dog-1'),
+        '/dogs/dog-1/health/anomalies',
+      );
     });
 
     test('healthExport is nested under the dog', () {
@@ -88,7 +94,10 @@ void main() {
     });
 
     test('alertsReadAll is nested under the dog, without an alert id', () {
-      expect(ApiConstants.alertsReadAll('dog-1'), '/dogs/dog-1/alerts/read-all');
+      expect(
+        ApiConstants.alertsReadAll('dog-1'),
+        '/dogs/dog-1/alerts/read-all',
+      );
     });
   });
 

@@ -47,7 +47,9 @@ class _DogSetupScreenState extends State<DogSetupScreen> {
   Future<void> _pickPhoto() async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(
-        source: ImageSource.gallery, imageQuality: 80);
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
     if (picked == null) return;
 
     setState(() {
@@ -58,20 +60,29 @@ class _DogSetupScreenState extends State<DogSetupScreen> {
     try {
       final dio = getIt<Dio>();
       final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(picked.path,
-            filename: 'dog_photo.jpg'),
+        'file': await MultipartFile.fromFile(
+          picked.path,
+          filename: 'dog_photo.jpg',
+        ),
       });
-      final response = await dio
-          .post<Map<String, dynamic>>('/upload/dog-photo', data: formData);
+      final response = await dio.post<Map<String, dynamic>>(
+        '/upload/dog-photo',
+        data: formData,
+      );
       _photoUrl = response.data?['url'] as String?;
     } catch (e) {
-      DebugLogger.log('UPLOAD', 'Photo upload failed: $e',
-          level: LogLevel.error);
+      DebugLogger.log(
+        'UPLOAD',
+        'Photo upload failed: $e',
+        level: LogLevel.error,
+      );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Erreur upload photo.'),
-          backgroundColor: Colors.red,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erreur upload photo.'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
       setState(() => _photo = null);
     } finally {
@@ -108,29 +119,36 @@ class _DogSetupScreenState extends State<DogSetupScreen> {
 
     final breed = _selectedBreed == 'Autre'
         ? (_customBreedCtrl.text.trim().isEmpty
-            ? null
-            : _customBreedCtrl.text.trim())
+              ? null
+              : _customBreedCtrl.text.trim())
         : _selectedBreed;
 
     setState(() => _saving = true);
     try {
-      await getIt<IDogRepository>().createDog(CreateDogParams(
-        name: _nameCtrl.text.trim(),
-        breed: breed,
-        birthDate: _birthDate,
-        weight: _weight,
-        sex: _sex,
-        photoUrl: _photoUrl,
-      ));
+      await getIt<IDogRepository>().createDog(
+        CreateDogParams(
+          name: _nameCtrl.text.trim(),
+          breed: breed,
+          birthDate: _birthDate,
+          weight: _weight,
+          sex: _sex,
+          photoUrl: _photoUrl,
+        ),
+      );
       if (mounted) context.go(AppRoutes.homeAccueil);
     } catch (e) {
-      DebugLogger.log('DOG_SETUP', 'Create dog failed: $e',
-          level: LogLevel.error);
+      DebugLogger.log(
+        'DOG_SETUP',
+        'Create dog failed: $e',
+        level: LogLevel.error,
+      );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Erreur lors de la création du profil.'),
-          backgroundColor: Colors.red,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erreur lors de la création du profil.'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -148,10 +166,13 @@ class _DogSetupScreenState extends State<DogSetupScreen> {
         actions: [
           TextButton(
             onPressed: () => context.go(AppRoutes.homeAccueil),
-            child: Text('Passer',
-                style: TextStyle(
-                    color: AppColors.textMuted,
-                    fontWeight: FontWeight.w700)),
+            child: Text(
+              'Passer',
+              style: TextStyle(
+                color: AppColors.textMuted,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ],
       ),
@@ -163,17 +184,19 @@ class _DogSetupScreenState extends State<DogSetupScreen> {
             children: [
               const Text('🐾', style: TextStyle(fontSize: 48)),
               const SizedBox(height: 12),
-              const Text('Votre compagnon',
-                  style: TextStyle(
-                      fontSize: 26, fontWeight: FontWeight.w900)),
+              const Text(
+                'Votre compagnon',
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900),
+              ),
               const SizedBox(height: 6),
               Text(
                 'Créez le profil de votre chien pour commencer le suivi.',
                 style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textMuted,
-                    fontWeight: FontWeight.w600,
-                    height: 1.4),
+                  fontSize: 14,
+                  color: AppColors.textMuted,
+                  fontWeight: FontWeight.w600,
+                  height: 1.4,
+                ),
               ),
               const SizedBox(height: 28),
 
@@ -186,67 +209,79 @@ class _DogSetupScreenState extends State<DogSetupScreen> {
               ),
               const SizedBox(height: 28),
 
-              _FormCard(children: [
-                _FieldLabel('Nom du chien *'),
-                _buildNameField(),
-                const SizedBox(height: 16),
-                _FieldLabel('Race'),
-                _buildBreedDropdown(),
-                if (_selectedBreed == 'Autre') ...[
-                  const SizedBox(height: 10),
-                  _buildCustomBreedField(),
+              _FormCard(
+                children: [
+                  _FieldLabel('Nom du chien *'),
+                  _buildNameField(),
+                  const SizedBox(height: 16),
+                  _FieldLabel('Race'),
+                  _buildBreedDropdown(),
+                  if (_selectedBreed == 'Autre') ...[
+                    const SizedBox(height: 10),
+                    _buildCustomBreedField(),
+                  ],
                 ],
-              ]),
+              ),
               const SizedBox(height: 16),
 
-              _FormCard(children: [
-                _FieldLabel('Sexe'),
-                const SizedBox(height: 8),
-                _SexSelector(
-                  selected: _sex,
-                  onChanged: (v) => setState(() => _sex = v),
-                ),
-                const SizedBox(height: 16),
-                _FieldLabel('Date de naissance'),
-                const SizedBox(height: 8),
-                _DatePickerTile(
-                  date: _birthDate,
-                  onTap: _pickDate,
-                ),
-              ]),
+              _FormCard(
+                children: [
+                  _FieldLabel('Sexe'),
+                  const SizedBox(height: 8),
+                  _SexSelector(
+                    selected: _sex,
+                    onChanged: (v) => setState(() => _sex = v),
+                  ),
+                  const SizedBox(height: 16),
+                  _FieldLabel('Date de naissance'),
+                  const SizedBox(height: 8),
+                  _DatePickerTile(date: _birthDate, onTap: _pickDate),
+                ],
+              ),
               const SizedBox(height: 16),
 
-              _FormCard(children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _FieldLabel('Poids'),
-                    Text(
-                      '${_weight.toStringAsFixed(1)} kg',
-                      style: TextStyle(
+              _FormCard(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _FieldLabel('Poids'),
+                      Text(
+                        '${_weight.toStringAsFixed(1)} kg',
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w900,
-                          color: AppColors.orange),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                _WeightSlider(
-                  value: _weight,
-                  onChanged: (v) => setState(() => _weight = v),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('0.5 kg',
+                          color: AppColors.orange,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  _WeightSlider(
+                    value: _weight,
+                    onChanged: (v) => setState(() => _weight = v),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '0.5 kg',
                         style: TextStyle(
-                            fontSize: 11, color: AppColors.textMuted)),
-                    Text('80 kg',
+                          fontSize: 11,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                      Text(
+                        '80 kg',
                         style: TextStyle(
-                            fontSize: 11, color: AppColors.textMuted)),
-                  ],
-                ),
-              ]),
+                          fontSize: 11,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
               const SizedBox(height: 32),
 
               _saving
@@ -254,21 +289,22 @@ class _DogSetupScreenState extends State<DogSetupScreen> {
                   : GestureDetector(
                       onTap: _submit,
                       child: Container(
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         decoration: BoxDecoration(
                           color: AppColors.orange,
-                          border: Border.all(
-                              color: AppColors.border, width: 2),
+                          border: Border.all(color: AppColors.border, width: 2),
                           borderRadius: BorderRadius.circular(50),
                           boxShadow: [AppDimensions.cardShadow],
                         ),
                         child: const Center(
-                          child: Text('Créer le profil',
-                              style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.white)),
+                          child: Text(
+                            'Créer le profil',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -302,18 +338,28 @@ class _DogSetupScreenState extends State<DogSetupScreen> {
   Widget _buildBreedDropdown() {
     return DropdownButtonFormField<String>(
       value: _selectedBreed,
-      hint: Text('Sélectionner une race',
-          style: TextStyle(
-              color: AppColors.textMuted, fontWeight: FontWeight.w600)),
+      hint: Text(
+        'Sélectionner une race',
+        style: TextStyle(
+          color: AppColors.textMuted,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
       decoration: _inputDecoration(''),
       isExpanded: true,
       items: DogBreeds.all
-          .map((breed) => DropdownMenuItem(
-                value: breed,
-                child: Text(breed,
-                    style: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w700)),
-              ))
+          .map(
+            (breed) => DropdownMenuItem(
+              value: breed,
+              child: Text(
+                breed,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          )
           .toList(),
       onChanged: (v) => setState(() {
         _selectedBreed = v;
@@ -327,8 +373,7 @@ class _DogSetupScreenState extends State<DogSetupScreen> {
       controller: _customBreedCtrl,
       textCapitalization: TextCapitalization.words,
       validator: (v) {
-        if (_selectedBreed == 'Autre' &&
-            (v == null || v.trim().isEmpty)) {
+        if (_selectedBreed == 'Autre' && (v == null || v.trim().isEmpty)) {
           return 'Précisez la race';
         }
         return null;
@@ -342,11 +387,12 @@ class _DogSetupScreenState extends State<DogSetupScreen> {
     return InputDecoration(
       hintText: hint,
       hintStyle: TextStyle(
-          color: AppColors.textMuted, fontWeight: FontWeight.w600),
+        color: AppColors.textMuted,
+        fontWeight: FontWeight.w600,
+      ),
       filled: true,
       fillColor: AppColors.bg,
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: AppDimensions.borderRadiusSm,
         borderSide: BorderSide(color: AppColors.border, width: 2),
@@ -371,10 +417,11 @@ class _PhotoPicker extends StatelessWidget {
   final File? photo;
   final bool uploading;
   final VoidCallback onTap;
-  const _PhotoPicker(
-      {required this.photo,
-      required this.uploading,
-      required this.onTap});
+  const _PhotoPicker({
+    required this.photo,
+    required this.uploading,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -395,20 +442,22 @@ class _PhotoPicker extends StatelessWidget {
               child: uploading
                   ? const Center(child: CircularProgressIndicator())
                   : photo != null
-                      ? Image.file(photo!, fit: BoxFit.cover)
-                      : Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text('🐕',
-                                style: TextStyle(fontSize: 36)),
-                            const SizedBox(height: 4),
-                            Text('Photo',
-                                style: TextStyle(
-                                    fontSize: 10,
-                                    color: AppColors.textMuted,
-                                    fontWeight: FontWeight.w700)),
-                          ],
+                  ? Image.file(photo!, fit: BoxFit.cover)
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text('🐕', style: TextStyle(fontSize: 36)),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Photo',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: AppColors.textMuted,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
+                      ],
+                    ),
             ),
           ),
           Positioned(
@@ -422,8 +471,11 @@ class _PhotoPicker extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white, width: 2),
               ),
-              child: const Icon(Icons.camera_alt,
-                  size: 14, color: Colors.white),
+              child: const Icon(
+                Icons.camera_alt,
+                size: 14,
+                color: Colors.white,
+              ),
             ),
           ),
         ],
@@ -435,8 +487,7 @@ class _PhotoPicker extends StatelessWidget {
 class _SexSelector extends StatelessWidget {
   final DogSex? selected;
   final ValueChanged<DogSex?> onChanged;
-  const _SexSelector(
-      {required this.selected, required this.onChanged});
+  const _SexSelector({required this.selected, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -445,15 +496,14 @@ class _SexSelector extends StatelessWidget {
         _SexChip(
           label: '♂ Mâle',
           selected: selected == DogSex.male,
-          onTap: () => onChanged(
-              selected == DogSex.male ? null : DogSex.male),
+          onTap: () => onChanged(selected == DogSex.male ? null : DogSex.male),
         ),
         const SizedBox(width: 10),
         _SexChip(
           label: '♀ Femelle',
           selected: selected == DogSex.female,
-          onTap: () => onChanged(
-              selected == DogSex.female ? null : DogSex.female),
+          onTap: () =>
+              onChanged(selected == DogSex.female ? null : DogSex.female),
         ),
       ],
     );
@@ -464,18 +514,18 @@ class _SexChip extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  const _SexChip(
-      {required this.label,
-      required this.selected,
-      required this.onTap});
+  const _SexChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
           color: selected ? AppColors.orange : AppColors.bg,
           border: Border.all(
@@ -507,8 +557,7 @@ class _DatePickerTile extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
           color: AppColors.bg,
           border: Border.all(color: AppColors.border, width: 2),
@@ -516,26 +565,23 @@ class _DatePickerTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(Icons.calendar_today,
-                size: 18, color: AppColors.textMuted),
+            Icon(Icons.calendar_today, size: 18, color: AppColors.textMuted),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 date != null
                     ? '${date!.day.toString().padLeft(2, '0')}/'
-                        '${date!.month.toString().padLeft(2, '0')}/'
-                        '${date!.year}'
+                          '${date!.month.toString().padLeft(2, '0')}/'
+                          '${date!.year}'
                     : 'Sélectionner une date',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color:
-                      date != null ? AppColors.text : AppColors.textMuted,
+                  color: date != null ? AppColors.text : AppColors.textMuted,
                 ),
               ),
             ),
-            Icon(Icons.chevron_right,
-                size: 18, color: AppColors.textMuted),
+            Icon(Icons.chevron_right, size: 18, color: AppColors.textMuted),
           ],
         ),
       ),
@@ -546,8 +592,7 @@ class _DatePickerTile extends StatelessWidget {
 class _WeightSlider extends StatelessWidget {
   final double value;
   final ValueChanged<double> onChanged;
-  const _WeightSlider(
-      {required this.value, required this.onChanged});
+  const _WeightSlider({required this.value, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -557,8 +602,7 @@ class _WeightSlider extends StatelessWidget {
         inactiveTrackColor: AppColors.border,
         thumbColor: AppColors.orange,
         overlayColor: AppColors.orange.withOpacity(0.15),
-        thumbShape:
-            const RoundSliderThumbShape(enabledThumbRadius: 12),
+        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
         trackHeight: 4,
       ),
       child: Slider(
@@ -587,8 +631,9 @@ class _FormCard extends StatelessWidget {
         boxShadow: [AppDimensions.cardShadow],
       ),
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: children),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
     );
   }
 }
@@ -601,9 +646,10 @@ class _FieldLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Text(text,
-          style: const TextStyle(
-              fontSize: 12, fontWeight: FontWeight.w900)),
+      child: Text(
+        text,
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+      ),
     );
   }
 }

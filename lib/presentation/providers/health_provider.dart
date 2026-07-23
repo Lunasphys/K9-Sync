@@ -6,8 +6,9 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../../domain/interfaces/repositories/i_health_repository.dart';
 import '../../injection.dart';
 
-final healthRepositoryProvider =
-    Provider<IHealthRepository>((ref) => getIt<IHealthRepository>());
+final healthRepositoryProvider = Provider<IHealthRepository>(
+  (ref) => getIt<IHealthRepository>(),
+);
 
 // Hive box for daily activity persistence
 const _kActivityBox = 'daily_activity';
@@ -44,20 +45,21 @@ class HealthSnapshot {
       activeMinutes: (json['activeMinutes'] as num?)?.toInt() ?? 0,
       anomalyDetected: json['anomalyDetected'] as bool? ?? false,
       anomalyType: json['anomalyType'] as String? ?? 'none',
-      recordedAt: DateTime.tryParse(json['recordedAt'] as String? ?? '') ??
+      recordedAt:
+          DateTime.tryParse(json['recordedAt'] as String? ?? '') ??
           DateTime.now(),
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'heartRate': heartRate,
-        'temperature': temperature,
-        'steps': steps,
-        'activeMinutes': activeMinutes,
-        'anomalyDetected': anomalyDetected,
-        'anomalyType': anomalyType,
-        'recordedAt': recordedAt.toIso8601String(),
-      };
+    'heartRate': heartRate,
+    'temperature': temperature,
+    'steps': steps,
+    'activeMinutes': activeMinutes,
+    'anomalyDetected': anomalyDetected,
+    'anomalyType': anomalyType,
+    'recordedAt': recordedAt.toIso8601String(),
+  };
 }
 
 // ── DailyActivity — persisted in Hive ────────────────────────────────────────
@@ -74,22 +76,22 @@ class DailyActivity {
   });
 
   DailyActivity copyWith({int? steps, int? activeMinutes}) => DailyActivity(
-        date: date,
-        steps: steps ?? this.steps,
-        activeMinutes: activeMinutes ?? this.activeMinutes,
-      );
+    date: date,
+    steps: steps ?? this.steps,
+    activeMinutes: activeMinutes ?? this.activeMinutes,
+  );
 
   Map<String, dynamic> toJson() => {
-        'date': date,
-        'steps': steps,
-        'activeMinutes': activeMinutes,
-      };
+    'date': date,
+    'steps': steps,
+    'activeMinutes': activeMinutes,
+  };
 
   factory DailyActivity.fromJson(Map<String, dynamic> json) => DailyActivity(
-        date: json['date'] as String,
-        steps: (json['steps'] as num?)?.toInt() ?? 0,
-        activeMinutes: (json['activeMinutes'] as num?)?.toInt() ?? 0,
-      );
+    date: json['date'] as String,
+    steps: (json['steps'] as num?)?.toInt() ?? 0,
+    activeMinutes: (json['activeMinutes'] as num?)?.toInt() ?? 0,
+  );
 
   // Today's key in Hive
   static String get todayKey {
@@ -112,12 +114,13 @@ class HealthState {
     this.latest,
     this.history = const [],
     DailyActivity? todayActivity,
-  }) : todayActivity = todayActivity ??
-            DailyActivity(
-              date: DailyActivity.todayKey,
-              steps: 0,
-              activeMinutes: 0,
-            );
+  }) : todayActivity =
+           todayActivity ??
+           DailyActivity(
+             date: DailyActivity.todayKey,
+             steps: 0,
+             activeMinutes: 0,
+           );
 
   HealthState copyWith({
     HealthSnapshot? latest,
@@ -134,9 +137,9 @@ class HealthState {
 
 // ── HealthNotifier ────────────────────────────────────────────────────────────
 
-final healthProvider =
-    StateNotifierProvider<HealthNotifier, HealthState>(
-        (ref) => HealthNotifier());
+final healthProvider = StateNotifierProvider<HealthNotifier, HealthState>(
+  (ref) => HealthNotifier(),
+);
 
 class HealthNotifier extends StateNotifier<HealthState> {
   static const _maxHistory = 60;
@@ -154,7 +157,8 @@ class HealthNotifier extends StateNotifier<HealthState> {
 
     try {
       final activity = DailyActivity.fromJson(
-          jsonDecode(raw) as Map<String, dynamic>);
+        jsonDecode(raw) as Map<String, dynamic>,
+      );
       state = state.copyWith(todayActivity: activity);
     } catch (_) {
       // Corrupted entry — ignore and start fresh

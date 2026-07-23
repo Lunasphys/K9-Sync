@@ -23,7 +23,11 @@ class SharedAccessScreen extends StatelessWidget {
               border: Border.all(color: AppColors.border, width: 1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.arrow_back, size: 18, color: AppColors.textMuted),
+            child: const Icon(
+              Icons.arrow_back,
+              size: 18,
+              color: AppColors.textMuted,
+            ),
           ),
           onPressed: () => context.pop(),
         ),
@@ -59,7 +63,10 @@ class SharedAccessScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
                   border: Border.all(color: AppColors.border, width: 1),
@@ -136,7 +143,8 @@ class SharedAccessScreen extends StatelessWidget {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => context.push('/dogs/${dogId ?? "dog1"}/invite'),
+                  onPressed: () =>
+                      context.push('/dogs/${dogId ?? "dog1"}/invite'),
                   child: const Text('+ Inviter quelqu\'un'),
                 ),
               ),
@@ -291,9 +299,16 @@ class SharedAccessScreen extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
-                    color: faded ? AppColors.surface : (roleColor == AppColors.greenStatus ? AppColors.greenMint : AppColors.orangeLight),
+                    color: faded
+                        ? AppColors.surface
+                        : (roleColor == AppColors.greenStatus
+                              ? AppColors.greenMint
+                              : AppColors.orangeLight),
                     borderRadius: BorderRadius.circular(7),
                   ),
                   child: Text(
@@ -306,7 +321,11 @@ class SharedAccessScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(Icons.chevron_right, color: AppColors.textMuted, size: 20),
+                const Icon(
+                  Icons.chevron_right,
+                  color: AppColors.textMuted,
+                  size: 20,
+                ),
               ],
             ),
           ),
@@ -341,7 +360,11 @@ class SharedAccessScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [AppDimensions.cardShadowSm],
                   ),
-                  child: const Icon(Icons.medical_services_outlined, color: AppColors.blue, size: 20),
+                  child: const Icon(
+                    Icons.medical_services_outlined,
+                    color: AppColors.blue,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 const Expanded(
@@ -366,7 +389,11 @@ class SharedAccessScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right, color: AppColors.textMuted, size: 20),
+                const Icon(
+                  Icons.chevron_right,
+                  color: AppColors.textMuted,
+                  size: 20,
+                ),
               ],
             ),
           ),
@@ -406,7 +433,12 @@ class _SharedUserDetailSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).padding.bottom + 20),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        20,
+        20,
+        MediaQuery.of(context).padding.bottom + 20,
+      ),
       decoration: const BoxDecoration(
         color: AppColors.cardBg,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -426,18 +458,12 @@ class _SharedUserDetailSheet extends StatelessWidget {
             const SizedBox(height: 20),
             Text(
               name,
-              style: const TextStyle(
-                fontSize: 19,
-                fontWeight: FontWeight.w800,
-              ),
+              style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 4),
             Text(
               email,
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.textMuted,
-              ),
+              style: TextStyle(fontSize: 13, color: AppColors.textMuted),
             ),
             const SizedBox(height: 10),
             Container(
@@ -477,7 +503,10 @@ class _SharedUserDetailSheet extends StatelessWidget {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.orangeLight,
                           borderRadius: BorderRadius.circular(20),
@@ -496,10 +525,7 @@ class _SharedUserDetailSheet extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     expireText,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textMuted,
-                    ),
+                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                   ),
                   const SizedBox(height: 10),
                   ClipRRect(
@@ -507,7 +533,9 @@ class _SharedUserDetailSheet extends StatelessWidget {
                     child: LinearProgressIndicator(
                       value: progress,
                       backgroundColor: AppColors.surface,
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.orange),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.orange,
+                      ),
                       minHeight: 6,
                     ),
                   ),

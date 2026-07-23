@@ -20,7 +20,7 @@ void main() {
           'photoUrl': null,
           'createdAt': DateTime.now().toIso8601String(),
           'updatedAt': DateTime.now().toIso8601String(),
-        }
+        },
       ];
 
       final json = fakeResponseData.first as Map<String, dynamic>;
@@ -101,11 +101,11 @@ Dog _dogFromJson(Map<String, dynamic> j) {
         ? double.tryParse(j['weight'].toString())
         : null,
     sex: _parseSex(j['sex'] as String?),
-    allergies: (j['allergies'] as List<dynamic>?)
-            ?.map((e) => e as String)
-            .toList() ??
+    allergies:
+        (j['allergies'] as List<dynamic>?)?.map((e) => e as String).toList() ??
         [],
-    characterTraits: (j['characterTraits'] as List<dynamic>?)
+    characterTraits:
+        (j['characterTraits'] as List<dynamic>?)
             ?.map((e) => e as String)
             .toList() ??
         [],

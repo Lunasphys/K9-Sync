@@ -16,12 +16,18 @@ class ApiInterceptor extends Interceptor {
   });
 
   final Dio dio;
+
   /// Dio sans intercepteur pour appeler POST /auth/refresh sans boucle 401.
   final Dio dioForRefresh;
   final Future<String?> Function() getAccessToken;
   final Future<String?> Function() getRefreshToken;
-  final Future<void> Function({required String accessToken, required String refreshToken}) setTokens;
+  final Future<void> Function({
+    required String accessToken,
+    required String refreshToken,
+  })
+  setTokens;
   final Future<void> Function() clearTokens;
+
   /// Appelé après clearTokens() quand la session est invalide (pas de refresh ou refresh échoué).
   final void Function()? onSessionExpired;
 
@@ -35,7 +41,10 @@ class ApiInterceptor extends Interceptor {
   }
 
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+  void onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
     if (_isAuthPath(options.path)) {
       return handler.next(options);
     }
@@ -48,7 +57,8 @@ class ApiInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    if (err.response?.statusCode != 401 || _isAuthPath(err.requestOptions.path)) {
+    if (err.response?.statusCode != 401 ||
+        _isAuthPath(err.requestOptions.path)) {
       return handler.next(err);
     }
     final refreshToken = await getRefreshToken();

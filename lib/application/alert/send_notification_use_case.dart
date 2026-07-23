@@ -7,9 +7,13 @@ class SendNotificationUseCase {
 
   SendNotificationUseCase(this._service);
 
-  Future<void> sendToUser({required String userId, required NotificationPayload payload}) =>
-      _service.sendToUser(userId: userId, payload: payload);
+  Future<void> sendToUser({
+    required String userId,
+    required NotificationPayload payload,
+  }) => _service.sendToUser(userId: userId, payload: payload);
 
-  Future<void> sendToGroup({required List<String> userIds, required NotificationPayload payload}) =>
-      _service.sendToGroup(userIds: userIds, payload: payload);
+  Future<void> sendToGroup({
+    required List<String> userIds,
+    required NotificationPayload payload,
+  }) => _service.sendToGroup(userIds: userIds, payload: payload);
 }

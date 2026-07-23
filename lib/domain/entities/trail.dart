@@ -19,25 +19,27 @@ class Trail {
 
   /// Serialize to plain Map for Hive JSON storage
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'startedAt': startedAt.toIso8601String(),
-        'endedAt': endedAt.toIso8601String(),
-        'distanceMeters': distanceMeters,
-        'points': points
-            .map((p) => {'lat': p.latitude, 'lng': p.longitude})
-            .toList(),
-      };
+    'id': id,
+    'startedAt': startedAt.toIso8601String(),
+    'endedAt': endedAt.toIso8601String(),
+    'distanceMeters': distanceMeters,
+    'points': points
+        .map((p) => {'lat': p.latitude, 'lng': p.longitude})
+        .toList(),
+  };
 
   factory Trail.fromJson(Map<String, dynamic> json) => Trail(
-        id: json['id'] as String,
-        startedAt: DateTime.parse(json['startedAt'] as String),
-        endedAt: DateTime.parse(json['endedAt'] as String),
-        distanceMeters: (json['distanceMeters'] as num).toDouble(),
-        points: (json['points'] as List)
-            .map((p) => LatLng(
-                  (p['lat'] as num).toDouble(),
-                  (p['lng'] as num).toDouble(),
-                ))
-            .toList(),
-      );
+    id: json['id'] as String,
+    startedAt: DateTime.parse(json['startedAt'] as String),
+    endedAt: DateTime.parse(json['endedAt'] as String),
+    distanceMeters: (json['distanceMeters'] as num).toDouble(),
+    points: (json['points'] as List)
+        .map(
+          (p) => LatLng(
+            (p['lat'] as num).toDouble(),
+            (p['lng'] as num).toDouble(),
+          ),
+        )
+        .toList(),
+  );
 }

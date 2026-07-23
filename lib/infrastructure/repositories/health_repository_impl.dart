@@ -32,16 +32,27 @@ class HealthRepositoryImpl implements IHealthRepository {
   }
 
   @override
-  Future<ActivitySummary?> getActivitySummary(String dogId, DateTime date) async => null;
+  Future<ActivitySummary?> getActivitySummary(
+    String dogId,
+    DateTime date,
+  ) async => null;
 
   @override
-  Future<SleepAnalysis?> getSleepAnalysis(String dogId, DateTime date) async => null;
+  Future<SleepAnalysis?> getSleepAnalysis(String dogId, DateTime date) async =>
+      null;
 
   @override
-  Future<List<AnomalyRecord>> getAnomalies(String dogId, {DateTime? from, DateTime? to}) async => [];
+  Future<List<AnomalyRecord>> getAnomalies(
+    String dogId, {
+    DateTime? from,
+    DateTime? to,
+  }) async => [];
 
   @override
-  Future<int> syncOfflineHealth(String dogId, List<HealthRecord> records) async {
+  Future<int> syncOfflineHealth(
+    String dogId,
+    List<HealthRecord> records,
+  ) async {
     final box = await Hive.openBox<String>(_kHealthOfflineBox);
     final entries = box.toMap();
     if (entries.isEmpty) return 0;
@@ -77,5 +88,9 @@ class HealthRepositoryImpl implements IHealthRepository {
   }
 
   @override
-  Future<List<int>> exportPdfBytes(String dogId, {DateTime? from, DateTime? to}) async => [];
+  Future<List<int>> exportPdfBytes(
+    String dogId, {
+    DateTime? from,
+    DateTime? to,
+  }) async => [];
 }

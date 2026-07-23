@@ -8,8 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 //   Temperature: < 36.0°C or > 39.5°C → anomaly
 
 bool isHeartRateAnomaly(int bpm) => bpm < 50 || bpm > 180;
-bool isTemperatureAnomaly(double celsius) =>
-    celsius < 36.0 || celsius > 39.5;
+bool isTemperatureAnomaly(double celsius) => celsius < 36.0 || celsius > 39.5;
 
 void main() {
   group('Health anomaly detection — heart rate', () {

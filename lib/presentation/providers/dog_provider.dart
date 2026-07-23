@@ -21,11 +21,7 @@ class DogState {
     this.errorMessage,
   });
 
-  DogState copyWith({
-    Dog? dog,
-    DogLoadStatus? status,
-    String? errorMessage,
-  }) =>
+  DogState copyWith({Dog? dog, DogLoadStatus? status, String? errorMessage}) =>
       DogState(
         dog: dog ?? this.dog,
         status: status ?? this.status,
@@ -36,8 +32,7 @@ class DogState {
 // ── Provider ──────────────────────────────────────────────────────────────────
 
 /// Family provider — one notifier per dogId.
-final dogProvider =
-    StateNotifierProvider.family<DogNotifier, DogState, String>(
+final dogProvider = StateNotifierProvider.family<DogNotifier, DogState, String>(
   (ref, dogId) => DogNotifier(dogId),
 );
 

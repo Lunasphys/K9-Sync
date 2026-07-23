@@ -7,6 +7,9 @@ class InviteUserToCollarUseCase {
 
   InviteUserToCollarUseCase(this._repo);
 
-  Future<void> call(String dogId, {required String email, required UserDogRole role}) =>
-      _repo.inviteUser(dogId, email: email, role: role);
+  Future<void> call(
+    String dogId, {
+    required String email,
+    required UserDogRole role,
+  }) => _repo.inviteUser(dogId, email: email, role: role);
 }

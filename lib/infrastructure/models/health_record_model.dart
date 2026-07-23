@@ -34,13 +34,13 @@ class HealthRecordModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'collarId': collarId,
-        if (heartRate > 0) 'heartRate': heartRate,
-        'temperature': temperature,
-        'recordedAt': recordedAt.toIso8601String(),
-        if (syncedAt != null) 'syncedAt': syncedAt!.toIso8601String(),
-      };
+    'id': id,
+    'collarId': collarId,
+    if (heartRate > 0) 'heartRate': heartRate,
+    'temperature': temperature,
+    'recordedAt': recordedAt.toIso8601String(),
+    if (syncedAt != null) 'syncedAt': syncedAt!.toIso8601String(),
+  };
 
   static HealthRecordModel fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
@@ -49,36 +49,39 @@ class HealthRecordModel {
       collarId: (data['collarId'] as String?) ?? '',
       heartRate: (data['heartRate'] as int?) ?? 0,
       temperature: (data['temperature'] as num?)?.toDouble() ?? 0,
-      recordedAt: (data['recordedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      recordedAt:
+          (data['recordedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       syncedAt: (data['syncedAt'] as Timestamp?)?.toDate(),
     );
   }
 
   Map<String, dynamic> toFirestore() => {
-        'collarId': collarId,
-        'heartRate': heartRate,
-        'temperature': temperature,
-        'recordedAt': Timestamp.fromDate(recordedAt),
-        'syncedAt': syncedAt != null ? Timestamp.fromDate(syncedAt!) : FieldValue.serverTimestamp(),
-      };
+    'collarId': collarId,
+    'heartRate': heartRate,
+    'temperature': temperature,
+    'recordedAt': Timestamp.fromDate(recordedAt),
+    'syncedAt': syncedAt != null
+        ? Timestamp.fromDate(syncedAt!)
+        : FieldValue.serverTimestamp(),
+  };
 
   static HealthRecordModel fromEntity(HealthRecord e) => HealthRecordModel(
-        id: e.id,
-        collarId: e.collarId,
-        heartRate: e.heartRate,
-        temperature: e.temperature,
-        recordedAt: e.recordedAt,
-        syncedAt: e.syncedAt,
-      );
+    id: e.id,
+    collarId: e.collarId,
+    heartRate: e.heartRate,
+    temperature: e.temperature,
+    recordedAt: e.recordedAt,
+    syncedAt: e.syncedAt,
+  );
 
   HealthRecord toEntity() => HealthRecord(
-        id: id,
-        collarId: collarId,
-        heartRate: heartRate,
-        temperature: temperature,
-        recordedAt: recordedAt,
-        syncedAt: syncedAt,
-      );
+    id: id,
+    collarId: collarId,
+    heartRate: heartRate,
+    temperature: temperature,
+    recordedAt: recordedAt,
+    syncedAt: syncedAt,
+  );
 }
 
 /// Réponse GET /health/activity (Prisma).

@@ -13,8 +13,9 @@ class GpsRepositoryImpl implements IGpsRepository {
   @override
   Future<GpsLocation?> getLatestLocation(String dogId) async {
     try {
-      final response =
-          await _dio.get<Map<String, dynamic>>('/dogs/$dogId/gps/latest');
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/dogs/$dogId/gps/latest',
+      );
       return _fromJson(response.data!);
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) return null;
@@ -38,20 +39,24 @@ class GpsRepositoryImpl implements IGpsRepository {
       },
     );
     final list = response.data ?? [];
-    return list
-        .map((e) => _fromJson(e as Map<String, dynamic>))
-        .toList();
+    return list.map((e) => _fromJson(e as Map<String, dynamic>)).toList();
   }
 
   @override
-  Future<List<Trail>> getTrails(String dogId, {DateTime? from, DateTime? to}) async => [];
+  Future<List<Trail>> getTrails(
+    String dogId, {
+    DateTime? from,
+    DateTime? to,
+  }) async => [];
 
   @override
   Future<Trail?> getTrailById(String dogId, String trailId) async => null;
 
   @override
   Future<int> syncOfflineLocations(
-      String dogId, List<GpsLocation> locations) async {
+    String dogId,
+    List<GpsLocation> locations,
+  ) async {
     if (locations.isEmpty) return 0;
 
     try {
@@ -59,12 +64,14 @@ class GpsRepositoryImpl implements IGpsRepository {
         '/dogs/$dogId/gps/sync',
         data: {
           'locations': locations
-              .map((l) => {
-                    'latitude': l.latitude,
-                    'longitude': l.longitude,
-                    'accuracy': l.accuracy,
-                    'recordedAt': l.recordedAt.toIso8601String(),
-                  })
+              .map(
+                (l) => {
+                  'latitude': l.latitude,
+                  'longitude': l.longitude,
+                  'accuracy': l.accuracy,
+                  'recordedAt': l.recordedAt.toIso8601String(),
+                },
+              )
               .toList(),
         },
       );
@@ -84,9 +91,7 @@ GpsLocation _fromJson(Map<String, dynamic> j) {
     collarId: j['collarId'] as String? ?? '',
     latitude: (j['latitude'] as num).toDouble(),
     longitude: (j['longitude'] as num).toDouble(),
-    accuracy: j['accuracy'] != null
-        ? (j['accuracy'] as num).toDouble()
-        : null,
+    accuracy: j['accuracy'] != null ? (j['accuracy'] as num).toDouble() : null,
     recordedAt: DateTime.parse(j['recordedAt'] as String),
     syncedAt: j['syncedAt'] != null
         ? DateTime.tryParse(j['syncedAt'] as String)

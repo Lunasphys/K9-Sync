@@ -9,10 +9,13 @@ import '../storage/secure_storage.dart';
 
 /// Implémentation auth : Firebase (auth != null) ou REST (secureStorage != null).
 class AuthRepositoryImpl implements IAuthRepository {
-  AuthRepositoryImpl(this._remote, [FirebaseAuth? auth, SecureStorage? secureStorage])
-      : _auth = auth,
-        _secureStorage = secureStorage,
-        _sessionController = StreamController<bool>.broadcast() {
+  AuthRepositoryImpl(
+    this._remote, [
+    FirebaseAuth? auth,
+    SecureStorage? secureStorage,
+  ]) : _auth = auth,
+       _secureStorage = secureStorage,
+       _sessionController = StreamController<bool>.broadcast() {
     assert(
       (auth != null) != (secureStorage != null),
       'Exactly one of auth (Firebase) or secureStorage (REST) must be provided.',
@@ -66,7 +69,10 @@ class AuthRepositoryImpl implements IAuthRepository {
   }
 
   @override
-  Future<AuthResult> login({required String email, required String password}) async {
+  Future<AuthResult> login({
+    required String email,
+    required String password,
+  }) async {
     final res = await _remote.login(email: email, password: password);
     if (_isRest) _cachedLoggedIn = true;
     return AuthResult(
@@ -114,5 +120,6 @@ class AuthRepositoryImpl implements IAuthRepository {
   }
 
   @override
-  Future<void> forgotPassword({required String email}) async => _remote.forgotPassword(email: email);
+  Future<void> forgotPassword({required String email}) async =>
+      _remote.forgotPassword(email: email);
 }

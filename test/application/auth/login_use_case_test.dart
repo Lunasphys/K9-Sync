@@ -7,7 +7,7 @@ import 'package:k9sync/domain/entities/user.dart';
 import 'package:k9sync/domain/enums/subscription_plan.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_auth_repository.dart';
 
-// Mock implementation of IAuthRepository
+// Mock
 class MockAuthRepository extends Mock implements IAuthRepository {}
 
 void main() {
@@ -42,10 +42,9 @@ void main() {
 
     test('returns AuthResult when credentials are valid', () async {
       // Arrange
-      when(() => mockRepo.login(
-            email: validEmail,
-            password: validPassword,
-          )).thenAnswer((_) async => fakeResult);
+      when(
+        () => mockRepo.login(email: validEmail, password: validPassword),
+      ).thenAnswer((_) async => fakeResult);
 
       // Act
       final result = await loginUseCase(
@@ -56,18 +55,19 @@ void main() {
       // Assert
       expect(result.accessToken, equals('access_token_fake'));
       expect(result.user.email, equals(validEmail));
-      verify(() => mockRepo.login(
-            email: validEmail,
-            password: validPassword,
-          )).called(1);
+      verify(
+        () => mockRepo.login(email: validEmail, password: validPassword),
+      ).called(1);
     });
 
     test('throws AuthError when credentials are invalid', () async {
       // Arrange
-      when(() => mockRepo.login(
-            email: any(named: 'email'),
-            password: any(named: 'password'),
-          )).thenThrow(const AuthError.invalidCredentials());
+      when(
+        () => mockRepo.login(
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+        ),
+      ).thenThrow(const AuthError.invalidCredentials());
 
       // Act & Assert
       expect(
@@ -78,19 +78,20 @@ void main() {
 
     test('calls repository exactly once per login attempt', () async {
       // Arrange
-      when(() => mockRepo.login(
-            email: any(named: 'email'),
-            password: any(named: 'password'),
-          )).thenAnswer((_) async => fakeResult);
+      when(
+        () => mockRepo.login(
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+        ),
+      ).thenAnswer((_) async => fakeResult);
 
       // Act
       await loginUseCase(email: validEmail, password: validPassword);
 
       // Assert — repository called exactly once, not cached or duplicated
-      verify(() => mockRepo.login(
-            email: validEmail,
-            password: validPassword,
-          )).called(1);
+      verify(
+        () => mockRepo.login(email: validEmail, password: validPassword),
+      ).called(1);
     });
   });
 }

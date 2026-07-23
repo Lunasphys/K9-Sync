@@ -8,7 +8,9 @@ class ConsentScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Consentements')),
-      body: const Center(child: Text('CGU + Politique confidentialité (squelette)')),
+      body: const Center(
+        child: Text('CGU + Politique confidentialité (squelette)'),
+      ),
     );
   }
 }

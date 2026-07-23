@@ -60,4 +60,3 @@ String? authGuard(bool isLoggedIn, String currentPath) {
   }
   return null;
 }
-

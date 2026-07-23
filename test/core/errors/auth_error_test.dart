@@ -5,13 +5,19 @@ void main() {
   group('AppError.toString', () {
     test('formats as [code] message with context', () {
       final err = AuthError.insufficientPermissions(action: 'delete_dog');
-      expect(err.toString(), '[AUTH_005] Permission denied: delete_dog {action: delete_dog}');
+      expect(
+        err.toString(),
+        '[AUTH_005] Permission denied: delete_dog {action: delete_dog}',
+      );
     });
 
-    test('leaves a trailing blank when there is no context (context ?? \'\')', () {
-      const err = AuthError.invalidCredentials();
-      expect(err.toString(), '[AUTH_003] Invalid credentials ');
-    });
+    test(
+      'leaves a trailing blank when there is no context (context ?? \'\')',
+      () {
+        const err = AuthError.invalidCredentials();
+        expect(err.toString(), '[AUTH_003] Invalid credentials ');
+      },
+    );
   });
 
   group('AuthError named constructors', () {
@@ -37,7 +43,9 @@ void main() {
 
   group('AuthError.fromDio', () {
     test('maps a 401 status to AUTH_001', () {
-      final err = AuthError.fromDio(Exception('DioException [bad response]: 401 Unauthorized'));
+      final err = AuthError.fromDio(
+        Exception('DioException [bad response]: 401 Unauthorized'),
+      );
       expect(err.code, 'AUTH_001');
     });
 
@@ -103,10 +111,13 @@ void main() {
       expect(err.userMessage, 'Mot de passe trop faible.');
     });
 
-    test('an unrecognized Firebase error falls back to AUTH_000 with a generic message', () {
-      final err = AuthError.fromFirebase(Exception('network-request-failed'));
-      expect(err.code, 'AUTH_000');
-      expect(err.userMessage, "Erreur d'authentification. Réessayez.");
-    });
+    test(
+      'an unrecognized Firebase error falls back to AUTH_000 with a generic message',
+      () {
+        final err = AuthError.fromFirebase(Exception('network-request-failed'));
+        expect(err.code, 'AUTH_000');
+        expect(err.userMessage, "Erreur d'authentification. Réessayez.");
+      },
+    );
   });
 }

@@ -35,7 +35,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     if (!getIt.isRegistered<IAuthRepository>()) {
-      setState(() => _errorMessage = 'Service non prêt. Redémarrez l\'application.');
+      setState(
+        () => _errorMessage = 'Service non prêt. Redémarrez l\'application.',
+      );
       return;
     }
 
@@ -49,14 +51,22 @@ class _LoginScreenState extends State<LoginScreen> {
       context.go(AppRoutes.homeAccueil);
     } on AuthError catch (e) {
       if (!mounted) return;
-      setState(() => _errorMessage = e.userMessage ?? 'Erreur d\'authentification.');
+      setState(
+        () => _errorMessage = e.userMessage ?? 'Erreur d\'authentification.',
+      );
     } on DioException catch (e) {
       if (!mounted) return;
       final authErr = AuthError.fromDio(e);
-      setState(() => _errorMessage = authErr.userMessage ?? 'Impossible de se connecter.');
+      setState(
+        () => _errorMessage =
+            authErr.userMessage ?? 'Impossible de se connecter.',
+      );
     } catch (_) {
       if (!mounted) return;
-      setState(() => _errorMessage = 'Impossible de se connecter. Vérifiez votre connexion.');
+      setState(
+        () => _errorMessage =
+            'Impossible de se connecter. Vérifiez votre connexion.',
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -101,9 +111,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 Text(
                   'Connexion',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 24,
-                      ),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 24,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -142,7 +152,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   decoration: _inputDecoration(hint: '••••••••').copyWith(
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                         color: AppColors.textMuted,
                       ),
                       onPressed: () =>

@@ -39,13 +39,13 @@ class AlertModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'dogId': dogId,
-        'type': type.name,
-        'message': message,
-        'isRead': isRead,
-        'triggeredAt': triggeredAt.toIso8601String(),
-      };
+    'id': id,
+    'dogId': dogId,
+    'type': type.name,
+    'message': message,
+    'isRead': isRead,
+    'triggeredAt': triggeredAt.toIso8601String(),
+  };
 
   static AlertModel fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
@@ -56,35 +56,36 @@ class AlertModel {
       type: _parseAlertType(typeStr),
       message: (data['message'] as String?) ?? '',
       isRead: data['isRead'] as bool? ?? false,
-      triggeredAt: (data['triggeredAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      triggeredAt:
+          (data['triggeredAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 
   Map<String, dynamic> toFirestore() => {
-        'dogId': dogId,
-        'type': type.name,
-        'message': message,
-        'isRead': isRead,
-        'triggeredAt': Timestamp.fromDate(triggeredAt),
-      };
+    'dogId': dogId,
+    'type': type.name,
+    'message': message,
+    'isRead': isRead,
+    'triggeredAt': Timestamp.fromDate(triggeredAt),
+  };
 
   static AlertModel fromEntity(Alert e) => AlertModel(
-        id: e.id,
-        dogId: e.dogId,
-        type: e.type,
-        message: e.message,
-        isRead: e.isRead,
-        triggeredAt: e.triggeredAt,
-      );
+    id: e.id,
+    dogId: e.dogId,
+    type: e.type,
+    message: e.message,
+    isRead: e.isRead,
+    triggeredAt: e.triggeredAt,
+  );
 
   Alert toEntity() => Alert(
-        id: id,
-        dogId: dogId,
-        type: type,
-        message: message,
-        isRead: isRead,
-        triggeredAt: triggeredAt,
-      );
+    id: id,
+    dogId: dogId,
+    type: type,
+    message: message,
+    isRead: isRead,
+    triggeredAt: triggeredAt,
+  );
 
   static AlertType _parseAlertType(String s) {
     final lower = s.replaceAll('_', '').toLowerCase();

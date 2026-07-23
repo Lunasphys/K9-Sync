@@ -26,9 +26,7 @@ AppError defaultMap(DioException e) {
 
   switch (status) {
     case 400:
-      return BusinessError.validationFailed(
-        message: msg ?? 'Requête invalide',
-      );
+      return BusinessError.validationFailed(message: msg ?? 'Requête invalide');
     case 401:
       return const AuthError.tokenExpired();
     case 403:

@@ -15,9 +15,12 @@ void main() {
       expect('   '.isNotBlank, isFalse);
     });
 
-    test('a string with leading/trailing whitespace around real content is not blank', () {
-      expect('  Nami  '.isNotBlank, isTrue);
-    });
+    test(
+      'a string with leading/trailing whitespace around real content is not blank',
+      () {
+        expect('  Nami  '.isNotBlank, isTrue);
+      },
+    );
 
     test('a tab/newline-only string is blank', () {
       expect('\t\n'.isNotBlank, isFalse);

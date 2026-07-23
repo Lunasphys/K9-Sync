@@ -33,7 +33,8 @@ class HealthCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(value, style: Theme.of(context).textTheme.headlineSmall),
-            if (unit != null) Text(unit!, style: Theme.of(context).textTheme.bodySmall),
+            if (unit != null)
+              Text(unit!, style: Theme.of(context).textTheme.bodySmall),
           ],
         ),
       ),

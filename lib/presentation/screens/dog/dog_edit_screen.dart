@@ -66,7 +66,9 @@ class _DogEditScreenState extends ConsumerState<DogEditScreen> {
   Future<void> _pickPhoto() async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(
-        source: ImageSource.gallery, imageQuality: 80);
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
     if (picked == null) return;
 
     setState(() {
@@ -77,20 +79,29 @@ class _DogEditScreenState extends ConsumerState<DogEditScreen> {
     try {
       final dio = getIt<Dio>();
       final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(picked.path,
-            filename: 'dog_photo.jpg'),
+        'file': await MultipartFile.fromFile(
+          picked.path,
+          filename: 'dog_photo.jpg',
+        ),
       });
-      final response = await dio
-          .post<Map<String, dynamic>>('/upload/dog-photo', data: formData);
+      final response = await dio.post<Map<String, dynamic>>(
+        '/upload/dog-photo',
+        data: formData,
+      );
       setState(() => _photoUrl = response.data?['url'] as String?);
     } catch (e) {
-      DebugLogger.log('UPLOAD', 'Photo upload failed: $e',
-          level: LogLevel.error);
+      DebugLogger.log(
+        'UPLOAD',
+        'Photo upload failed: $e',
+        level: LogLevel.error,
+      );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Erreur upload photo.'),
-          backgroundColor: Colors.red,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erreur upload photo.'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
       setState(() => _newPhoto = null);
     } finally {
@@ -127,11 +138,13 @@ class _DogEditScreenState extends ConsumerState<DogEditScreen> {
 
     final breed = _selectedBreed == 'Autre'
         ? (_customBreedCtrl.text.trim().isEmpty
-            ? null
-            : _customBreedCtrl.text.trim())
+              ? null
+              : _customBreedCtrl.text.trim())
         : _selectedBreed;
 
-    final ok = await ref.read(dogProvider(widget.dogId).notifier).save(
+    final ok = await ref
+        .read(dogProvider(widget.dogId).notifier)
+        .save(
           name: _nameCtrl.text.trim(),
           breed: breed,
           weight: _weight,
@@ -144,10 +157,12 @@ class _DogEditScreenState extends ConsumerState<DogEditScreen> {
     if (ok) {
       context.pop();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Erreur lors de la sauvegarde.'),
-        backgroundColor: Colors.red,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Erreur lors de la sauvegarde.'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -170,9 +185,10 @@ class _DogEditScreenState extends ConsumerState<DogEditScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.cardBg,
         surfaceTintColor: Colors.transparent,
-        title: const Text('Modifier le profil',
-            style:
-                TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+        title: const Text(
+          'Modifier le profil',
+          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+        ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(2),
           child: Container(height: 2, color: AppColors.border),
@@ -184,17 +200,20 @@ class _DogEditScreenState extends ConsumerState<DogEditScreen> {
                 ? const Padding(
                     padding: EdgeInsets.all(14),
                     child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2)),
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
                   )
                 : TextButton(
                     onPressed: _submit,
-                    child: Text('Enregistrer',
-                        style: TextStyle(
-                            color: AppColors.orange,
-                            fontWeight: FontWeight.w900)),
+                    child: Text(
+                      'Enregistrer',
+                      style: TextStyle(
+                        color: AppColors.orange,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
                   ),
           ),
         ],
@@ -214,67 +233,79 @@ class _DogEditScreenState extends ConsumerState<DogEditScreen> {
             ),
             const SizedBox(height: 24),
 
-            _FormCard(children: [
-              _FieldLabel('Nom *'),
-              _buildNameField(),
-              const SizedBox(height: 16),
-              _FieldLabel('Race'),
-              _buildBreedDropdown(),
-              if (_selectedBreed == 'Autre') ...[
-                const SizedBox(height: 10),
-                _buildCustomBreedField(),
+            _FormCard(
+              children: [
+                _FieldLabel('Nom *'),
+                _buildNameField(),
+                const SizedBox(height: 16),
+                _FieldLabel('Race'),
+                _buildBreedDropdown(),
+                if (_selectedBreed == 'Autre') ...[
+                  const SizedBox(height: 10),
+                  _buildCustomBreedField(),
+                ],
               ],
-            ]),
+            ),
             const SizedBox(height: 16),
 
-            _FormCard(children: [
-              _FieldLabel('Sexe'),
-              const SizedBox(height: 8),
-              _SexSelector(
-                selected: _sex,
-                onChanged: (v) => setState(() => _sex = v),
-              ),
-              const SizedBox(height: 16),
-              _FieldLabel('Date de naissance'),
-              const SizedBox(height: 8),
-              _DatePickerTile(
-                date: _birthDate,
-                onTap: _pickDate,
-              ),
-            ]),
+            _FormCard(
+              children: [
+                _FieldLabel('Sexe'),
+                const SizedBox(height: 8),
+                _SexSelector(
+                  selected: _sex,
+                  onChanged: (v) => setState(() => _sex = v),
+                ),
+                const SizedBox(height: 16),
+                _FieldLabel('Date de naissance'),
+                const SizedBox(height: 8),
+                _DatePickerTile(date: _birthDate, onTap: _pickDate),
+              ],
+            ),
             const SizedBox(height: 16),
 
-            _FormCard(children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _FieldLabel('Poids'),
-                  Text(
-                    '${_weight.toStringAsFixed(1)} kg',
-                    style: TextStyle(
+            _FormCard(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _FieldLabel('Poids'),
+                    Text(
+                      '${_weight.toStringAsFixed(1)} kg',
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
-                        color: AppColors.orange),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              _WeightSlider(
-                value: _weight,
-                onChanged: (v) => setState(() => _weight = v),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('0.5 kg',
+                        color: AppColors.orange,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                _WeightSlider(
+                  value: _weight,
+                  onChanged: (v) => setState(() => _weight = v),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '0.5 kg',
                       style: TextStyle(
-                          fontSize: 11, color: AppColors.textMuted)),
-                  Text('80 kg',
+                        fontSize: 11,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                    Text(
+                      '80 kg',
                       style: TextStyle(
-                          fontSize: 11, color: AppColors.textMuted)),
-                ],
-              ),
-            ]),
+                        fontSize: 11,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
             const SizedBox(height: 32),
           ],
         ),
@@ -283,83 +314,84 @@ class _DogEditScreenState extends ConsumerState<DogEditScreen> {
   }
 
   Widget _buildNameField() => TextFormField(
-        controller: _nameCtrl,
-        textCapitalization: TextCapitalization.words,
-        validator: (v) {
-          if (v == null || v.trim().isEmpty) return 'Requis';
-          if (v.trim().length < 2) return 'Minimum 2 caractères';
-          if (v.trim().length > 30) return 'Maximum 30 caractères';
-          final validName = RegExp(r"^[a-zA-ZÀ-ÿ\s'\-]+$");
-          if (!validName.hasMatch(v.trim())) return 'Lettres uniquement';
-          return null;
-        },
-        style:
-            const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-        decoration: _inputDecoration('Ex : Bucky'),
-      );
+    controller: _nameCtrl,
+    textCapitalization: TextCapitalization.words,
+    validator: (v) {
+      if (v == null || v.trim().isEmpty) return 'Requis';
+      if (v.trim().length < 2) return 'Minimum 2 caractères';
+      if (v.trim().length > 30) return 'Maximum 30 caractères';
+      final validName = RegExp(r"^[a-zA-ZÀ-ÿ\s'\-]+$");
+      if (!validName.hasMatch(v.trim())) return 'Lettres uniquement';
+      return null;
+    },
+    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+    decoration: _inputDecoration('Ex : Bucky'),
+  );
 
   Widget _buildBreedDropdown() => DropdownButtonFormField<String>(
-        value: _selectedBreed,
-        hint: Text('Sélectionner une race',
-            style: TextStyle(
-                color: AppColors.textMuted,
-                fontWeight: FontWeight.w600)),
-        decoration: _inputDecoration(''),
-        isExpanded: true,
-        items: DogBreeds.all
-            .map((b) => DropdownMenuItem(
-                  value: b,
-                  child: Text(b,
-                      style: const TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w700)),
-                ))
-            .toList(),
-        onChanged: (v) => setState(() {
-          _selectedBreed = v;
-          if (v != 'Autre') _customBreedCtrl.clear();
-        }),
-      );
+    value: _selectedBreed,
+    hint: Text(
+      'Sélectionner une race',
+      style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w600),
+    ),
+    decoration: _inputDecoration(''),
+    isExpanded: true,
+    items: DogBreeds.all
+        .map(
+          (b) => DropdownMenuItem(
+            value: b,
+            child: Text(
+              b,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+            ),
+          ),
+        )
+        .toList(),
+    onChanged: (v) => setState(() {
+      _selectedBreed = v;
+      if (v != 'Autre') _customBreedCtrl.clear();
+    }),
+  );
 
   Widget _buildCustomBreedField() => TextFormField(
-        controller: _customBreedCtrl,
-        textCapitalization: TextCapitalization.words,
-        validator: (v) {
-          if (_selectedBreed == 'Autre' &&
-              (v == null || v.trim().isEmpty)) {
-            return 'Précisez la race';
-          }
-          return null;
-        },
-        style:
-            const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-        decoration: _inputDecoration('Précisez la race...'),
-      );
+    controller: _customBreedCtrl,
+    textCapitalization: TextCapitalization.words,
+    validator: (v) {
+      if (_selectedBreed == 'Autre' && (v == null || v.trim().isEmpty)) {
+        return 'Précisez la race';
+      }
+      return null;
+    },
+    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+    decoration: _inputDecoration('Précisez la race...'),
+  );
 
   InputDecoration _inputDecoration(String hint) => InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(
-            color: AppColors.textMuted, fontWeight: FontWeight.w600),
-        filled: true,
-        fillColor: AppColors.bg,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        border: OutlineInputBorder(
-          borderRadius: AppDimensions.borderRadiusSm,
-          borderSide: BorderSide(color: AppColors.border, width: 2),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: AppDimensions.borderRadiusSm,
-          borderSide: BorderSide(color: AppColors.border, width: 2),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: AppDimensions.borderRadiusSm,
-          borderSide: BorderSide(color: AppColors.orange, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: AppDimensions.borderRadiusSm,
-          borderSide: const BorderSide(color: Colors.red, width: 2),
-        ),
-      );
+    hintText: hint,
+    hintStyle: TextStyle(
+      color: AppColors.textMuted,
+      fontWeight: FontWeight.w600,
+    ),
+    filled: true,
+    fillColor: AppColors.bg,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    border: OutlineInputBorder(
+      borderRadius: AppDimensions.borderRadiusSm,
+      borderSide: BorderSide(color: AppColors.border, width: 2),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: AppDimensions.borderRadiusSm,
+      borderSide: BorderSide(color: AppColors.border, width: 2),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: AppDimensions.borderRadiusSm,
+      borderSide: BorderSide(color: AppColors.orange, width: 2),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: AppDimensions.borderRadiusSm,
+      borderSide: const BorderSide(color: Colors.red, width: 2),
+    ),
+  );
 }
 
 class _PhotoPicker extends StatelessWidget {
@@ -392,17 +424,18 @@ class _PhotoPicker extends StatelessWidget {
               child: uploading
                   ? const Center(child: CircularProgressIndicator())
                   : newPhoto != null
-                      ? Image.file(newPhoto!, fit: BoxFit.cover)
-                      : existingUrl != null && existingUrl!.isNotEmpty
-                          ? Image.network(existingUrl!, fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const Center(
-                                    child: Text('🐕',
-                                        style:
-                                            TextStyle(fontSize: 36)),
-                                  ))
-                          : const Center(
-                              child: Text('🐕',
-                                  style: TextStyle(fontSize: 36))),
+                  ? Image.file(newPhoto!, fit: BoxFit.cover)
+                  : existingUrl != null && existingUrl!.isNotEmpty
+                  ? Image.network(
+                      existingUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Center(
+                        child: Text('🐕', style: TextStyle(fontSize: 36)),
+                      ),
+                    )
+                  : const Center(
+                      child: Text('🐕', style: TextStyle(fontSize: 36)),
+                    ),
             ),
           ),
           Positioned(
@@ -416,8 +449,11 @@ class _PhotoPicker extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white, width: 2),
               ),
-              child: const Icon(Icons.camera_alt,
-                  size: 13, color: Colors.white),
+              child: const Icon(
+                Icons.camera_alt,
+                size: 13,
+                color: Colors.white,
+              ),
             ),
           ),
         ],
@@ -429,26 +465,26 @@ class _PhotoPicker extends StatelessWidget {
 class _SexSelector extends StatelessWidget {
   final DogSex? selected;
   final ValueChanged<DogSex?> onChanged;
-  const _SexSelector(
-      {required this.selected, required this.onChanged});
+  const _SexSelector({required this.selected, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
-    return Row(children: [
-      _SexChip(
-        label: '♂ Mâle',
-        selected: selected == DogSex.male,
-        onTap: () =>
-            onChanged(selected == DogSex.male ? null : DogSex.male),
-      ),
-      const SizedBox(width: 10),
-      _SexChip(
-        label: '♀ Femelle',
-        selected: selected == DogSex.female,
-        onTap: () => onChanged(
-            selected == DogSex.female ? null : DogSex.female),
-      ),
-    ]);
+    return Row(
+      children: [
+        _SexChip(
+          label: '♂ Mâle',
+          selected: selected == DogSex.male,
+          onTap: () => onChanged(selected == DogSex.male ? null : DogSex.male),
+        ),
+        const SizedBox(width: 10),
+        _SexChip(
+          label: '♀ Femelle',
+          selected: selected == DogSex.female,
+          onTap: () =>
+              onChanged(selected == DogSex.female ? null : DogSex.female),
+        ),
+      ],
+    );
   }
 }
 
@@ -456,18 +492,18 @@ class _SexChip extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  const _SexChip(
-      {required this.label,
-      required this.selected,
-      required this.onTap});
+  const _SexChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
           color: selected ? AppColors.orange : AppColors.bg,
           border: Border.all(
@@ -476,12 +512,14 @@ class _SexChip extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(20),
         ),
-        child: Text(label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: selected ? Colors.white : AppColors.text,
-            )),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+            color: selected ? Colors.white : AppColors.text,
+          ),
+        ),
       ),
     );
   }
@@ -497,36 +535,33 @@ class _DatePickerTile extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
           color: AppColors.bg,
           border: Border.all(color: AppColors.border, width: 2),
           borderRadius: AppDimensions.borderRadiusSm,
         ),
-        child: Row(children: [
-          Icon(Icons.calendar_today,
-              size: 18, color: AppColors.textMuted),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              date != null
-                  ? '${date!.day.toString().padLeft(2, '0')}/'
-                      '${date!.month.toString().padLeft(2, '0')}/'
-                      '${date!.year}'
-                  : 'Sélectionner une date',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: date != null
-                    ? AppColors.text
-                    : AppColors.textMuted,
+        child: Row(
+          children: [
+            Icon(Icons.calendar_today, size: 18, color: AppColors.textMuted),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                date != null
+                    ? '${date!.day.toString().padLeft(2, '0')}/'
+                          '${date!.month.toString().padLeft(2, '0')}/'
+                          '${date!.year}'
+                    : 'Sélectionner une date',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: date != null ? AppColors.text : AppColors.textMuted,
+                ),
               ),
             ),
-          ),
-          Icon(Icons.chevron_right,
-              size: 18, color: AppColors.textMuted),
-        ]),
+            Icon(Icons.chevron_right, size: 18, color: AppColors.textMuted),
+          ],
+        ),
       ),
     );
   }
@@ -535,8 +570,7 @@ class _DatePickerTile extends StatelessWidget {
 class _WeightSlider extends StatelessWidget {
   final double value;
   final ValueChanged<double> onChanged;
-  const _WeightSlider(
-      {required this.value, required this.onChanged});
+  const _WeightSlider({required this.value, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -546,8 +580,7 @@ class _WeightSlider extends StatelessWidget {
         inactiveTrackColor: AppColors.border,
         thumbColor: AppColors.orange,
         overlayColor: AppColors.orange.withOpacity(0.15),
-        thumbShape:
-            const RoundSliderThumbShape(enabledThumbRadius: 12),
+        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
         trackHeight: 4,
       ),
       child: Slider(
@@ -576,8 +609,9 @@ class _FormCard extends StatelessWidget {
         boxShadow: [AppDimensions.cardShadow],
       ),
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: children),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
     );
   }
 }
@@ -588,9 +622,10 @@ class _FieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: Text(text,
-            style: const TextStyle(
-                fontSize: 12, fontWeight: FontWeight.w900)),
-      );
+    padding: const EdgeInsets.only(bottom: 6),
+    child: Text(
+      text,
+      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+    ),
+  );
 }

@@ -12,6 +12,5 @@ class GetLocationHistoryUseCase {
     required DateTime from,
     required DateTime to,
     int limit = 500,
-  }) =>
-      _repo.getLocationHistory(dogId, from: from, to: to, limit: limit);
+  }) => _repo.getLocationHistory(dogId, from: from, to: to, limit: limit);
 }

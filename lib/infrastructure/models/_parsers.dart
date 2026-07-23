@@ -16,7 +16,7 @@ double? parseDecimal(dynamic v) {
   return null;
 }
 
-/// Parse un int nullable (SMALLINT Postgres peut arriver comme int ou String). 
+/// Parse un int nullable (SMALLINT Postgres peut arriver comme int ou String).
 int? parseInt(dynamic v) {
   if (v == null) return null;
   if (v is int) return v;

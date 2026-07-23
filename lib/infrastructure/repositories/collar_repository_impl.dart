@@ -13,9 +13,17 @@ class CollarRepositoryImpl implements ICollarRepository {
 
   @override
   Future<CollarStatus> getCollarStatus(String collarId) async {
-    return const CollarStatus(battery: 0, isOnline: false, lastSeen: null, firmware: null);
+    return const CollarStatus(
+      battery: 0,
+      isOnline: false,
+      lastSeen: null,
+      firmware: null,
+    );
   }
 
   @override
-  Future<void> triggerLostMode(String collarId, {required bool activate}) async {}
+  Future<void> triggerLostMode(
+    String collarId, {
+    required bool activate,
+  }) async {}
 }

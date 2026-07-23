@@ -76,7 +76,8 @@ class VetJournalScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Center(
-                        child: Text('🏥', style: TextStyle(fontSize: 24))),
+                      child: Text('🏥', style: TextStyle(fontSize: 24)),
+                    ),
                   ),
                   const SizedBox(width: 14),
                   const Expanded(

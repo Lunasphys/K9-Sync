@@ -61,5 +61,9 @@ abstract interface class IHealthRepository {
     DateTime? to,
   });
   Future<int> syncOfflineHealth(String dogId, List<HealthRecord> records);
-  Future<List<int>> exportPdfBytes(String dogId, {DateTime? from, DateTime? to});
+  Future<List<int>> exportPdfBytes(
+    String dogId, {
+    DateTime? from,
+    DateTime? to,
+  });
 }

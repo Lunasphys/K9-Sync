@@ -9,7 +9,9 @@ class CollarStatusScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Collier')),
-      body: Center(child: Text('Statut collier ${collarId ?? "?"} (squelette)')),
+      body: Center(
+        child: Text('Statut collier ${collarId ?? "?"} (squelette)'),
+      ),
     );
   }
 }

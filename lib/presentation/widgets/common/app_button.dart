@@ -20,12 +20,24 @@ class AppButton extends StatelessWidget {
     if (outlined) {
       return OutlinedButton(
         onPressed: loading ? null : onPressed,
-        child: loading ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)) : Text(label),
+        child: loading
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Text(label),
       );
     }
     return ElevatedButton(
       onPressed: loading ? null : onPressed,
-      child: loading ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)) : Text(label),
+      child: loading
+          ? const SizedBox(
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Text(label),
     );
   }
 }

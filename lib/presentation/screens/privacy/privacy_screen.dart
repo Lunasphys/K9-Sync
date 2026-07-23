@@ -22,7 +22,11 @@ class PrivacyScreen extends StatelessWidget {
               border: Border.all(color: AppColors.border, width: 1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.arrow_back, size: 18, color: AppColors.textMuted),
+            child: const Icon(
+              Icons.arrow_back,
+              size: 18,
+              color: AppColors.textMuted,
+            ),
           ),
           onPressed: () => context.pop(),
         ),
@@ -175,7 +179,14 @@ class PrivacyScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              if (trailing != null) trailing else const Icon(Icons.chevron_right, size: 14, color: AppColors.textMuted),
+              if (trailing != null)
+                trailing
+              else
+                const Icon(
+                  Icons.chevron_right,
+                  size: 14,
+                  color: AppColors.textMuted,
+                ),
             ],
           ),
         ),
@@ -208,7 +219,9 @@ class PrivacyScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [AppDimensions.cardShadowSm],
               ),
-              child: const Center(child: Text('📦', style: TextStyle(fontSize: 20))),
+              child: const Center(
+                child: Text('📦', style: TextStyle(fontSize: 20)),
+              ),
             ),
             const SizedBox(width: 14),
             const Expanded(
@@ -226,10 +239,7 @@ class PrivacyScreen extends StatelessWidget {
                   SizedBox(height: 2),
                   Text(
                     'Archive ZIP · JSON + CSV · sous 30 jours',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textMuted,
-                    ),
+                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                   ),
                 ],
               ),
@@ -283,7 +293,10 @@ class PrivacyScreen extends StatelessWidget {
           children: [
             for (var i = 0; i < items.length; i++) ...[
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -313,9 +326,14 @@ class PrivacyScreen extends StatelessWidget {
                       ],
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: items[i].$3 == 'Indéfini' ? AppColors.greenMint : AppColors.blueLight,
+                        color: items[i].$3 == 'Indéfini'
+                            ? AppColors.greenMint
+                            : AppColors.blueLight,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -323,7 +341,9 @@ class PrivacyScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
-                          color: items[i].$3 == 'Indéfini' ? AppColors.greenStatus : AppColors.blue,
+                          color: items[i].$3 == 'Indéfini'
+                              ? AppColors.greenStatus
+                              : AppColors.blue,
                         ),
                       ),
                     ),
@@ -398,10 +418,7 @@ class PrivacyScreen extends StatelessWidget {
               children: [
                 Text(
                   '••••••••',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textMuted,
-                  ),
+                  style: TextStyle(fontSize: 14, color: AppColors.textMuted),
                 ),
                 const Spacer(),
                 Icon(Icons.lock_outline, size: 16, color: AppColors.textMuted),
@@ -418,7 +435,9 @@ class PrivacyScreen extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.redDanger.withOpacity(0.25)),
+                  border: Border.all(
+                    color: AppColors.redDanger.withOpacity(0.25),
+                  ),
                   borderRadius: AppDimensions.borderRadiusSm,
                 ),
                 child: const Center(

@@ -13,8 +13,7 @@ import 'package:k9sync/injection.dart';
 // Hive box name — one box, each entry is a JSON-encoded Trail
 const _kBoxName = 'trails';
 
-final trailListProvider =
-    StateNotifierProvider<TrailNotifier, List<Trail>>(
+final trailListProvider = StateNotifierProvider<TrailNotifier, List<Trail>>(
   (ref) => TrailNotifier(),
 );
 
@@ -50,7 +49,8 @@ class TrailNotifier extends StateNotifier<List<Trail>> {
       final i = e.key;
       final p = e.value;
       final recordedAt = DateTime.fromMillisecondsSinceEpoch(
-          start + (step * i).round());
+        start + (step * i).round(),
+      );
       return GpsLocation(
         id: '${trail.id}_$i',
         collarId: _collarId,
@@ -67,8 +67,7 @@ class TrailNotifier extends StateNotifier<List<Trail>> {
     final trails = box.values
         .map((raw) {
           try {
-            return Trail.fromJson(
-                jsonDecode(raw) as Map<String, dynamic>);
+            return Trail.fromJson(jsonDecode(raw) as Map<String, dynamic>);
           } catch (_) {
             return null;
           }

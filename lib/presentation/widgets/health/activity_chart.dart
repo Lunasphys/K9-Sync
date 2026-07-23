@@ -10,9 +10,7 @@ class ActivityChart extends StatelessWidget {
     return Container(
       height: 200,
       padding: const EdgeInsets.all(16),
-      child: CustomPaint(
-        painter: _PlaceholderChartPainter(data: data ?? []),
-      ),
+      child: CustomPaint(painter: _PlaceholderChartPainter(data: data ?? [])),
     );
   }
 }

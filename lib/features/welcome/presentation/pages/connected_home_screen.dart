@@ -52,27 +52,42 @@ class _ConnectedHomeScreenState extends State<ConnectedHomeScreen> {
             Text(
               greeting,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.text,
-                  ),
+                fontWeight: FontWeight.bold,
+                color: AppColors.text,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
               'Utilise le menu en bas pour accéder à la Carte, Alertes, Santé et Profil.',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppColors.textMuted,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(color: AppColors.textMuted),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
-            _quickLink(context, Icons.map_outlined, 'Carte', AppRoutes.homeCarte),
+            _quickLink(
+              context,
+              Icons.map_outlined,
+              'Carte',
+              AppRoutes.homeCarte,
+            ),
             const SizedBox(height: 12),
             _quickLink(context, Icons.pets, 'Mes chiens', AppRoutes.dogList),
             const SizedBox(height: 12),
-            _quickLink(context, Icons.favorite_outline, 'Santé', AppRoutes.homeSante),
+            _quickLink(
+              context,
+              Icons.favorite_outline,
+              'Santé',
+              AppRoutes.homeSante,
+            ),
             const SizedBox(height: 12),
-            _quickLink(context, Icons.person_outline, 'Profil', AppRoutes.homeProfil),
+            _quickLink(
+              context,
+              Icons.person_outline,
+              'Profil',
+              AppRoutes.homeProfil,
+            ),
             const SizedBox(height: 24),
           ],
         ),
@@ -127,7 +142,12 @@ class _ConnectedHomeScreenState extends State<ConnectedHomeScreen> {
     }
   }
 
-  Widget _quickLink(BuildContext context, IconData icon, String label, String path) {
+  Widget _quickLink(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String path,
+  ) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -154,7 +174,11 @@ class _ConnectedHomeScreenState extends State<ConnectedHomeScreen> {
                 ),
               ),
               const Spacer(),
-              Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textMuted),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: AppColors.textMuted,
+              ),
             ],
           ),
         ),

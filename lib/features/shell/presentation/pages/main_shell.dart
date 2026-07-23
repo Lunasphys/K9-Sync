@@ -11,11 +11,27 @@ class MainShell extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
 
   static const List<ShellNavItem> navItems = [
-    ShellNavItem(icon: Icons.home_outlined, label: 'Maison', path: '/home/accueil'),
+    ShellNavItem(
+      icon: Icons.home_outlined,
+      label: 'Maison',
+      path: '/home/accueil',
+    ),
     ShellNavItem(icon: Icons.map_outlined, label: 'Carte', path: '/home/carte'),
-    ShellNavItem(icon: Icons.notifications_outlined, label: 'Alertes', path: '/home/alertes'),
-    ShellNavItem(icon: Icons.favorite_outline, label: 'Santé', path: '/home/sante'),
-    ShellNavItem(icon: Icons.person_outline, label: 'Profil', path: '/home/profil'),
+    ShellNavItem(
+      icon: Icons.notifications_outlined,
+      label: 'Alertes',
+      path: '/home/alertes',
+    ),
+    ShellNavItem(
+      icon: Icons.favorite_outline,
+      label: 'Santé',
+      path: '/home/sante',
+    ),
+    ShellNavItem(
+      icon: Icons.person_outline,
+      label: 'Profil',
+      path: '/home/profil',
+    ),
   ];
 
   @override
@@ -25,27 +41,21 @@ class MainShell extends ConsumerWidget {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: navigationShell.currentIndex,
         onTap: (index) => _onItemTapped(context, index),
-        items: navItems
-            .asMap()
-            .entries
-            .map(
-              (entry) {
-                final index = entry.key;
-                final item = entry.value;
-                if (index == 2) {
-                  return const BottomNavigationBarItem(
-                    icon: AlertsNavIcon(selected: false),
-                    label: 'Alertes',
-                    activeIcon: AlertsNavIcon(selected: true),
-                  );
-                }
-                return BottomNavigationBarItem(
-                  icon: Icon(item.icon),
-                  label: item.label,
-                );
-              },
-            )
-            .toList(),
+        items: navItems.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+          if (index == 2) {
+            return const BottomNavigationBarItem(
+              icon: AlertsNavIcon(selected: false),
+              label: 'Alertes',
+              activeIcon: AlertsNavIcon(selected: true),
+            );
+          }
+          return BottomNavigationBarItem(
+            icon: Icon(item.icon),
+            label: item.label,
+          );
+        }).toList(),
       ),
     );
   }
@@ -60,7 +70,11 @@ class ShellNavItem {
   final IconData icon;
   final String label;
   final String path;
-  const ShellNavItem({required this.icon, required this.label, required this.path});
+  const ShellNavItem({
+    required this.icon,
+    required this.label,
+    required this.path,
+  });
 }
 
 class AlertsNavIcon extends ConsumerWidget {
@@ -75,9 +89,7 @@ class AlertsNavIcon extends ConsumerWidget {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        Icon(
-          selected ? Icons.notifications : Icons.notifications_outlined,
-        ),
+        Icon(selected ? Icons.notifications : Icons.notifications_outlined),
         if (showBadge)
           Positioned(
             top: -4,
@@ -95,4 +107,3 @@ class AlertsNavIcon extends ConsumerWidget {
     );
   }
 }
-

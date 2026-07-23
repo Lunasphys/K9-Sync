@@ -30,6 +30,16 @@ class ActivityRecord extends Equatable {
   });
 
   @override
-  List<Object?> get props =>
-      [id, collarId, steps, activeMinutes, restMinutes, sleepPhase, anomalyDetected, anomalyType, recordedAt, syncedAt];
+  List<Object?> get props => [
+    id,
+    collarId,
+    steps,
+    activeMinutes,
+    restMinutes,
+    sleepPhase,
+    anomalyDetected,
+    anomalyType,
+    recordedAt,
+    syncedAt,
+  ];
 }

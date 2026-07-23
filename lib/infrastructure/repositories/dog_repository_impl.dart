@@ -17,9 +17,7 @@ class DogRepositoryImpl implements IDogRepository {
   Future<List<Dog>> getDogs() async {
     final response = await _dio.get<List<dynamic>>('/dogs');
     final list = response.data ?? [];
-    return list
-        .map((e) => _dogFromJson(e as Map<String, dynamic>))
-        .toList();
+    return list.map((e) => _dogFromJson(e as Map<String, dynamic>)).toList();
   }
 
   // ── GET /dogs/:dogId ────────────────────────────────────────────────────────
@@ -27,8 +25,7 @@ class DogRepositoryImpl implements IDogRepository {
   @override
   Future<Dog?> getDogById(String dogId) async {
     try {
-      final response =
-          await _dio.get<Map<String, dynamic>>('/dogs/$dogId');
+      final response = await _dio.get<Map<String, dynamic>>('/dogs/$dogId');
       return _dogFromJson(response.data!);
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) return null;
@@ -90,8 +87,7 @@ class DogRepositoryImpl implements IDogRepository {
   @override
   Future<List<UserDogAccess>> getDogUsers(String dogId) async {
     try {
-      final response =
-          await _dio.get<List<dynamic>>('/dogs/$dogId/users');
+      final response = await _dio.get<List<dynamic>>('/dogs/$dogId/users');
       final list = response.data ?? [];
       return list.map((e) {
         final m = e as Map<String, dynamic>;
@@ -106,8 +102,11 @@ class DogRepositoryImpl implements IDogRepository {
         );
       }).toList();
     } catch (e) {
-      DebugLogger.log('DOG_REPO', 'getDogUsers failed: $e',
-          level: LogLevel.warning);
+      DebugLogger.log(
+        'DOG_REPO',
+        'getDogUsers failed: $e',
+        level: LogLevel.warning,
+      );
       return [];
     }
   }
@@ -120,10 +119,10 @@ class DogRepositoryImpl implements IDogRepository {
     required String email,
     required UserDogRole role,
   }) async {
-    await _dio.post('/dogs/$dogId/invite', data: {
-      'email': email,
-      'role': role.name,
-    });
+    await _dio.post(
+      '/dogs/$dogId/invite',
+      data: {'email': email, 'role': role.name},
+    );
   }
 
   // ── DELETE /dogs/:dogId/users/:userId ───────────────────────────────────────
@@ -147,11 +146,13 @@ class DogRepositoryImpl implements IDogRepository {
           ? double.tryParse(j['weight'].toString())
           : null,
       sex: _parseSex(j['sex'] as String?),
-      allergies: (j['allergies'] as List<dynamic>?)
+      allergies:
+          (j['allergies'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           [],
-      characterTraits: (j['characterTraits'] as List<dynamic>?)
+      characterTraits:
+          (j['characterTraits'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           [],

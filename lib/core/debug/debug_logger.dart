@@ -53,10 +53,13 @@ class DebugLogger {
   }
 
   static void gps(String msg, {Object? data}) => log('GPS', msg, data: data);
-  static void health(String msg, {Object? data}) => log('HEALTH', msg, data: data);
-  static void collar(String msg, {Object? data}) => log('COLLAR', msg, data: data);
+  static void health(String msg, {Object? data}) =>
+      log('HEALTH', msg, data: data);
+  static void collar(String msg, {Object? data}) =>
+      log('COLLAR', msg, data: data);
   static void auth(String msg, {Object? data}) => log('AUTH', msg, data: data);
-  static void notif(String msg, {Object? data}) => log('NOTIF', msg, data: data);
+  static void notif(String msg, {Object? data}) =>
+      log('NOTIF', msg, data: data);
   static void sync(String msg, {Object? data}) => log('SYNC', msg, data: data);
   static void ui(String msg, {Object? data}) =>
       log('UI', msg, data: data, level: LogLevel.verbose);

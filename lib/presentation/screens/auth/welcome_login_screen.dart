@@ -30,9 +30,9 @@ class WelcomeLoginScreen extends StatelessWidget {
                   Text(
                     'Bienvenue !',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 26,
-                        ),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 26,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 6),
@@ -224,10 +224,7 @@ class WelcomeLoginScreen extends StatelessWidget {
               ),
               child: const Text(
                 'SALUT !',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                ),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
               ),
             ),
           ),
@@ -268,10 +265,7 @@ class _SocialButton extends StatelessWidget {
           child: Center(
             child: Text(
               label,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w900,
-              ),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
             ),
           ),
         ),

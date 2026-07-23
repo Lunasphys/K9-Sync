@@ -21,7 +21,15 @@ class GpsLocation extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, collarId, latitude, longitude, accuracy, recordedAt, syncedAt];
+  List<Object?> get props => [
+    id,
+    collarId,
+    latitude,
+    longitude,
+    accuracy,
+    recordedAt,
+    syncedAt,
+  ];
 }
 
 /// Trail = list of points for a walk.
@@ -43,5 +51,12 @@ class Trail extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, dogId, startAt, endAt, distanceMeters, pointCount];
+  List<Object?> get props => [
+    id,
+    dogId,
+    startAt,
+    endAt,
+    distanceMeters,
+    pointCount,
+  ];
 }

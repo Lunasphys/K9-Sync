@@ -56,32 +56,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(color: AppColors.border, width: 2),
         ),
-        title: const Text('Se déconnecter ?',
-            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+        title: const Text(
+          'Se déconnecter ?',
+          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
+        ),
         content: Text(
           'Vous devrez vous reconnecter pour accéder à vos données.',
           style: TextStyle(
-              fontSize: 13,
-              color: AppColors.textMuted,
-              fontWeight: FontWeight.w600),
+            fontSize: 13,
+            color: AppColors.textMuted,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Annuler',
-                style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textMuted)),
+            child: Text(
+              'Annuler',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: AppColors.textMuted,
+              ),
+            ),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
               _logout();
             },
-            child: const Text('Se déconnecter',
-                style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.redDanger)),
+            child: const Text(
+              'Se déconnecter',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                color: AppColors.redDanger,
+              ),
+            ),
           ),
         ],
       ),
@@ -100,9 +109,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               const Padding(
                 padding: EdgeInsets.fromLTRB(20, 16, 20, 12),
-                child: Text('Paramètres',
-                    style: TextStyle(
-                        fontSize: 26, fontWeight: FontWeight.w900)),
+                child: Text(
+                  'Paramètres',
+                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900),
+                ),
               ),
               _UserCard(user: _user),
               _sectionLabel('Mon chien'),
@@ -141,19 +151,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               _RgpdCard(),
               _sectionLabel('Compte'),
-              _LogoutButton(
-                isLoading: _isLoggingOut,
-                onTap: _confirmLogout,
-              ),
+              _LogoutButton(isLoading: _isLoggingOut, onTap: _confirmLogout),
               const SizedBox(height: 8),
               _DeleteButton(),
               const SizedBox(height: 16),
               Center(
-                child: Text('K9 Sync v1.0.0-mvp',
-                    style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textMuted,
-                        fontWeight: FontWeight.w600)),
+                child: Text(
+                  'K9 Sync v1.0.0-mvp',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ],
           ),
@@ -168,10 +178,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Text(
         text.toUpperCase(),
         style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.8,
-            color: AppColors.textMuted),
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.8,
+          color: AppColors.textMuted,
+        ),
       ),
     );
   }
@@ -185,7 +196,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Widget? trailingWidget,
     VoidCallback? onTap,
   }) {
-    final trailingContent = trailingWidget ??
+    final trailingContent =
+        trailingWidget ??
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -195,13 +207,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Text(
                   trailing,
                   style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: trailingColor ?? AppColors.textMuted),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: trailingColor ?? AppColors.textMuted,
+                  ),
                 ),
               ),
-            Icon(Icons.chevron_right,
-                color: AppColors.textMuted, size: 20),
+            Icon(Icons.chevron_right, color: AppColors.textMuted, size: 20),
           ],
         );
 
@@ -214,8 +226,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onTap: onTap,
           borderRadius: AppDimensions.borderRadiusSm,
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
             decoration: BoxDecoration(
               color: AppColors.cardBg,
               border: Border.all(color: AppColors.border, width: 2),
@@ -229,21 +240,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   height: 32,
                   decoration: BoxDecoration(
                     color: iconBg,
-                    border:
-                        Border.all(color: AppColors.border, width: 2),
+                    border: Border.all(color: AppColors.border, width: 2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Center(
-                      child: Text(icon,
-                          style: const TextStyle(fontSize: 16))),
+                    child: Text(icon, style: const TextStyle(fontSize: 16)),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                    child: Text(title,
-                        style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.text))),
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.text,
+                    ),
+                  ),
+                ),
                 trailingContent,
               ],
             ),
@@ -301,9 +315,10 @@ class _UserCard extends StatelessWidget {
               child: Text(
                 initials,
                 style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.orange),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.orange,
+                ),
               ),
             ),
           ),
@@ -312,22 +327,27 @@ class _UserCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name,
-                    style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white)),
-                Text(email,
-                    style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.white70,
-                        fontWeight: FontWeight.w600)),
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  email,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
           ),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: AppColors.cardBg,
               border: Border.all(color: AppColors.border, width: 2),
@@ -336,9 +356,10 @@ class _UserCard extends StatelessWidget {
             child: Text(
               plan == 'premium' ? '⭐ Pro' : 'Free',
               style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.orange),
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: AppColors.orange,
+              ),
             ),
           ),
         ],
@@ -348,10 +369,8 @@ class _UserCard extends StatelessWidget {
 
   String _initials(User? user) {
     if (user == null) return '?';
-    final f =
-        user.firstName.isNotEmpty ? user.firstName[0].toUpperCase() : '';
-    final l =
-        user.lastName.isNotEmpty ? user.lastName[0].toUpperCase() : '';
+    final f = user.firstName.isNotEmpty ? user.firstName[0].toUpperCase() : '';
+    final l = user.lastName.isNotEmpty ? user.lastName[0].toUpperCase() : '';
     return '$f$l';
   }
 }
@@ -373,17 +392,19 @@ class _RgpdCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('🔒 Confidentialité & Données',
-              style:
-                  TextStyle(fontSize: 13, fontWeight: FontWeight.w900)),
+          const Text(
+            '🔒 Confidentialité & Données',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+          ),
           const SizedBox(height: 4),
           Text(
             'Gérez vos consentements, téléchargez ou supprimez vos données.',
             style: TextStyle(
-                fontSize: 11,
-                color: AppColors.textMuted,
-                fontWeight: FontWeight.w600,
-                height: 1.4),
+              fontSize: 11,
+              color: AppColors.textMuted,
+              fontWeight: FontWeight.w600,
+              height: 1.4,
+            ),
           ),
           const SizedBox(height: 10),
           Row(
@@ -394,7 +415,9 @@ class _RgpdCard extends StatelessWidget {
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 7),
                     textStyle: const TextStyle(
-                        fontSize: 11, fontWeight: FontWeight.w800),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
                     foregroundColor: AppColors.text,
                     side: BorderSide(color: AppColors.border, width: 2),
                   ),
@@ -408,7 +431,9 @@ class _RgpdCard extends StatelessWidget {
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 7),
                     textStyle: const TextStyle(
-                        fontSize: 11, fontWeight: FontWeight.w800),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
                     foregroundColor: AppColors.text,
                     side: BorderSide(color: AppColors.border, width: 2),
                   ),
@@ -455,10 +480,14 @@ class _LogoutButton extends StatelessWidget {
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2.5),
                     )
-                  : const Text('Se déconnecter',
+                  : const Text(
+                      'Se déconnecter',
                       style: TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w800,
-                          color: AppColors.text)),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.text,
+                      ),
+                    ),
             ),
           ),
         ),
@@ -489,11 +518,14 @@ class _DeleteButton extends StatelessWidget {
               boxShadow: [AppDimensions.cardShadowSm],
             ),
             child: const Center(
-              child: Text('Supprimer mon compte',
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.redDanger)),
+              child: Text(
+                'Supprimer mon compte',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.redDanger,
+                ),
+              ),
             ),
           ),
         ),

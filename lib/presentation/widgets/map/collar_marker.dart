@@ -19,7 +19,13 @@ class CollarMarker extends StatelessWidget {
         children: [
           const Icon(Icons.pets, color: Colors.white, size: 20),
           const SizedBox(width: 4),
-          Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );

@@ -18,7 +18,10 @@ class HeartRateWidget extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(label, style: Theme.of(context).textTheme.bodySmall),
-            Text('${bpm ?? '--'} bpm', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              '${bpm ?? '--'} bpm',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
           ],
         ),
       ],

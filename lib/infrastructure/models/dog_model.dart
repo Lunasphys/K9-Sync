@@ -49,18 +49,18 @@ class DogModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        if (breed != null) 'breed': breed,
-        if (birthDate != null) 'birthDate': birthDate!.toIso8601String(),
-        if (weight != null) 'weightKg': weight,
-        if (sex != null) 'sex': sex,
-        'allergies': allergies,
-        'characterTraits': characterTraits,
-        if (photoUrl != null) 'photoUrl': photoUrl,
-        'createdAt': createdAt.toIso8601String(),
-        'updatedAt': updatedAt.toIso8601String(),
-      };
+    'id': id,
+    'name': name,
+    if (breed != null) 'breed': breed,
+    if (birthDate != null) 'birthDate': birthDate!.toIso8601String(),
+    if (weight != null) 'weightKg': weight,
+    if (sex != null) 'sex': sex,
+    'allergies': allergies,
+    'characterTraits': characterTraits,
+    if (photoUrl != null) 'photoUrl': photoUrl,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+  };
 
   static DogModel fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
@@ -72,7 +72,8 @@ class DogModel {
       weight: (data['weight'] as num?)?.toDouble(),
       sex: data['sex'] as String?,
       allergies: (data['allergies'] as List<dynamic>?)?.cast<String>() ?? [],
-      characterTraits: (data['characterTraits'] as List<dynamic>?)?.cast<String>() ?? [],
+      characterTraits:
+          (data['characterTraits'] as List<dynamic>?)?.cast<String>() ?? [],
       photoUrl: data['photoUrl'] as String?,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
@@ -80,42 +81,42 @@ class DogModel {
   }
 
   Map<String, dynamic> toFirestore() => {
-        'name': name,
-        'breed': breed,
-        'birthDate': birthDate != null ? Timestamp.fromDate(birthDate!) : null,
-        'weight': weight,
-        'sex': sex,
-        'allergies': allergies,
-        'characterTraits': characterTraits,
-        'photoUrl': photoUrl,
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
+    'name': name,
+    'breed': breed,
+    'birthDate': birthDate != null ? Timestamp.fromDate(birthDate!) : null,
+    'weight': weight,
+    'sex': sex,
+    'allergies': allergies,
+    'characterTraits': characterTraits,
+    'photoUrl': photoUrl,
+    'updatedAt': FieldValue.serverTimestamp(),
+  };
 
   static DogModel fromEntity(Dog e) => DogModel(
-        id: e.id,
-        name: e.name,
-        breed: e.breed,
-        birthDate: e.birthDate,
-        weight: e.weight,
-        sex: e.sex?.name,
-        allergies: e.allergies,
-        characterTraits: e.characterTraits,
-        photoUrl: e.photoUrl,
-        createdAt: e.createdAt,
-        updatedAt: e.updatedAt,
-      );
+    id: e.id,
+    name: e.name,
+    breed: e.breed,
+    birthDate: e.birthDate,
+    weight: e.weight,
+    sex: e.sex?.name,
+    allergies: e.allergies,
+    characterTraits: e.characterTraits,
+    photoUrl: e.photoUrl,
+    createdAt: e.createdAt,
+    updatedAt: e.updatedAt,
+  );
 
   Dog toEntity() => Dog(
-        id: id,
-        name: name,
-        breed: breed,
-        birthDate: birthDate,
-        weight: weight,
-        sex: sex == 'male' ? DogSex.male : (sex == 'female' ? DogSex.female : null),
-        allergies: allergies,
-        characterTraits: characterTraits,
-        photoUrl: photoUrl,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-      );
+    id: id,
+    name: name,
+    breed: breed,
+    birthDate: birthDate,
+    weight: weight,
+    sex: sex == 'male' ? DogSex.male : (sex == 'female' ? DogSex.female : null),
+    allergies: allergies,
+    characterTraits: characterTraits,
+    photoUrl: photoUrl,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+  );
 }

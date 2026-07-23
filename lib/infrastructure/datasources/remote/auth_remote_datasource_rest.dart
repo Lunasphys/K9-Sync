@@ -32,7 +32,10 @@ class AuthRemoteDatasourceRest implements AuthRemoteDatasource {
         },
       );
       final r = _parseAuthResponse(res.data);
-      await _storage.setTokens(accessToken: r.accessToken, refreshToken: r.refreshToken);
+      await _storage.setTokens(
+        accessToken: r.accessToken,
+        refreshToken: r.refreshToken,
+      );
       DebugLogger.auth('Register OK id=${r.user.id}');
       return r;
     } on DioException catch (e) {
@@ -41,14 +44,20 @@ class AuthRemoteDatasourceRest implements AuthRemoteDatasource {
   }
 
   @override
-  Future<AuthResponse> login({required String email, required String password}) async {
+  Future<AuthResponse> login({
+    required String email,
+    required String password,
+  }) async {
     try {
       final res = await _dioClient.dio.post<Map<String, dynamic>>(
         ApiConstants.authLogin,
         data: {'email': email, 'password': password},
       );
       final r = _parseAuthResponse(res.data);
-      await _storage.setTokens(accessToken: r.accessToken, refreshToken: r.refreshToken);
+      await _storage.setTokens(
+        accessToken: r.accessToken,
+        refreshToken: r.refreshToken,
+      );
       DebugLogger.auth('Login OK id=${r.user.id}');
       return r;
     } on DioException catch (e) {
@@ -97,7 +106,9 @@ class AuthRemoteDatasourceRest implements AuthRemoteDatasource {
   @override
   Future<UserModel?> getMe() async {
     try {
-      final res = await _dioClient.dio.get<Map<String, dynamic>>(ApiConstants.userMe);
+      final res = await _dioClient.dio.get<Map<String, dynamic>>(
+        ApiConstants.userMe,
+      );
       final data = res.data;
       if (data == null) return null;
       final userJson = data['user'] as Map<String, dynamic>? ?? data;
@@ -118,7 +129,10 @@ class AuthRemoteDatasourceRest implements AuthRemoteDatasource {
         data: {'refreshToken': refresh},
       );
       final r = _parseAuthResponse(res.data);
-      await _storage.setTokens(accessToken: r.accessToken, refreshToken: r.refreshToken);
+      await _storage.setTokens(
+        accessToken: r.accessToken,
+        refreshToken: r.refreshToken,
+      );
       return r;
     } on DioException catch (e) {
       await _storage.clear();

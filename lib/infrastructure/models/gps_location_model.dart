@@ -38,11 +38,11 @@ class GpsLocationModel {
 
   /// Pour POST /gps/sync (sync offline).
   Map<String, dynamic> toJson() => {
-        'latitude': latitude,
-        'longitude': longitude,
-        if (accuracy != null) 'accuracy': accuracy,
-        'recordedAt': recordedAt.toIso8601String(),
-      };
+    'latitude': latitude,
+    'longitude': longitude,
+    if (accuracy != null) 'accuracy': accuracy,
+    'recordedAt': recordedAt.toIso8601String(),
+  };
 
   static GpsLocationModel fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
@@ -52,39 +52,42 @@ class GpsLocationModel {
       latitude: (data['latitude'] as num?)?.toDouble() ?? 0,
       longitude: (data['longitude'] as num?)?.toDouble() ?? 0,
       accuracy: (data['accuracy'] as num?)?.toDouble(),
-      recordedAt: (data['recordedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      recordedAt:
+          (data['recordedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       syncedAt: (data['syncedAt'] as Timestamp?)?.toDate(),
     );
   }
 
   Map<String, dynamic> toFirestore() => {
-        'collarId': collarId,
-        'latitude': latitude,
-        'longitude': longitude,
-        'accuracy': accuracy,
-        'recordedAt': Timestamp.fromDate(recordedAt),
-        'syncedAt': syncedAt != null ? Timestamp.fromDate(syncedAt!) : FieldValue.serverTimestamp(),
-      };
+    'collarId': collarId,
+    'latitude': latitude,
+    'longitude': longitude,
+    'accuracy': accuracy,
+    'recordedAt': Timestamp.fromDate(recordedAt),
+    'syncedAt': syncedAt != null
+        ? Timestamp.fromDate(syncedAt!)
+        : FieldValue.serverTimestamp(),
+  };
 
   static GpsLocationModel fromEntity(GpsLocation e) => GpsLocationModel(
-        id: e.id,
-        collarId: e.collarId,
-        latitude: e.latitude,
-        longitude: e.longitude,
-        accuracy: e.accuracy,
-        recordedAt: e.recordedAt,
-        syncedAt: e.syncedAt,
-      );
+    id: e.id,
+    collarId: e.collarId,
+    latitude: e.latitude,
+    longitude: e.longitude,
+    accuracy: e.accuracy,
+    recordedAt: e.recordedAt,
+    syncedAt: e.syncedAt,
+  );
 
   GpsLocation toEntity() => GpsLocation(
-        id: id,
-        collarId: collarId,
-        latitude: latitude,
-        longitude: longitude,
-        accuracy: accuracy,
-        recordedAt: recordedAt,
-        syncedAt: syncedAt,
-      );
+    id: id,
+    collarId: collarId,
+    latitude: latitude,
+    longitude: longitude,
+    accuracy: accuracy,
+    recordedAt: recordedAt,
+    syncedAt: syncedAt,
+  );
 }
 
 /// DTO Trail — REST (Prisma distanceM, durationS, pointsCount, points optionnel).
@@ -121,17 +124,21 @@ class TrailModel {
       points: json['points'] == null
           ? []
           : (json['points'] as List)
-              .map((p) => GpsLocationModel.fromJson(p as Map<String, dynamic>).toEntity())
-              .toList(),
+                .map(
+                  (p) => GpsLocationModel.fromJson(
+                    p as Map<String, dynamic>,
+                  ).toEntity(),
+                )
+                .toList(),
     );
   }
 
   Trail toEntity(String dogId) => Trail(
-        id: id,
-        dogId: dogId,
-        startAt: startedAt,
-        endAt: endedAt,
-        distanceMeters: distanceM.toDouble(),
-        pointCount: pointsCount,
-      );
+    id: id,
+    dogId: dogId,
+    startAt: startedAt,
+    endAt: endedAt,
+    distanceMeters: distanceM.toDouble(),
+    pointCount: pointsCount,
+  );
 }

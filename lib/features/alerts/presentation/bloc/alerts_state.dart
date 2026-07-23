@@ -24,14 +24,14 @@ class AlertItem extends Equatable {
   });
 
   AlertItem copyWith({bool? isRead}) => AlertItem(
-        id: id,
-        category: category,
-        title: title,
-        subtitle: subtitle,
-        triggeredAt: triggeredAt,
-        isRead: isRead ?? this.isRead,
-        isPriority: isPriority,
-      );
+    id: id,
+    category: category,
+    title: title,
+    subtitle: subtitle,
+    triggeredAt: triggeredAt,
+    isRead: isRead ?? this.isRead,
+    isPriority: isPriority,
+  );
 
   @override
   List<Object?> get props => [id, isRead];
@@ -72,6 +72,10 @@ class AlertsState extends Equatable {
   }
 
   @override
-  List<Object?> get props =>
-      [selectedTabIndex, silentMode, realtimeTracking, alerts];
+  List<Object?> get props => [
+    selectedTabIndex,
+    silentMode,
+    realtimeTracking,
+    alerts,
+  ];
 }

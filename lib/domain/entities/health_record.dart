@@ -19,5 +19,12 @@ class HealthRecord extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, collarId, heartRate, temperature, recordedAt, syncedAt];
+  List<Object?> get props => [
+    id,
+    collarId,
+    heartRate,
+    temperature,
+    recordedAt,
+    syncedAt,
+  ];
 }

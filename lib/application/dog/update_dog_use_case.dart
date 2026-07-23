@@ -6,5 +6,6 @@ class UpdateDogUseCase {
   UpdateDogUseCase(this._repo);
   final IDogRepository _repo;
 
-  Future<Dog> call(String dogId, UpdateDogParams params) => _repo.updateDog(dogId, params);
+  Future<Dog> call(String dogId, UpdateDogParams params) =>
+      _repo.updateDog(dogId, params);
 }

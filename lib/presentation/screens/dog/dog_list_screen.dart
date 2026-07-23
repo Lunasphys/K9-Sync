@@ -138,14 +138,13 @@ class _DogCard extends StatelessWidget {
                             dog.photoUrl!,
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => const Center(
-                              child: Text('🐕',
-                                  style: TextStyle(fontSize: 28)),
+                              child: Text('🐕', style: TextStyle(fontSize: 28)),
                             ),
                           ),
                         )
                       : const Center(
-                          child: Text('🐕',
-                              style: TextStyle(fontSize: 28))),
+                          child: Text('🐕', style: TextStyle(fontSize: 28)),
+                        ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -164,7 +163,9 @@ class _DogCard extends StatelessWidget {
                       if (dog.breed != null)
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 3),
+                            horizontal: 10,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.surface,
                             borderRadius: BorderRadius.circular(8),
@@ -181,8 +182,11 @@ class _DogCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right,
-                    color: AppColors.textMuted, size: 20),
+                const Icon(
+                  Icons.chevron_right,
+                  color: AppColors.textMuted,
+                  size: 20,
+                ),
               ],
             ),
           ),
@@ -226,21 +230,26 @@ class _AddDogCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
               ),
               child: const Center(
-                  child: Text('➕', style: TextStyle(fontSize: 22))),
+                child: Text('➕', style: TextStyle(fontSize: 22)),
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Ajouter un chien',
-                      style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.text)),
-                  Text('Associer un nouveau collier',
-                      style: TextStyle(
-                          fontSize: 12, color: AppColors.textMuted)),
+                  const Text(
+                    'Ajouter un chien',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.text,
+                    ),
+                  ),
+                  Text(
+                    'Associer un nouveau collier',
+                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  ),
                 ],
               ),
             ),
@@ -262,13 +271,15 @@ class _EmptyState extends StatelessWidget {
         children: [
           const Text('🐾', style: TextStyle(fontSize: 48)),
           const SizedBox(height: 16),
-          const Text('Aucun chien pour l\'instant',
-              style:
-                  TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+          const Text(
+            'Aucun chien pour l\'instant',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+          ),
           const SizedBox(height: 8),
-          Text('Ajoutez votre premier chien ci-dessous',
-              style:
-                  TextStyle(fontSize: 13, color: AppColors.textMuted)),
+          Text(
+            'Ajoutez votre premier chien ci-dessous',
+            style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+          ),
         ],
       ),
     );
@@ -290,12 +301,13 @@ class _ErrorBody extends StatelessWidget {
         children: [
           const Text('😕', style: TextStyle(fontSize: 48)),
           const SizedBox(height: 16),
-          Text(message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.w700)),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 16),
-          ElevatedButton(
-              onPressed: onRetry, child: const Text('Réessayer')),
+          ElevatedButton(onPressed: onRetry, child: const Text('Réessayer')),
         ],
       ),
     );
@@ -315,8 +327,7 @@ class _BackBtn extends StatelessWidget {
         border: Border.all(color: AppColors.border, width: 2),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: const Icon(Icons.arrow_back,
-          size: 18, color: AppColors.textMuted),
+      child: const Icon(Icons.arrow_back, size: 18, color: AppColors.textMuted),
     );
   }
 }

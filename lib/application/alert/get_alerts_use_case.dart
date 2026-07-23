@@ -7,6 +7,9 @@ class GetAlertsUseCase {
 
   GetAlertsUseCase(this._repo);
 
-  Future<List<Alert>> call(String dogId, {bool unreadOnly = false, int limit = 50}) =>
-      _repo.getAlerts(dogId, unreadOnly: unreadOnly, limit: limit);
+  Future<List<Alert>> call(
+    String dogId, {
+    bool unreadOnly = false,
+    int limit = 50,
+  }) => _repo.getAlerts(dogId, unreadOnly: unreadOnly, limit: limit);
 }

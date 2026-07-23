@@ -29,7 +29,19 @@ class Dog extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, name, breed, birthDate, weight, sex, allergies, characterTraits, photoUrl, createdAt, updatedAt];
+  List<Object?> get props => [
+    id,
+    name,
+    breed,
+    birthDate,
+    weight,
+    sex,
+    allergies,
+    characterTraits,
+    photoUrl,
+    createdAt,
+    updatedAt,
+  ];
 }
 
 enum DogSex { male, female }

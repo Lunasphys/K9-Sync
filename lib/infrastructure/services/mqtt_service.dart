@@ -41,10 +41,15 @@ class MqttService implements IMqttService {
 
     final broker = String.fromEnvironment(
       'MQTT_BROKER_URL',
-      defaultValue: '192.168.1.113',
+      // Previous value: '192.168.1.113' (a stale LAN IP from a prior dev
+      // machine — unreachable from the emulator/anywhere else).
+      // 10.0.2.2 is the Android emulator's alias for the host machine's
+      // localhost, where Mosquitto runs (docker compose, port 1883).
+      defaultValue: '10.0.2.2',
     );
     const port = 1883;
-    final clientId = 'k9sync_flutter_${_collarSerial}_${DateTime.now().millisecondsSinceEpoch}';
+    final clientId =
+        'k9sync_flutter_${_collarSerial}_${DateTime.now().millisecondsSinceEpoch}';
 
     // Cancel previous subscriptions before creating a new client
     for (final sub in _subscriptions) {
@@ -105,7 +110,10 @@ class MqttService implements IMqttService {
   }
 
   @override
-  Future<void> publishLostMode(String collarSerial, {required bool active}) async {
+  Future<void> publishLostMode(
+    String collarSerial, {
+    required bool active,
+  }) async {
     _publish(
       'k9sync/collar/$collarSerial/cmd/lost-mode',
       jsonEncode({'active': active}),
@@ -113,7 +121,10 @@ class MqttService implements IMqttService {
   }
 
   @override
-  Future<void> publishBeep(String collarSerial, {required int durationMs}) async {
+  Future<void> publishBeep(
+    String collarSerial, {
+    required int durationMs,
+  }) async {
     _publish(
       'k9sync/collar/$collarSerial/cmd/beep',
       jsonEncode({'duration': durationMs}),

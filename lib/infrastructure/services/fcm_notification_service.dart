@@ -9,10 +9,16 @@ class FcmNotificationService implements INotificationService {
   }
 
   @override
-  Future<void> sendToUser({required String userId, required NotificationPayload payload}) async {}
+  Future<void> sendToUser({
+    required String userId,
+    required NotificationPayload payload,
+  }) async {}
 
   @override
-  Future<void> sendToGroup({required List<String> userIds, required NotificationPayload payload}) async {}
+  Future<void> sendToGroup({
+    required List<String> userIds,
+    required NotificationPayload payload,
+  }) async {}
 
   @override
   Future<void> subscribeToTopic(String topic) async {}
