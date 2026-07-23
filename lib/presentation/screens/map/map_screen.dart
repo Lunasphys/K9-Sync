@@ -34,7 +34,8 @@ class _GpsPoint {
       lat: (json['latitude'] as num).toDouble(),
       lng: (json['longitude'] as num).toDouble(),
       accuracy: (json['accuracy'] as num?)?.toDouble() ?? 0,
-      recordedAt: DateTime.tryParse(json['recordedAt'] as String? ?? '') ??
+      recordedAt:
+          DateTime.tryParse(json['recordedAt'] as String? ?? '') ??
           DateTime.now(),
     );
   }
@@ -268,41 +269,52 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   Positioned(
                     top: 60,
                     right: 16,
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() => _followDog = true);
-                        if (_lastGps != null) {
-                          _mapController.move(
-                            LatLng(_lastGps!.lat, _lastGps!.lng),
-                            _mapController.camera.zoom,
-                          );
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.cardBg,
-                          border: Border.all(
-                              color: AppColors.border, width: 2),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [AppDimensions.cardShadowSm],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.my_location,
-                                size: 14, color: AppColors.orange),
-                            const SizedBox(width: 5),
-                            Text(
-                              'Suivre $_dogName',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.text,
-                              ),
+                    child: Semantics(
+                      button: true,
+                      label: 'Recentrer la carte sur $_dogName',
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() => _followDog = true);
+                          if (_lastGps != null) {
+                            _mapController.move(
+                              LatLng(_lastGps!.lat, _lastGps!.lng),
+                              _mapController.camera.zoom,
+                            );
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.cardBg,
+                            border: Border.all(
+                              color: AppColors.border,
+                              width: 2,
                             ),
-                          ],
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [AppDimensions.cardShadowSm],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.my_location,
+                                size: 14,
+                                color: AppColors.orange,
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                'Suivre $_dogName',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.text,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -318,18 +330,25 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       Expanded(
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 10),
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.cardBg,
                             border: Border.all(
-                                color: AppColors.border, width: 2),
+                              color: AppColors.border,
+                              width: 2,
+                            ),
                             borderRadius: BorderRadius.circular(30),
                             boxShadow: [AppDimensions.cardShadowSm],
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.search,
-                                  size: 20, color: AppColors.textMuted),
+                              Icon(
+                                Icons.search,
+                                size: 20,
+                                color: AppColors.textMuted,
+                              ),
                               const SizedBox(width: 8),
                               Text(
                                 'Rechercher un lieu...',
@@ -347,9 +366,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       _mapIconBtn(
                         Icons.history,
                         () => context.push('/home/carte/history'),
+                        semanticLabel: 'Historique des balades',
                       ),
                       const SizedBox(width: 8),
-                      _mapIconBtn(Icons.pets, () => context.push(AppRoutes.lostMode)),
+                      _mapIconBtn(
+                        Icons.pets,
+                        () => context.push(AppRoutes.lostMode),
+                        semanticLabel: 'Mode chien perdu',
+                      ),
                     ],
                   ),
                 ),
@@ -373,9 +397,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       : ElevatedButton.icon(
                           onPressed: _startTrail,
                           icon: const Icon(Icons.play_arrow),
-                          label: Text(savedTrails.isEmpty
-                              ? 'Démarrer une balade'
-                              : 'Nouvelle balade (${savedTrails.length} sauvegardée${savedTrails.length > 1 ? 's' : ''})'),
+                          label: Text(
+                            savedTrails.isEmpty
+                                ? 'Démarrer une balade'
+                                : 'Nouvelle balade (${savedTrails.length} sauvegardée${savedTrails.length > 1 ? 's' : ''})',
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.orange,
                             foregroundColor: Colors.white,
@@ -392,8 +418,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
             decoration: BoxDecoration(
               color: AppColors.cardBg,
-              border:
-                  Border(top: BorderSide(color: AppColors.border, width: 2)),
+              border: Border(
+                top: BorderSide(color: AppColors.border, width: 2),
+              ),
               boxShadow: [
                 BoxShadow(
                   color: AppColors.border,
@@ -420,24 +447,26 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       height: 44,
                       decoration: BoxDecoration(
                         color: AppColors.cream,
-                        border: Border.all(
-                            color: AppColors.border, width: 2),
+                        border: Border.all(color: AppColors.border, width: 2),
                         shape: BoxShape.circle,
                         boxShadow: [AppDimensions.cardShadowSm],
                       ),
                       child: const Center(
-                          child: Text('🐕',
-                              style: TextStyle(fontSize: 24))),
+                        child: Text('🐕', style: TextStyle(fontSize: 24)),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(_dogName,
-                              style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w900)),
+                          Text(
+                            _dogName,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
                           Text(
                             '$_locationLabel · $_lastSeenLabel',
                             style: TextStyle(
@@ -510,22 +539,30 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     );
   }
 
-  Widget _mapIconBtn(IconData icon, VoidCallback onPressed) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(21),
-        child: Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: AppColors.cardBg,
-            border: Border.all(color: AppColors.border, width: 2),
-            shape: BoxShape.circle,
-            boxShadow: [AppDimensions.cardShadowSm],
+  Widget _mapIconBtn(
+    IconData icon,
+    VoidCallback onPressed, {
+    required String semanticLabel,
+  }) {
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(21),
+          child: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: AppColors.cardBg,
+              border: Border.all(color: AppColors.border, width: 2),
+              shape: BoxShape.circle,
+              boxShadow: [AppDimensions.cardShadowSm],
+            ),
+            child: Icon(icon, size: 20),
           ),
-          child: Icon(icon, size: 20),
         ),
       ),
     );
@@ -543,14 +580,18 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         ),
         child: Column(
           children: [
-            Text(value,
-                style: const TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.w900)),
-            Text(label,
-                style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textMuted)),
+            Text(
+              value,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textMuted,
+              ),
+            ),
           ],
         ),
       ),
@@ -579,7 +620,8 @@ class _DogMarker extends StatelessWidget {
             boxShadow: [AppDimensions.cardShadow],
           ),
           child: const Center(
-              child: Text('🐕', style: TextStyle(fontSize: 26))),
+            child: Text('🐕', style: TextStyle(fontSize: 26)),
+          ),
         ),
         const SizedBox(height: 3),
         Container(
@@ -665,8 +707,7 @@ class _StatusChip extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             connected ? 'En ligne' : 'Hors ligne',
-            style:
-                const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
           ),
         ],
       ),

@@ -23,8 +23,7 @@ class HealthDashboardScreen extends ConsumerStatefulWidget {
       _HealthDashboardScreenState();
 }
 
-class _HealthDashboardScreenState
-    extends ConsumerState<HealthDashboardScreen>
+class _HealthDashboardScreenState extends ConsumerState<HealthDashboardScreen>
     with WidgetsBindingObserver {
   static const _collarSerial = 'SIM001';
   StreamSubscription<bool>? _connectionSub;
@@ -120,12 +119,17 @@ class _HealthDashboardScreenState
       appBar: AppBar(
         backgroundColor: AppColors.cardBg,
         surfaceTintColor: Colors.transparent,
-        title: const Text('Santé',
-            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+        title: const Text(
+          'Santé',
+          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.pets),
-            onPressed: () => context.push(AppRoutes.lostMode),
+          Semantics(
+            label: 'Mode chien perdu',
+            child: IconButton(
+              icon: const Icon(Icons.pets),
+              onPressed: () => context.push(AppRoutes.lostMode),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.only(right: 16),
@@ -174,9 +178,10 @@ class _WaitingState extends StatelessWidget {
                 : 'Lance le simulateur pour voir les données.',
             textAlign: TextAlign.center,
             style: TextStyle(
-                fontSize: 13,
-                color: AppColors.textMuted,
-                fontWeight: FontWeight.w600),
+              fontSize: 13,
+              color: AppColors.textMuted,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -208,7 +213,11 @@ class _Dashboard extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _DogHeader(latest: latest, todayActivity: todayActivity, dogName: dogName),
+        _DogHeader(
+          latest: latest,
+          todayActivity: todayActivity,
+          dogName: dogName,
+        ),
         const SizedBox(height: 16),
         if (latest.anomalyDetected) ...[
           _AnomalyBanner(type: latest.anomalyType),
@@ -256,9 +265,10 @@ class _Dashboard extends StatelessWidget {
           child: Text(
             'Dernière mise à jour : ${_ago(latest.recordedAt)}',
             style: TextStyle(
-                fontSize: 11,
-                color: AppColors.textMuted,
-                fontWeight: FontWeight.w600),
+              fontSize: 11,
+              color: AppColors.textMuted,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
         const SizedBox(height: 24),
@@ -306,24 +316,30 @@ class _DogHeader extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: const Center(
-                child: Text('🐕', style: TextStyle(fontSize: 28))),
+              child: Text('🐕', style: TextStyle(fontSize: 28)),
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(dogName,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w900)),
+                Text(
+                  dogName,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
                 // Uses persisted daily totals, not the raw snapshot value
                 Text(
                   '${todayActivity.steps} pas · '
                   '${todayActivity.activeMinutes}min actif aujourd\'hui',
                   style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textMuted,
-                      fontWeight: FontWeight.w600),
+                    fontSize: 12,
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -361,9 +377,10 @@ class _AnomalyBanner extends StatelessWidget {
             child: Text(
               'Anomalie détectée : $type',
               style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.red),
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: Colors.red,
+              ),
             ),
           ),
         ],
@@ -414,16 +431,21 @@ class _VitalCard extends StatelessWidget {
               if (isAnomaly)
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 7, vertical: 2),
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.red,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Text('!',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w900)),
+                  child: const Text(
+                    '!',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -443,23 +465,28 @@ class _VitalCard extends StatelessWidget {
                 TextSpan(
                   text: ' $unit',
                   style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textMuted),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textMuted,
+                  ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 4),
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 12, fontWeight: FontWeight.w800)),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+          ),
           const SizedBox(height: 2),
-          Text(normalRange,
-              style: TextStyle(
-                  fontSize: 10,
-                  color: AppColors.textMuted,
-                  fontWeight: FontWeight.w600)),
+          Text(
+            normalRange,
+            style: TextStyle(
+              fontSize: 10,
+              color: AppColors.textMuted,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
@@ -492,15 +519,19 @@ class _ActivityCard extends StatelessWidget {
             children: [
               const Text('🏃', style: TextStyle(fontSize: 20)),
               const SizedBox(width: 8),
-              const Text('Activité du jour',
-                  style: TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w900)),
+              const Text(
+                'Activité du jour',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+              ),
               const Spacer(),
-              Text('${todayActivity.steps} / $goal pas',
-                  style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textMuted,
-                      fontWeight: FontWeight.w700)),
+              Text(
+                '${todayActivity.steps} / $goal pas',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textMuted,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -516,11 +547,12 @@ class _ActivityCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              _activityStat(
-                  '${todayActivity.activeMinutes}min', 'Actif'),
+              _activityStat('${todayActivity.activeMinutes}min', 'Actif'),
               const SizedBox(width: 8),
               _activityStat(
-                  '${(100 * progress).toStringAsFixed(0)}%', 'Objectif'),
+                '${(100 * progress).toStringAsFixed(0)}%',
+                'Objectif',
+              ),
             ],
           ),
         ],
@@ -539,14 +571,18 @@ class _ActivityCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Text(value,
-                style: const TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.w900)),
-            Text(label,
-                style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textMuted,
-                    fontWeight: FontWeight.w700)),
+            Text(
+              value,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: AppColors.textMuted,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ],
         ),
       ),
@@ -565,8 +601,9 @@ class _HrChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final recent =
-        history.length > 20 ? history.sublist(history.length - 20) : history;
+    final recent = history.length > 20
+        ? history.sublist(history.length - 20)
+        : history;
     final spots = recent
         .asMap()
         .entries
@@ -586,25 +623,30 @@ class _HrChart extends StatelessWidget {
           ),
           titlesData: FlTitlesData(
             leftTitles: AxisTitles(
-              axisNameWidget: Text('bpm',
-                  style: TextStyle(
-                      fontSize: 9, color: AppColors.textMuted)),
+              axisNameWidget: Text(
+                'bpm',
+                style: TextStyle(fontSize: 9, color: AppColors.textMuted),
+              ),
               axisNameSize: 14,
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 36,
                 interval: 50,
-                getTitlesWidget: (v, _) => Text(v.toInt().toString(),
-                    style: TextStyle(
-                        fontSize: 10, color: AppColors.textMuted)),
+                getTitlesWidget: (v, _) => Text(
+                  v.toInt().toString(),
+                  style: TextStyle(fontSize: 10, color: AppColors.textMuted),
+                ),
               ),
             ),
             bottomTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false)),
+              sideTitles: SideTitles(showTitles: false),
+            ),
             topTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false)),
+              sideTitles: SideTitles(showTitles: false),
+            ),
             rightTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false)),
+              sideTitles: SideTitles(showTitles: false),
+            ),
           ),
           borderData: FlBorderData(show: false),
           extraLinesData: ExtraLinesData(
@@ -618,8 +660,7 @@ class _HrChart extends StatelessWidget {
                   show: true,
                   alignment: Alignment.topRight,
                   labelResolver: (_) => '50',
-                  style: TextStyle(
-                      fontSize: 9, color: Colors.blue.shade400),
+                  style: TextStyle(fontSize: 9, color: Colors.blue.shade400),
                 ),
               ),
               HorizontalLine(
@@ -631,8 +672,7 @@ class _HrChart extends StatelessWidget {
                   show: true,
                   alignment: Alignment.topRight,
                   labelResolver: (_) => '180',
-                  style: const TextStyle(
-                      fontSize: 9, color: Colors.red),
+                  style: const TextStyle(fontSize: 9, color: Colors.red),
                 ),
               ),
             ],
@@ -667,8 +707,9 @@ class _TempChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final recent =
-        history.length > 20 ? history.sublist(history.length - 20) : history;
+    final recent = history.length > 20
+        ? history.sublist(history.length - 20)
+        : history;
     final spots = recent
         .asMap()
         .entries
@@ -688,25 +729,30 @@ class _TempChart extends StatelessWidget {
           ),
           titlesData: FlTitlesData(
             leftTitles: AxisTitles(
-              axisNameWidget: Text('°C',
-                  style: TextStyle(
-                      fontSize: 9, color: AppColors.textMuted)),
+              axisNameWidget: Text(
+                '°C',
+                style: TextStyle(fontSize: 9, color: AppColors.textMuted),
+              ),
               axisNameSize: 14,
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 40,
                 interval: 1,
-                getTitlesWidget: (v, _) => Text('${v.toStringAsFixed(0)}°',
-                    style: TextStyle(
-                        fontSize: 10, color: AppColors.textMuted)),
+                getTitlesWidget: (v, _) => Text(
+                  '${v.toStringAsFixed(0)}°',
+                  style: TextStyle(fontSize: 10, color: AppColors.textMuted),
+                ),
               ),
             ),
             bottomTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false)),
+              sideTitles: SideTitles(showTitles: false),
+            ),
             topTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false)),
+              sideTitles: SideTitles(showTitles: false),
+            ),
             rightTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false)),
+              sideTitles: SideTitles(showTitles: false),
+            ),
           ),
           borderData: FlBorderData(show: false),
           extraLinesData: ExtraLinesData(
@@ -720,8 +766,7 @@ class _TempChart extends StatelessWidget {
                   show: true,
                   alignment: Alignment.topRight,
                   labelResolver: (_) => '36°',
-                  style: TextStyle(
-                      fontSize: 9, color: Colors.blue.shade400),
+                  style: TextStyle(fontSize: 9, color: Colors.blue.shade400),
                 ),
               ),
               HorizontalLine(
@@ -733,8 +778,7 @@ class _TempChart extends StatelessWidget {
                   show: true,
                   alignment: Alignment.topRight,
                   labelResolver: (_) => '39.5°',
-                  style: const TextStyle(
-                      fontSize: 9, color: Colors.red),
+                  style: const TextStyle(fontSize: 9, color: Colors.red),
                 ),
               ),
             ],
@@ -787,8 +831,10 @@ class _SectionTitle extends StatelessWidget {
   const _SectionTitle(this.text);
 
   @override
-  Widget build(BuildContext context) => Text(text,
-      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900));
+  Widget build(BuildContext context) => Text(
+    text,
+    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+  );
 }
 
 class _MqttDot extends StatelessWidget {
@@ -809,11 +855,14 @@ class _MqttDot extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 5),
-        Text(connected ? 'Live' : 'Off',
-            style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: connected ? AppColors.greenStatus : Colors.grey)),
+        Text(
+          connected ? 'Live' : 'Off',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+            color: connected ? AppColors.greenStatus : Colors.grey,
+          ),
+        ),
       ],
     );
   }
@@ -848,11 +897,14 @@ class _StatusDot extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 5),
-          Text(label,
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: ok ? AppColors.greenStatus : Colors.red)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: ok ? AppColors.greenStatus : Colors.red,
+            ),
+          ),
         ],
       ),
     );

@@ -70,10 +70,7 @@ class _LostModeScreenState extends ConsumerState<LostModeScreen>
             _buildStatusCard(isActive),
             const SizedBox(height: 16),
             _buildToggleButton(isActive),
-            if (isActive) ...[
-              const SizedBox(height: 12),
-              _buildBeepButton(),
-            ],
+            if (isActive) ...[const SizedBox(height: 12), _buildBeepButton()],
             const SizedBox(height: 24),
             _buildInfoCard(),
           ],
@@ -87,10 +84,7 @@ class _LostModeScreenState extends ConsumerState<LostModeScreen>
       return AnimatedBuilder(
         animation: _pulseAnimation,
         builder: (context, child) {
-          return Opacity(
-            opacity: _pulseAnimation.value,
-            child: child,
-          );
+          return Opacity(opacity: _pulseAnimation.value, child: child);
         },
         child: Container(
           padding: const EdgeInsets.all(20),
@@ -102,10 +96,7 @@ class _LostModeScreenState extends ConsumerState<LostModeScreen>
           ),
           child: Row(
             children: [
-              Text(
-                '🚨',
-                style: const TextStyle(fontSize: 40),
-              ),
+              Text('🚨', style: const TextStyle(fontSize: 40)),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -179,23 +170,27 @@ class _LostModeScreenState extends ConsumerState<LostModeScreen>
   }
 
   Widget _buildToggleButton(bool isActive) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: () => ref.read(lostModeProvider.notifier).toggle(),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isActive ? AppColors.redDanger : AppColors.orange,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+    return Semantics(
+      toggled: isActive,
+      label: 'Mode chien perdu',
+      hint: isActive
+          ? 'Alerte active, appuyez pour désactiver'
+          : 'Appuyez pour alerter les utilisateurs K9 Sync à proximité',
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: () => ref.read(lostModeProvider.notifier).toggle(),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isActive ? AppColors.redDanger : AppColors.orange,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+            ),
           ),
-        ),
-        child: Text(
-          isActive ? 'Désactiver' : 'Activer le mode perdu',
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
+          child: Text(
+            isActive ? 'Désactiver' : 'Activer le mode perdu',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
           ),
         ),
       ),
@@ -203,20 +198,24 @@ class _LostModeScreenState extends ConsumerState<LostModeScreen>
   }
 
   Widget _buildBeepButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton.icon(
-        onPressed: () {
-          getIt<IMqttService>().publishBeep(_collarSerial, durationMs: 3000);
-        },
-        icon: const Icon(Icons.volume_up, size: 20),
-        label: const Text('Faire biper'),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.text,
-          side: const BorderSide(color: AppColors.border, width: 2),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+    return Semantics(
+      hint:
+          'Émet un signal sonore de 3 secondes sur le collier pour aider à localiser le chien',
+      child: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: () {
+            getIt<IMqttService>().publishBeep(_collarSerial, durationMs: 3000);
+          },
+          icon: const Icon(Icons.volume_up, size: 20),
+          label: const Text('Faire biper'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.text,
+            side: const BorderSide(color: AppColors.border, width: 2),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+            ),
           ),
         ),
       ),
