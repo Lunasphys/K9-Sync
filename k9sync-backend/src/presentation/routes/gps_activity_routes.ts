@@ -13,24 +13,3 @@ export async function gpsActivityRoutes(app: FastifyInstance) {
   app.get('/dogs/:dogId/activity', getActivitySummary);
   app.post('/dogs/:dogId/activity/sync', syncActivity);
 }
-
-// ── app.ts patch ──────────────────────────────────────────────────────────────
-// Add to src/app.ts (after other route registrations, same prefix as dogRoutes):
-//
-// import { gpsActivityRoutes } from './presentation/routes/gps_activity_routes.js';
-//
-// await app.register(gpsActivityRoutes, { prefix });
-//
-// Optional — MQTT + cron (e.g. in server.ts or where MQTT client lives):
-// import { handleCollarMessage, markStaleCollarsOffline } from './mqtt/mqtt_collar_handler.js';
-// import cron from 'node-cron';
-//
-// In MQTT message callback:
-//   const parts = topic.split('/'); // k9sync/collar/{serial}/gps
-//   if (parts[0] === 'k9sync' && parts[1] === 'collar') {
-//     const serial = parts[2];
-//     await handleCollarMessage(serial, topic, JSON.parse(message.toString()));
-//   }
-//
-// Cron — mark stale collars offline every 5 minutes:
-//   cron.schedule('*/5 * * * *', markStaleCollarsOffline);

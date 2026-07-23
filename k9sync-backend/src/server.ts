@@ -3,6 +3,8 @@ import { buildApp } from './app.js';
 import { loadEnv } from './config/env.js';
 import { initPrisma, getPrisma } from './config/database.js';
 import { logger } from './shared/logger.js';
+import { connectMqtt } from './mqtt/mqtt_client.js';
+import type { MqttClient } from 'mqtt';
 
 const env = loadEnv();
 initPrisma(env.DATABASE_URL);
@@ -19,11 +21,22 @@ async function main() {
     process.exit(1);
   }
 
+  let mqttClient: MqttClient | undefined;
+  if (env.MQTT_BROKER_URL) {
+    mqttClient = connectMqtt(env.MQTT_BROKER_URL, {
+      username: env.MQTT_USERNAME,
+      password: env.MQTT_PASSWORD,
+    });
+  } else {
+    logger.warn('MQTT_BROKER_URL not set — MQTT ingestion disabled');
+  }
+
   await app.listen({ port: env.PORT, host: '0.0.0.0' });
   logger.info({ port: env.PORT, prefix: env.API_PREFIX }, 'K9 Sync API listening');
 
   const shutdown = async () => {
     await app.close();
+    mqttClient?.end();
     await prisma.$disconnect();
     process.exit(0);
   };
