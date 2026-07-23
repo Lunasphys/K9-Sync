@@ -47,3 +47,8 @@ app.*.map.json
 # Firebase Admin SDK key (NEVER commit – server use only)
 *firebase-adminsdk*.json
 *-firebase-adminsdk-*.json
+
+# DB export for jury handoff — contains test data, kept out of git,
+# distributed separately in the zip archive alongside the demo video.
+k9sync_export_jury.sql
+k9sync_export_jury_LISEZMOI.txt
