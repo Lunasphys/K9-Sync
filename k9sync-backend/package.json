@@ -9,6 +9,7 @@
     "start": "node dist/server.js",
     "lint": "tsc --noEmit",
     "test": "tsx --test src/shared/middleware/jwt.middleware.test.ts",
+    "test:integration": "tsx --test src/presentation/controllers/user.controller.integration.test.ts",
     "db:generate": "prisma generate",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",

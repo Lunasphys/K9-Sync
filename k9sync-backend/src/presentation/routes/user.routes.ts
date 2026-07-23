@@ -8,4 +8,5 @@ export async function userRoutes(app: FastifyInstance) {
   const controller = new UserController();
 
   app.get('/me', { preHandler: jwtAuth, handler: controller.getMe });
+  app.delete('/me', { preHandler: jwtAuth, handler: controller.deleteMe });
 }
