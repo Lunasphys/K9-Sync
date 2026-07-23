@@ -1,5 +1,3 @@
-import 'package:go_router/go_router.dart';
-
 /// Centralized route path constants.
 class AppRoutes {
   AppRoutes._();

@@ -26,7 +26,6 @@ class _DogSetupScreenState extends State<DogSetupScreen> {
   final _nameCtrl = TextEditingController();
 
   String? _selectedBreed;
-  String? _customBreed;
   final _customBreedCtrl = TextEditingController();
 
   double _weight = 10.0;

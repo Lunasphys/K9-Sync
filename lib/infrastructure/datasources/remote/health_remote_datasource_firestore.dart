@@ -10,7 +10,7 @@ class HealthRemoteDatasourceFirestore {
 
   CollectionReference<Map<String, dynamic>>? _healthCol(String dogId) {
     if (_firestore == null) return null;
-    return _firestore!
+    return _firestore
         .collection(FirebaseConstants.dogs)
         .doc(dogId)
         .collection(FirebaseConstants.healthRecordsSub);

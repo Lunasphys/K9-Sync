@@ -10,7 +10,7 @@ class GpsRemoteDatasourceFirestore {
 
   CollectionReference<Map<String, dynamic>>? _gpsCol(String dogId) {
     if (_firestore == null) return null;
-    return _firestore!.collection(FirebaseConstants.dogs).doc(dogId).collection(FirebaseConstants.gpsLocationsSub);
+    return _firestore.collection(FirebaseConstants.dogs).doc(dogId).collection(FirebaseConstants.gpsLocationsSub);
   }
 
   Future<GpsLocationModel?> getLatest(String dogId) async {

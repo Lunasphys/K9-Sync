@@ -10,7 +10,7 @@ class AlertRemoteDatasource {
 
   CollectionReference<Map<String, dynamic>>? _alertsCol(String userId) {
     if (_firestore == null) return null;
-    return _firestore!
+    return _firestore
         .collection(FirebaseConstants.users)
         .doc(userId)
         .collection(FirebaseConstants.alertsSub);
