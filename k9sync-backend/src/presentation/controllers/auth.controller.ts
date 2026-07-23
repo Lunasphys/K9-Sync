@@ -3,6 +3,7 @@ import { getPrisma } from '../../config/database.js';
 import { logger } from '../../shared/logger.js';
 import { ValidationError, UnauthorizedError, ConflictError } from '../../shared/errors.js';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import {
   registerBodySchema,
@@ -12,10 +13,10 @@ import {
 } from '../schemas/auth.schema.js';
 import type { RegisterBody, LoginBody, RefreshBody } from '../schemas/auth.schema.js';
 
-// Minimal JWT signing for skeleton — replace with proper JWT (e.g. jsonwebtoken RS256)
 function signAccessToken(payload: { sub: string }): string {
   const secret = process.env.JWT_ACCESS_SECRET ?? '';
-  return Buffer.from(JSON.stringify({ ...payload, iat: Date.now() })).toString('base64') + '.' + secret.slice(0, 8);
+  const expiresIn = process.env.JWT_ACCESS_EXPIRES_IN ?? '15m';
+  return jwt.sign(payload, secret, { expiresIn } as jwt.SignOptions);
 }
 
 function userToJson(user: {

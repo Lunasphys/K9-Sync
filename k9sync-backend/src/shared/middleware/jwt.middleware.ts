@@ -1,4 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
+import jwt from 'jsonwebtoken';
 import { UnauthorizedError } from '../errors.js';
 
 // Extend FastifyRequest to carry the authenticated user id
@@ -8,8 +9,6 @@ declare module 'fastify' {
   }
 }
 
-// Mirrors the minimal signing logic in auth.controller.ts:
-// token = base64(JSON payload) + '.' + secret.slice(0, 8)
 export async function jwtAuth(req: FastifyRequest, _reply: FastifyReply): Promise<void> {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) {
@@ -17,26 +16,21 @@ export async function jwtAuth(req: FastifyRequest, _reply: FastifyReply): Promis
   }
 
   const token = header.slice(7);
-  const dotIndex = token.lastIndexOf('.');
-  if (dotIndex === -1) throw new UnauthorizedError('Invalid token format');
+  const secret = process.env.JWT_ACCESS_SECRET ?? '';
 
-  const payloadB64 = token.slice(0, dotIndex);
-  const sentSecret = token.slice(dotIndex + 1);
-
-  // Verify the secret suffix matches
-  const expectedSecret = (process.env.JWT_ACCESS_SECRET ?? '').slice(0, 8);
-  if (sentSecret !== expectedSecret) {
+  let payload: string | jwt.JwtPayload;
+  try {
+    payload = jwt.verify(token, secret);
+  } catch (err) {
+    if (err instanceof jwt.TokenExpiredError) {
+      throw new UnauthorizedError('Token expired');
+    }
     throw new UnauthorizedError('Invalid token signature');
   }
 
-  let payload: { sub?: string; iat?: number };
-  try {
-    payload = JSON.parse(Buffer.from(payloadB64, 'base64').toString('utf8'));
-  } catch {
-    throw new UnauthorizedError('Malformed token payload');
+  if (typeof payload === 'string' || !payload.sub) {
+    throw new UnauthorizedError('Token missing subject');
   }
-
-  if (!payload.sub) throw new UnauthorizedError('Token missing subject');
 
   req.userId = payload.sub;
 }
