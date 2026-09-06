@@ -18,6 +18,11 @@ abstract interface class IAuthRepository {
   /// (profil, chiens possédés, GPS, santé, activité, alertes, accès partagés).
   Future<Map<String, dynamic>> exportMyData();
 
+  /// RGPD art. 17 — suppression définitive du compte. Requiert le mot de
+  /// passe actuel ; lève [AuthError.invalidCredentials] s'il est incorrect,
+  /// auquel cas rien n'est supprimé côté serveur.
+  Future<void> deleteAccount({required String password});
+
   /// Vérifie le stockage (token) de façon asynchrone. À appeler au démarrage pour que [isLoggedIn] reflète l’état réel (REST).
   Future<void> ensureAuthChecked();
   bool get isLoggedIn;

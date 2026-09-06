@@ -6,9 +6,12 @@ import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:k9sync/application/auth/delete_account_use_case.dart';
+import 'package:k9sync/core/errors/app_error.dart';
 import 'package:k9sync/core/theme/app_theme.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_auth_repository.dart';
 import 'package:k9sync/injection.dart';
+import 'package:k9sync/presentation/router/route_guards.dart';
 
 /// Confidentialité : 4 sections RGPD — consentements, export, durées, suppression.
 class PrivacyScreen extends StatefulWidget {
@@ -20,6 +23,7 @@ class PrivacyScreen extends StatefulWidget {
 
 class _PrivacyScreenState extends State<PrivacyScreen> {
   bool _exporting = false;
+  bool _deleting = false;
 
   Future<void> _exportData(BuildContext context) async {
     if (_exporting) return;
@@ -45,6 +49,72 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
       );
     } finally {
       if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  Future<void> _confirmDeleteAccount(BuildContext context) async {
+    final passwordController = TextEditingController();
+    final password = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Confirmer la suppression'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Cette action est irréversible. Saisissez votre mot de passe pour supprimer définitivement votre compte, vos chiens et toutes leurs données.',
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Mot de passe',
+                border: OutlineInputBorder(),
+              ),
+              onSubmitted: (value) => Navigator.of(dialogContext).pop(value),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: AppColors.redDanger),
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(passwordController.text),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+
+    if (password == null || password.isEmpty) return;
+    if (!context.mounted) return;
+    await _deleteAccount(context, password);
+  }
+
+  Future<void> _deleteAccount(BuildContext context, String password) async {
+    if (_deleting) return;
+    setState(() => _deleting = true);
+    try {
+      await DeleteAccountUseCase(getIt<IAuthRepository>())(
+        password: password,
+      );
+      if (!context.mounted) return;
+      context.go(AppRoutes.login);
+    } catch (e) {
+      if (!context.mounted) return;
+      final message = e is AppError
+          ? (e.userMessage ?? 'Échec de la suppression du compte.')
+          : 'Échec de la suppression du compte.';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    } finally {
+      if (mounted) setState(() => _deleting = false);
     }
   }
 
@@ -466,33 +536,12 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
-          _inputLabel('CONFIRMEZ VOTRE MOT DE PASSE'),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              border: Border.all(color: AppColors.border, width: 1.5),
-              borderRadius: AppDimensions.borderRadiusSm,
-              boxShadow: [AppDimensions.cardShadowSm],
-            ),
-            child: Row(
-              children: [
-                Text(
-                  '••••••••',
-                  style: TextStyle(fontSize: 14, color: AppColors.textMuted),
-                ),
-                const Spacer(),
-                Icon(Icons.lock_outline, size: 16, color: AppColors.textMuted),
-              ],
-            ),
-          ),
           const SizedBox(height: 14),
           Material(
             color: AppColors.redLight,
             borderRadius: AppDimensions.borderRadiusSm,
             child: InkWell(
-              onTap: () {},
+              onTap: _deleting ? null : () => _confirmDeleteAccount(context),
               borderRadius: AppDimensions.borderRadiusSm,
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 14),
@@ -502,15 +551,26 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                   ),
                   borderRadius: AppDimensions.borderRadiusSm,
                 ),
-                child: const Center(
-                  child: Text(
-                    'Supprimer définitivement mon compte',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.redDanger,
-                    ),
-                  ),
+                child: Center(
+                  child: _deleting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(
+                              AppColors.redDanger,
+                            ),
+                          ),
+                        )
+                      : const Text(
+                          'Supprimer définitivement mon compte',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.redDanger,
+                          ),
+                        ),
                 ),
               ),
             ),
@@ -519,7 +579,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'Un email de confirmation vous sera envoyé.\nExécution sous 30 jours (RGPD art. 17).',
+              'Votre mot de passe vous sera redemandé pour confirmer.\nSuppression immédiate et définitive (RGPD art. 17).',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 11,
@@ -529,21 +589,6 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _inputLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 0, 0, 6),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: AppColors.textMuted,
-          letterSpacing: 0.8,
-        ),
       ),
     );
   }

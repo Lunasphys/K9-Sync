@@ -1,11 +1,17 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
+import bcrypt from 'bcrypt';
 import { getPrisma } from '../../config/database.js';
-import { NotFoundError } from '../../shared/errors.js';
+import { NotFoundError, UnauthorizedError, ValidationError } from '../../shared/errors.js';
 import { logger } from '../../shared/logger.js';
+import { deleteAccountBodySchema } from '../schemas/user.schema.js';
 
 export class UserController {
   /**
    * Delete the authenticated user's account.
+   *
+   * Requires the current password in the body — a valid JWT alone is not
+   * enough for a destructive, irreversible action (matches the confirmation
+   * promised on the app's privacy screen).
    *
    * `Dog` has no direct FK to `User` — only the `DogUser` join table does —
    * so deleting a `User` row alone only cascades to `RefreshToken` and
@@ -17,8 +23,24 @@ export class UserController {
    * this user as family/viewer are left untouched — only their DogUser
    * link is removed, via the final user delete.
    */
-  async deleteMe(req: FastifyRequest, reply: FastifyReply) {
+  async deleteMe(req: FastifyRequest<{ Body: unknown }>, reply: FastifyReply) {
     const userId = req.userId;
+
+    const body = deleteAccountBodySchema.safeParse(req.body);
+    if (!body.success) throw new ValidationError(body.error.flatten());
+    const { password } = body.data;
+
+    const user = await getPrisma().user.findUnique({ where: { id: userId } });
+    if (!user) {
+      logger.warn({ userId }, 'DELETE /users/me — user not found');
+      throw new NotFoundError('User', userId);
+    }
+
+    const passwordMatches = await bcrypt.compare(password, user.passwordHash);
+    if (!passwordMatches) {
+      logger.warn({ userId }, 'DELETE /users/me — invalid password, account not deleted');
+      throw new UnauthorizedError('Invalid password');
+    }
 
     await getPrisma().$transaction(async (tx) => {
       const ownedDogs = await tx.dogUser.findMany({

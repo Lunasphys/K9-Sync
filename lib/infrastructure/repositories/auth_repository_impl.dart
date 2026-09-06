@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 
 import '../../core/constants/api_constants.dart';
+import '../../core/errors/auth_error.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/interfaces/repositories/i_auth_repository.dart';
 import '../../injection.dart';
@@ -135,5 +136,23 @@ class AuthRepositoryImpl implements IAuthRepository {
       ApiConstants.userExport,
     );
     return response.data ?? {};
+  }
+
+  @override
+  Future<void> deleteAccount({required String password}) async {
+    if (!_isRest) {
+      throw UnsupportedError('Account deletion is only available in REST mode.');
+    }
+    try {
+      await getIt<Dio>().delete(
+        ApiConstants.userMe,
+        data: {'password': password},
+      );
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) throw AuthError.invalidCredentials();
+      rethrow;
+    }
+    await _secureStorage!.clear();
+    _cachedLoggedIn = false;
   }
 }

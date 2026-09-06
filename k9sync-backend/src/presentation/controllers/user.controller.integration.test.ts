@@ -14,8 +14,8 @@ initPrisma(process.env.DATABASE_URL ?? '');
 const prisma = getPrisma();
 const controller = new UserController();
 
-function fakeRequest(userId: string): FastifyRequest {
-  return { userId } as unknown as FastifyRequest;
+function fakeRequest(userId: string, body?: unknown): FastifyRequest {
+  return { userId, body } as unknown as FastifyRequest;
 }
 
 function fakeReply() {
@@ -92,7 +92,10 @@ test('DELETE /users/me removes the user and cascades to their owned dog and all 
   assert.equal(await prisma.dogUser.count({ where: { userId: user.id } }), 1);
 
   const reply = fakeReply();
-  await controller.deleteMe(fakeRequest(user.id), reply as unknown as FastifyReply);
+  await controller.deleteMe(
+    fakeRequest(user.id, { password: 'irrelevant' }),
+    reply as unknown as FastifyReply,
+  );
 
   assert.equal(reply.statusCode, 204);
 
@@ -135,7 +138,7 @@ test('deleting an account does not delete a dog shared with another user', async
   // The family member (non-owner) deletes their own account
   const reply = fakeReply();
   await controller.deleteMe(
-    fakeRequest(familyMember.id),
+    fakeRequest(familyMember.id, { password: 'irrelevant' }),
     reply as unknown as FastifyReply,
   );
 
@@ -150,6 +153,43 @@ test('deleting an account does not delete a dog shared with another user', async
   // cleanup — the owner's account was never deleted by this test
   await prisma.dog.delete({ where: { id: dog.id } });
   await prisma.user.delete({ where: { id: owner.id } });
+});
+
+test('DELETE /users/me refuses deletion with an incorrect password and deletes nothing', async () => {
+  const passwordHash = await bcrypt.hash('correct-password', 4);
+  const user = await prisma.user.create({
+    data: {
+      email: `wrongpw-${randomUUID()}@test.local`,
+      passwordHash,
+      firstName: 'Wrong',
+      lastName: 'Password',
+    },
+  });
+  const dog = await prisma.dog.create({ data: { name: 'StillHereDog' } });
+  await prisma.dogUser.create({
+    data: { dogId: dog.id, userId: user.id, role: 'owner' },
+  });
+
+  const reply = fakeReply();
+  await assert.rejects(
+    () =>
+      controller.deleteMe(
+        fakeRequest(user.id, { password: 'wrong-password' }),
+        reply as unknown as FastifyReply,
+      ),
+    (err: unknown) => {
+      assert.equal((err as { statusCode?: number }).statusCode, 401);
+      return true;
+    },
+  );
+
+  // Nothing was deleted — account and dog both still exist
+  assert.equal(await prisma.user.count({ where: { id: user.id } }), 1);
+  assert.equal(await prisma.dog.count({ where: { id: dog.id } }), 1);
+
+  // cleanup
+  await prisma.dog.delete({ where: { id: dog.id } });
+  await prisma.user.delete({ where: { id: user.id } });
 });
 
 test('GET /users/me/export returns only the authenticated user\'s own data', async () => {
