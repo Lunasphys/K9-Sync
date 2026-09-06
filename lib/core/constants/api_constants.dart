@@ -42,7 +42,8 @@ abstract final class ApiConstants {
   static String healthLatest(String dogId) => '/dogs/$dogId/health/latest';
   static String healthHistory(String dogId) => '/dogs/$dogId/health/history';
   static String healthActivity(String dogId) => '/dogs/$dogId/health/activity';
-  static String healthSleep(String dogId) => '/dogs/$dogId/health/sleep';
+  static String healthSleep(String dogId, {int days = 1}) =>
+      '/dogs/$dogId/sleep?days=$days';
   static String healthAnomalies(String dogId) =>
       '/dogs/$dogId/health/anomalies';
   static String healthSync(String dogId) => '/dogs/$dogId/health/sync';

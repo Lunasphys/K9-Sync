@@ -66,7 +66,7 @@ export async function handleHealthMessage(serial: string, raw: unknown): Promise
     return;
   }
 
-  const { heartRate, temperature, recordedAt } = parsed.data;
+  const { heartRate, temperature, steps, activeMinutes, sleepPhase, recordedAt } = parsed.data;
   const isHrAnomaly = heartRate !== undefined && (heartRate > HR_MAX || heartRate < HR_MIN);
   const isTempAnomaly = temperature !== undefined && (temperature > TEMP_MAX || temperature < TEMP_MIN);
 
@@ -82,6 +82,21 @@ export async function handleHealthMessage(serial: string, raw: unknown): Promise
   });
 
   logger.debug({ serial, collarId, recordId: record.id }, 'Health record stored via MQTT');
+
+  // Same message also carries activity/sleep telemetry (steps, activeMinutes,
+  // sleepPhase) — previously accepted by the schema but silently dropped here.
+  if (steps !== undefined || activeMinutes !== undefined || sleepPhase !== undefined) {
+    await getPrisma().activityRecord.create({
+      data: {
+        collarId,
+        steps: steps ?? 0,
+        activeMinutes: activeMinutes ?? 0,
+        sleepPhase: sleepPhase ?? 'awake',
+        recordedAt: new Date(recordedAt),
+      },
+    });
+    logger.debug({ serial, collarId, sleepPhase }, 'Activity record stored via MQTT');
+  }
 
   if (isHrAnomaly || isTempAnomaly) {
     const collar = await getPrisma().collar.findUnique({ where: { id: collarId } });

@@ -377,3 +377,38 @@ test('GET /users/me/export returns only the authenticated user\'s own data', asy
   await prisma.dog.delete({ where: { id: otherDog.id } });
   await prisma.user.delete({ where: { id: otherUser.id } });
 });
+
+test('POST /users/me/push-token stores the token on the authenticated user', async () => {
+  const hash = await bcrypt.hash('irrelevant', 4);
+  const user = await prisma.user.create({
+    data: {
+      email: `push-${randomUUID()}@test.local`,
+      passwordHash: hash,
+      firstName: 'Push',
+      lastName: 'Tester',
+    },
+  });
+
+  const reply = fakeReply();
+  await controller.registerPushToken(
+    fakeRequest(user.id, { token: 'fcm-token-abc123' }),
+    reply as unknown as FastifyReply,
+  );
+  assert.equal(reply.statusCode, 204);
+
+  const stored = await prisma.user.findUnique({ where: { id: user.id } });
+  assert.equal(stored?.pushToken, 'fcm-token-abc123');
+
+  // Re-registering (e.g. token rotation, new device login) overwrites it —
+  // one token per account, the latest device wins.
+  const secondReply = fakeReply();
+  await controller.registerPushToken(
+    fakeRequest(user.id, { token: 'fcm-token-xyz789' }),
+    secondReply as unknown as FastifyReply,
+  );
+  const updated = await prisma.user.findUnique({ where: { id: user.id } });
+  assert.equal(updated?.pushToken, 'fcm-token-xyz789');
+
+  // cleanup
+  await prisma.user.delete({ where: { id: user.id } });
+});

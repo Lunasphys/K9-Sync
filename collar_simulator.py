@@ -56,11 +56,26 @@ class HealthSimulator:
 
         self.steps += random.randint(8, 15) if is_running else random.randint(0, 3)
 
+        # Synthetic sleep phase for demo purposes — a dog can't be asleep
+        # while running; during rest steps, cycle awake -> light -> deep so
+        # the sleep breakdown screen has some real variety to show.
+        if is_running:
+            sleep_phase = "awake"
+        else:
+            rest_step = step % 20
+            if rest_step < 13:
+                sleep_phase = "awake"
+            elif rest_step < 17:
+                sleep_phase = "light"
+            else:
+                sleep_phase = "deep"
+
         return {
             "heartRate": hr,
             "temperature": round(temp, 2),
             "steps": self.steps,
             "activeMinutes": step // 20 if is_running else 0,
+            "sleepPhase": sleep_phase,
             "anomalyDetected": anomaly is not None,
             "anomalyType": anomaly or "none",
         }

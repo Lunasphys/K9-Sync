@@ -17,8 +17,10 @@ class HealthRepositoryImpl implements IHealthRepository {
 
   @override
   Future<HealthRecord?> getLatestHealth(String dogId) async {
-    final m = await _remote.getLatest(dogId);
-    return m?.toEntity();
+    // REST (_syncRemote), not Firestore (_remote — dead in REST mode, always
+    // returns null since [_remote]'s FirebaseFirestore is null without
+    // Firebase configured, which was silently swallowing every call here).
+    return _syncRemote.getLatest(dogId);
   }
 
   @override
@@ -40,6 +42,10 @@ class HealthRepositoryImpl implements IHealthRepository {
   @override
   Future<SleepAnalysis?> getSleepAnalysis(String dogId, DateTime date) async =>
       null;
+
+  @override
+  Future<SleepBreakdown?> getSleepBreakdown(String dogId, {int days = 1}) =>
+      _syncRemote.getSleepBreakdown(dogId, days: days);
 
   @override
   Future<List<AnomalyRecord>> getAnomalies(

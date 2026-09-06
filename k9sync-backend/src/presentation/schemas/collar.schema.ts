@@ -23,6 +23,7 @@ export const healthMessageSchema = z.object({
   temperature: z.number().optional(),
   steps: z.number().int().nonnegative().optional(),
   activeMinutes: z.number().int().nonnegative().optional(),
+  sleepPhase: z.enum(['awake', 'light', 'deep']).optional(),
   anomalyDetected: z.boolean().optional(),
   anomalyType: z.string().optional(),
   recordedAt: z.string().min(1),

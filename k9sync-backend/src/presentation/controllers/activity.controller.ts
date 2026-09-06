@@ -142,3 +142,43 @@ export async function getActivitySummary(
     recordCount: result._count.id,
   });
 }
+
+/**
+ * Breakdown of ActivityRecord.sleepPhase over the last N days (default 1).
+ * Each ActivityRecord is a discrete snapshot, not a duration — the share of
+ * records per phase is used as a proxy for the share of time spent in it.
+ */
+export async function getSleepSummary(
+  req: FastifyRequest<{
+    Params: { dogId: string };
+    Querystring: { days?: string };
+  }>,
+  reply: FastifyReply,
+) {
+  const { dogId } = req.params;
+  await requireDogAccess(req.userId, dogId);
+
+  const collarId = await getCollarId(dogId);
+  if (!collarId) return reply.status(404).send({ error: 'No collar paired' });
+
+  const days = req.query.days
+    ? Math.min(Math.max(parseInt(req.query.days, 10), 1), 30)
+    : 1;
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+  const grouped = await getPrisma().activityRecord.groupBy({
+    by: ['sleepPhase'],
+    where: { collarId, recordedAt: { gte: since } },
+    _count: { _all: true },
+  });
+
+  const totalRecords = grouped.reduce((sum, g) => sum + g._count._all, 0);
+  const phases = grouped.map((g) => ({
+    phase: g.sleepPhase,
+    count: g._count._all,
+    percentage:
+      totalRecords > 0 ? Math.round((g._count._all / totalRecords) * 1000) / 10 : 0,
+  }));
+
+  return reply.send({ days, totalRecords, phases });
+}
