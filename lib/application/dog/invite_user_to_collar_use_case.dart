@@ -7,9 +7,10 @@ class InviteUserToCollarUseCase {
 
   InviteUserToCollarUseCase(this._repo);
 
-  Future<void> call(
+  Future<InviteOutcome> call(
     String dogId, {
     required String email,
     required UserDogRole role,
-  }) => _repo.inviteUser(dogId, email: email, role: role);
+    DateTime? expiresAt,
+  }) => _repo.inviteUser(dogId, email: email, role: role, expiresAt: expiresAt);
 }

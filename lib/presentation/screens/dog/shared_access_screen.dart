@@ -1,11 +1,127 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:k9sync/core/errors/app_error.dart';
 import 'package:k9sync/core/theme/app_theme.dart';
+import 'package:k9sync/domain/entities/dog.dart';
+import 'package:k9sync/domain/enums/user_dog_role.dart';
+import 'package:k9sync/domain/interfaces/repositories/i_dog_repository.dart';
+import 'package:k9sync/injection.dart';
 
-/// Accès partagés (mockup light) : liste Famille / Dog-sitters, export vétérinaire, bouton Inviter.
-class SharedAccessScreen extends StatelessWidget {
+const _months = [
+  'jan.', 'fév.', 'mars', 'avr.', 'mai', 'juin',
+  'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.',
+];
+
+String _formatDate(DateTime d) => '${d.day} ${_months[d.month - 1]} ${d.year}';
+
+/// Accès partagés : liste réelle (GET /dogs/:dogId/users), révocation
+/// (DELETE .../users/:userId) avec confirmation, bouton Inviter.
+class SharedAccessScreen extends StatefulWidget {
   const SharedAccessScreen({super.key, this.dogId});
   final String? dogId;
+
+  @override
+  State<SharedAccessScreen> createState() => _SharedAccessScreenState();
+}
+
+class _SharedAccessScreenState extends State<SharedAccessScreen> {
+  bool _loading = true;
+  String? _error;
+  Dog? _dog;
+  List<UserDogAccess> _accesses = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final dogId = widget.dogId;
+    if (dogId == null) {
+      setState(() {
+        _loading = false;
+        _error = 'Chien introuvable.';
+      });
+      return;
+    }
+
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final repo = getIt<IDogRepository>();
+      final dog = await repo.getDogById(dogId);
+      final accesses = await repo.getDogUsers(dogId);
+      if (!mounted) return;
+      setState(() {
+        _dog = dog;
+        _accesses = accesses.where((a) => a.role != UserDogRole.owner).toList();
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = e is AppError
+            ? (e.userMessage ?? 'Impossible de charger les accès partagés.')
+            : 'Impossible de charger les accès partagés.';
+      });
+    }
+  }
+
+  Future<void> _confirmRevoke(UserDogAccess access) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Révoquer cet accès ?'),
+        content: Text(
+          '${access.firstName} ${access.lastName} (${access.email}) perdra '
+          'immédiatement l\'accès à ce chien.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: AppColors.redDanger),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Révoquer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || widget.dogId == null || !mounted) return;
+
+    try {
+      await getIt<IDogRepository>().removeUser(widget.dogId!, access.userId);
+      if (!mounted) return;
+      setState(() => _accesses.removeWhere((a) => a.userId == access.userId));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Accès de ${access.firstName} révoqué.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final message = e is AppError
+          ? (e.userMessage ?? 'Échec de la révocation.')
+          : 'Échec de la révocation.';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  Future<void> _goInvite() async {
+    final dogId = widget.dogId;
+    if (dogId == null) return;
+    final changed = await context.push<bool>(
+      '/dogs/$dogId/invite',
+      extra: _dog?.name,
+    );
+    if (changed == true) _load();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,124 +166,123 @@ class SharedAccessScreen extends StatelessWidget {
               ),
               child: const Icon(Icons.add, color: AppColors.blue, size: 20),
             ),
-            onPressed: () => context.push('/dogs/${dogId ?? "dog1"}/invite'),
+            onPressed: _goInvite,
           ),
           const SizedBox(width: 8),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  border: Border.all(color: AppColors.border, width: 1),
-                  borderRadius: AppDimensions.borderRadiusSm,
-                  boxShadow: [AppDimensions.cardShadowSm],
-                ),
-                child: Row(
-                  children: [
-                    const Text('🐕', style: TextStyle(fontSize: 22)),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Bucky',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          Text(
-                            'Collier SIM-001 · Vous êtes propriétaire',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            _sectionLabel('Famille · accès permanent'),
-            _sharedUserTile(
-              context,
-              initial: 'M',
-              name: 'Marie Dupont',
-              sub: 'marie@gmail.com',
-              role: 'Famille',
-              roleColor: AppColors.greenStatus,
-              online: true,
-            ),
-            _divider(),
-            _sectionLabel('Dog-sitters · accès temporaire'),
-            _sharedUserTile(
-              context,
-              initial: 'J',
-              name: 'Julie Martin',
-              sub: 'Expire dans 3 jours',
-              subColor: AppColors.orange,
-              role: 'Dog-sitter',
-              roleColor: AppColors.orange,
-              onTap: () => _showSharedUserDetail(context),
-            ),
-            _divider(),
-            _sharedUserTile(
-              context,
-              initial: 'T',
-              name: 'Thomas Bernard',
-              sub: 'Accès expiré · 12 jan.',
-              role: 'Expiré',
-              roleColor: AppColors.textMuted,
-              faded: true,
-            ),
-            _divider(),
-            _sectionLabel('Partage vétérinaire'),
-            _vetExportTile(context),
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () =>
-                      context.push('/dogs/${dogId ?? "dog1"}/invite'),
-                  child: const Text('+ Inviter quelqu\'un'),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      body: _buildBody(),
     );
   }
 
-  void _showSharedUserDetail(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _SharedUserDetailSheet(
-        name: 'Julie Martin',
-        email: 'julie.m@gmail.com',
-        role: 'Dog-sitter',
-        expireText: 'Expire le 30 janvier 2026',
-        progress: 0.3,
-        onRevoke: () => Navigator.pop(ctx),
-        onExtend: () => Navigator.pop(ctx),
+  Widget _buildBody() {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.textMuted),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final family = _accesses.where((a) => a.role == UserDogRole.family).toList();
+    final sitters = _accesses.where((a) => a.role == UserDogRole.dogSitter).toList();
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                border: Border.all(color: AppColors.border, width: 1),
+                borderRadius: AppDimensions.borderRadiusSm,
+                boxShadow: [AppDimensions.cardShadowSm],
+              ),
+              child: Row(
+                children: [
+                  const Text('🐕', style: TextStyle(fontSize: 22)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _dog?.name ?? 'Ce chien',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(
+                          'Gestion des accès partagés',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (family.isEmpty && sitters.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: Text(
+                'Personne d\'autre n\'a accès à ce chien pour l\'instant.',
+                style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+              ),
+            ),
+          if (family.isNotEmpty) ...[
+            _sectionLabel('Famille · accès permanent'),
+            for (var i = 0; i < family.length; i++) ...[
+              _sharedUserTile(family[i]),
+              if (i < family.length - 1) _divider(),
+            ],
+          ],
+          if (sitters.isNotEmpty) ...[
+            _sectionLabel('Dog-sitters · accès temporaire'),
+            for (var i = 0; i < sitters.length; i++) ...[
+              _sharedUserTile(sitters[i]),
+              if (i < sitters.length - 1) _divider(),
+            ],
+          ],
+          _sectionLabel('Partage vétérinaire'),
+          _vetExportTile(),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _goInvite,
+                child: const Text('+ Inviter quelqu\'un'),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -187,154 +302,95 @@ class SharedAccessScreen extends StatelessWidget {
     );
   }
 
-  Widget _sharedUserTile(
-    BuildContext context, {
-    required String initial,
-    required String name,
-    required String sub,
-    Color? subColor,
-    required String role,
-    required Color roleColor,
-    bool online = false,
-    bool faded = false,
-    VoidCallback? onTap,
-  }) {
+  Widget _sharedUserTile(UserDogAccess access) {
+    final isSitter = access.role == UserDogRole.dogSitter;
+    final roleLabel = isSitter ? 'Dog-sitter' : 'Famille';
+    final roleColor = isSitter ? AppColors.orange : AppColors.greenStatus;
+    final sub = isSitter && access.expiresAt != null
+        ? 'Expire le ${_formatDate(access.expiresAt!)}'
+        : access.email;
+
     return Material(
       color: AppColors.cardBg,
       child: InkWell(
-        onTap: onTap,
-        child: Opacity(
-          opacity: faded ? 0.45 : 1,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
-            child: Row(
-              children: [
-                Stack(
-                  clipBehavior: Clip.none,
+        onTap: () => _confirmRevoke(access),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppColors.blue, AppColors.blueLight],
+                  ),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    access.firstName.isNotEmpty
+                        ? access.firstName[0].toUpperCase()
+                        : '?',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.text,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: faded
-                              ? [AppColors.surface, AppColors.surface]
-                              : [AppColors.blue, AppColors.blueLight],
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          initial,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: faded ? AppColors.textMuted : AppColors.text,
-                          ),
-                        ),
+                    Text(
+                      '${access.firstName} ${access.lastName}',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.text,
                       ),
                     ),
-                    if (online)
-                      Positioned(
-                        bottom: 1,
-                        right: 1,
-                        child: Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: AppColors.greenStatus,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                        ),
-                      ),
+                    Text(
+                      sub,
+                      style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                    ),
                   ],
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.text,
-                        ),
-                      ),
-                      if (subColor != null)
-                        Row(
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                color: subColor,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              sub,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: subColor,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        )
-                      else
-                        Text(
-                          sub,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textMuted,
-                          ),
-                        ),
-                    ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: isSitter ? AppColors.orangeLight : AppColors.greenMint,
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                child: Text(
+                  roleLabel,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: roleColor,
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: faded
-                        ? AppColors.surface
-                        : (roleColor == AppColors.greenStatus
-                              ? AppColors.greenMint
-                              : AppColors.orangeLight),
-                    borderRadius: BorderRadius.circular(7),
-                  ),
-                  child: Text(
-                    role,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      color: roleColor,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Icon(
-                  Icons.chevron_right,
-                  color: AppColors.textMuted,
-                  size: 20,
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.person_remove_outlined,
+                color: AppColors.textMuted,
+                size: 20,
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _vetExportTile(BuildContext context) {
+  Widget _vetExportTile() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Material(
@@ -380,11 +436,8 @@ class SharedAccessScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Données santé uniquement · jamais de GPS',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textMuted,
-                        ),
+                        'Bientôt disponible',
+                        style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                       ),
                     ],
                   ),
@@ -407,212 +460,6 @@ class SharedAccessScreen extends StatelessWidget {
       height: 1,
       margin: const EdgeInsets.symmetric(horizontal: 20),
       color: AppColors.border,
-    );
-  }
-}
-
-class _SharedUserDetailSheet extends StatelessWidget {
-  final String name;
-  final String email;
-  final String role;
-  final String expireText;
-  final double progress;
-  final VoidCallback onRevoke;
-  final VoidCallback onExtend;
-
-  const _SharedUserDetailSheet({
-    required this.name,
-    required this.email,
-    required this.role,
-    required this.expireText,
-    required this.progress,
-    required this.onRevoke,
-    required this.onExtend,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        20,
-        20,
-        20,
-        MediaQuery.of(context).padding.bottom + 20,
-      ),
-      decoration: const BoxDecoration(
-        color: AppColors.cardBg,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              name,
-              style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              email,
-              style: TextStyle(fontSize: 13, color: AppColors.textMuted),
-            ),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppColors.orangeLight,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                role,
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.orange,
-                ),
-              ),
-            ),
-            const SizedBox(height: 18),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.orangeLight,
-                border: Border.all(color: AppColors.orange.withOpacity(0.25)),
-                borderRadius: AppDimensions.borderRadiusSm,
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '⏱ Accès temporaire',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.orange,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.orangeLight,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          '3 jours',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.orange,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    expireText,
-                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                  ),
-                  const SizedBox(height: 10),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(3),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      backgroundColor: AppColors.surface,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        AppColors.orange,
-                      ),
-                      minHeight: 6,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: onExtend,
-                          child: const Text('Prolonger'),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextButton(
-                          onPressed: onRevoke,
-                          style: TextButton.styleFrom(
-                            backgroundColor: AppColors.redLight,
-                            foregroundColor: AppColors.redDanger,
-                          ),
-                          child: const Text('Révoquer'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Padding(
-              padding: EdgeInsets.only(left: 20),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'PERMISSIONS',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.5,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            _permRow('📍 Position GPS temps réel', true),
-            _permRow('🔔 Alertes temps réel', true),
-            _permRow('📝 Ajouter note comportement', true),
-            _permRow('📊 Historique santé', false),
-            _permRow('🗺 Parcours historiques', false),
-            _permRow('✏️ Modifier profil / zones', false),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _permRow(String label, bool allowed) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              color: allowed ? AppColors.text : AppColors.textMuted,
-            ),
-          ),
-          Icon(
-            allowed ? Icons.check : Icons.close,
-            size: 16,
-            color: allowed ? AppColors.greenStatus : AppColors.redDanger,
-          ),
-        ],
-      ),
     );
   }
 }

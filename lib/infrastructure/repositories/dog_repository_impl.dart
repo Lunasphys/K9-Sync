@@ -5,6 +5,7 @@ import '../../domain/entities/dog.dart';
 import '../../domain/enums/user_dog_role.dart';
 import '../../domain/interfaces/repositories/i_dog_repository.dart';
 import '../../injection.dart';
+import '_error_mapper.dart';
 
 /// Dog repository — 100% REST (POST /v1/dogs, GET /v1/dogs, etc.)
 /// Replaces the Firestore implementation.
@@ -94,42 +95,59 @@ class DogRepositoryImpl implements IDogRepository {
         return UserDogAccess(
           userId: m['userId'] as String,
           dogId: dogId,
+          email: m['email'] as String,
+          firstName: m['firstName'] as String,
+          lastName: m['lastName'] as String,
           role: _parseRole(m['role'] as String?),
-          canEdit: m['canEdit'] as bool? ?? false,
           expiresAt: m['expiresAt'] != null
               ? DateTime.tryParse(m['expiresAt'] as String)
               : null,
         );
       }).toList();
-    } catch (e) {
+    } on DioException catch (e) {
       DebugLogger.log(
         'DOG_REPO',
         'getDogUsers failed: $e',
         level: LogLevel.warning,
       );
-      return [];
+      throw defaultMap(e);
     }
   }
 
   // ── POST /dogs/:dogId/invite ────────────────────────────────────────────────
 
   @override
-  Future<void> inviteUser(
+  Future<InviteOutcome> inviteUser(
     String dogId, {
     required String email,
     required UserDogRole role,
+    DateTime? expiresAt,
   }) async {
-    await _dio.post(
-      '/dogs/$dogId/invite',
-      data: {'email': email, 'role': role.name},
-    );
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/dogs/$dogId/invite',
+        data: {
+          'email': email,
+          'role': role.value,
+          if (expiresAt != null) 'expiresAt': expiresAt.toIso8601String(),
+        },
+      );
+      final status = response.data?['status'] as String?;
+      return status == 'granted' ? InviteOutcome.granted : InviteOutcome.pending;
+    } on DioException catch (e) {
+      throw defaultMap(e);
+    }
   }
 
   // ── DELETE /dogs/:dogId/users/:userId ───────────────────────────────────────
 
   @override
   Future<void> removeUser(String dogId, String userId) async {
-    await _dio.delete('/dogs/$dogId/users/$userId');
+    try {
+      await _dio.delete('/dogs/$dogId/users/$userId');
+    } on DioException catch (e) {
+      throw defaultMap(e);
+    }
   }
 
   // ── JSON mapper ─────────────────────────────────────────────────────────────
@@ -177,7 +195,7 @@ class DogRepositoryImpl implements IDogRepository {
   UserDogRole _parseRole(String? raw) {
     if (raw == null) return UserDogRole.family;
     for (final e in UserDogRole.values) {
-      if (e.name == raw) return e;
+      if (e.value == raw) return e;
     }
     return UserDogRole.family;
   }

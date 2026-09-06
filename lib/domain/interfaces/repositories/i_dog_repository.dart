@@ -9,12 +9,28 @@ abstract interface class IDogRepository {
   Future<Dog> updateDog(String dogId, UpdateDogParams params);
   Future<void> deleteDog(String dogId);
   Future<List<UserDogAccess>> getDogUsers(String dogId);
-  Future<void> inviteUser(
+
+  /// Invite a user to share access to [dogId]. [expiresAt] is required when
+  /// [role] is [UserDogRole.dogSitter]. Returns whether access was granted
+  /// immediately (the email already has an account) or is pending (deferred
+  /// until that email registers) — never throws for the "pending" case,
+  /// that is a normal, successful outcome.
+  Future<InviteOutcome> inviteUser(
     String dogId, {
     required String email,
     required UserDogRole role,
+    DateTime? expiresAt,
   });
   Future<void> removeUser(String dogId, String userId);
+}
+
+enum InviteOutcome {
+  /// The invited email already had an account — access was granted right away.
+  granted,
+
+  /// The invited email has no account yet — access will be granted
+  /// automatically once someone registers with that exact email.
+  pending,
 }
 
 class CreateDogParams {
@@ -62,6 +78,9 @@ class UpdateDogParams {
 class UserDogAccess {
   final String userId;
   final String dogId;
+  final String email;
+  final String firstName;
+  final String lastName;
   final UserDogRole role;
   final bool canEdit;
   final DateTime? expiresAt;
@@ -69,6 +88,9 @@ class UserDogAccess {
   const UserDogAccess({
     required this.userId,
     required this.dogId,
+    required this.email,
+    required this.firstName,
+    required this.lastName,
     required this.role,
     this.canEdit = false,
     this.expiresAt,

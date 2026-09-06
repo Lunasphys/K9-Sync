@@ -196,8 +196,10 @@ GoRouter createAppRouter({
           ),
           GoRoute(
             path: 'invite',
-            builder: (c, s) =>
-                InviteUserScreen(dogId: s.pathParameters['dogId']!),
+            builder: (c, s) => InviteUserScreen(
+              dogId: s.pathParameters['dogId']!,
+              dogName: s.extra as String?,
+            ),
           ),
         ],
       ),
