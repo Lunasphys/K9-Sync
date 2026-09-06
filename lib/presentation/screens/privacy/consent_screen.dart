@@ -118,8 +118,7 @@ class _ConsentScreenState extends State<ConsentScreen> {
                     _consentTile(
                       icon: '📄',
                       title: 'Conditions générales d\'utilisation',
-                      description:
-                          'Obligatoires pour utiliser K9 Sync.',
+                      description: 'Obligatoires pour utiliser K9 Sync.',
                       required: true,
                       value: _termsAccepted,
                       onChanged: (v) =>
@@ -157,20 +156,32 @@ class _ConsentScreenState extends State<ConsentScreen> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: (_termsAccepted && !_submitting) ? _submit : null,
-                  child: _submitting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(Colors.white),
-                          ),
-                        )
-                      : const Text('Continuer'),
+              child: Semantics(
+                button: true,
+                enabled: _termsAccepted && !_submitting,
+                label: _submitting
+                    ? 'Envoi des consentements en cours'
+                    : _termsAccepted
+                    ? 'Continuer'
+                    : 'Continuer — indisponible tant que les conditions '
+                          'générales d\'utilisation ne sont pas acceptées',
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: (_termsAccepted && !_submitting)
+                        ? _submit
+                        : null,
+                    child: _submitting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation(Colors.white),
+                            ),
+                          )
+                        : const Text('Continuer'),
+                  ),
                 ),
               ),
             ),
@@ -188,78 +199,86 @@ class _ConsentScreenState extends State<ConsentScreen> {
     required bool value,
     required ValueChanged<bool?> onChanged,
   }) {
-    return Material(
-      color: AppColors.cardBg,
-      borderRadius: AppDimensions.borderRadiusSm,
-      child: InkWell(
-        onTap: () => onChanged(!value),
-        borderRadius: AppDimensions.borderRadiusSm,
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            border: Border.all(color: AppColors.border, width: 1),
+    return Semantics(
+      button: true,
+      toggled: value,
+      label:
+          '$title${required ? ", obligatoire" : ", optionnel"}. $description',
+      child: MergeSemantics(
+        child: Material(
+          color: AppColors.cardBg,
+          borderRadius: AppDimensions.borderRadiusSm,
+          child: InkWell(
+            onTap: () => onChanged(!value),
             borderRadius: AppDimensions.borderRadiusSm,
-            boxShadow: [AppDimensions.cardShadowSm],
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(icon, style: const TextStyle(fontSize: 22)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.border, width: 1),
+                borderRadius: AppDimensions.borderRadiusSm,
+                boxShadow: [AppDimensions.cardShadowSm],
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(icon, style: const TextStyle(fontSize: 22)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Flexible(
-                          child: Text(
-                            title,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.text,
-                            ),
-                          ),
-                        ),
-                        if (required) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.orangeLight,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text(
-                              'Requis',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.orange,
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                title,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.text,
+                                ),
                               ),
                             ),
+                            if (required) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.orangeLight,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  'Requis',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.orange,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          description,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                            height: 1.4,
                           ),
-                        ],
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      description,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textMuted,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 8),
+                  Checkbox(value: value, onChanged: onChanged),
+                ],
               ),
-              const SizedBox(width: 8),
-              Checkbox(value: value, onChanged: onChanged),
-            ],
+            ),
           ),
         ),
       ),

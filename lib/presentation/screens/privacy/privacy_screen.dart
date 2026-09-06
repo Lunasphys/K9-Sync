@@ -44,9 +44,9 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
       );
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Échec de l\'export : $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Échec de l\'export : $e')));
     } finally {
       if (mounted) setState(() => _exporting = false);
     }
@@ -83,11 +83,17 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
             onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Annuler'),
           ),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: AppColors.redDanger),
-            onPressed: () =>
-                Navigator.of(dialogContext).pop(passwordController.text),
-            child: const Text('Supprimer'),
+          Semantics(
+            button: true,
+            label:
+                'Confirmer la suppression définitive du compte — action '
+                'irréversible',
+            child: TextButton(
+              style: TextButton.styleFrom(foregroundColor: AppColors.redDanger),
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop(passwordController.text),
+              child: const Text('Supprimer'),
+            ),
           ),
         ],
       ),
@@ -102,9 +108,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     if (_deleting) return;
     setState(() => _deleting = true);
     try {
-      await DeleteAccountUseCase(getIt<IAuthRepository>())(
-        password: password,
-      );
+      await DeleteAccountUseCase(getIt<IAuthRepository>())(password: password);
       if (!context.mounted) return;
       context.go(AppRoutes.login);
     } catch (e) {
@@ -112,7 +116,9 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
       final message = e is AppError
           ? (e.userMessage ?? 'Échec de la suppression du compte.')
           : 'Échec de la suppression du compte.';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) setState(() => _deleting = false);
     }
@@ -125,22 +131,26 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              border: Border.all(color: AppColors.border, width: 1),
-              borderRadius: BorderRadius.circular(12),
+        leading: Semantics(
+          button: true,
+          label: 'Retour',
+          child: IconButton(
+            icon: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                border: Border.all(color: AppColors.border, width: 1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.arrow_back,
+                size: 18,
+                color: AppColors.textMuted,
+              ),
             ),
-            child: const Icon(
-              Icons.arrow_back,
-              size: 18,
-              color: AppColors.textMuted,
-            ),
+            onPressed: () => context.pop(),
           ),
-          onPressed: () => context.pop(),
         ),
         title: const Text(
           'Confidentialité',
@@ -241,65 +251,70 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     VoidCallback? onTap,
     Widget? trailing,
   }) {
-    return Material(
-      color: AppColors.cardBg,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 22,
-                height: 22,
-                margin: const EdgeInsets.only(top: 1),
-                decoration: BoxDecoration(
-                  color: checked ? AppColors.blue : AppColors.cardBg,
-                  border: Border.all(
-                    color: checked ? AppColors.blue : AppColors.border,
-                    width: 2,
+    return Semantics(
+      label: '$title, ${checked ? "accepté" : "non accepté"}. $desc',
+      child: MergeSemantics(
+        child: Material(
+          color: AppColors.cardBg,
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 22,
+                    height: 22,
+                    margin: const EdgeInsets.only(top: 1),
+                    decoration: BoxDecoration(
+                      color: checked ? AppColors.blue : AppColors.cardBg,
+                      border: Border.all(
+                        color: checked ? AppColors.blue : AppColors.border,
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(7),
+                    ),
+                    child: checked
+                        ? const Icon(Icons.check, size: 12, color: Colors.white)
+                        : null,
                   ),
-                  borderRadius: BorderRadius.circular(7),
-                ),
-                child: checked
-                    ? const Icon(Icons.check, size: 12, color: Colors.white)
-                    : null,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.text,
-                      ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.text,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          desc,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      desc,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textMuted,
-                        height: 1.4,
-                      ),
+                  ),
+                  if (trailing != null)
+                    trailing
+                  else
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 14,
+                      color: AppColors.textMuted,
                     ),
-                  ],
-                ),
+                ],
               ),
-              if (trailing != null)
-                trailing
-              else
-                const Icon(
-                  Icons.chevron_right,
-                  size: 14,
-                  color: AppColors.textMuted,
-                ),
-            ],
+            ),
           ),
         ),
       ),
@@ -309,94 +324,105 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
   Widget _exportCard(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: AppDimensions.borderRadiusSm,
-        child: InkWell(
-          onTap: _exporting ? null : () => _exportData(context),
+      child: Semantics(
+        button: true,
+        enabled: !_exporting,
+        label: _exporting
+            ? 'Export de vos données en cours'
+            : 'Télécharger mes données personnelles, fichier JSON contenant '
+                  'profil, chiens, positions GPS, santé et alertes',
+        child: Material(
+          color: Colors.transparent,
           borderRadius: AppDimensions.borderRadiusSm,
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppColors.blueLight, AppColors.blueLight],
+          child: InkWell(
+            onTap: _exporting ? null : () => _exportData(context),
+            borderRadius: AppDimensions.borderRadiusSm,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [AppColors.blueLight, AppColors.blueLight],
+                ),
+                border: Border.all(color: AppColors.blue.withOpacity(0.15)),
+                borderRadius: AppDimensions.borderRadiusSm,
+                boxShadow: [AppDimensions.cardShadowSm],
               ),
-              border: Border.all(color: AppColors.blue.withOpacity(0.15)),
-              borderRadius: AppDimensions.borderRadiusSm,
-              boxShadow: [AppDimensions.cardShadowSm],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBg,
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [AppDimensions.cardShadowSm],
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.cardBg,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [AppDimensions.cardShadowSm],
+                    ),
+                    child: const Center(
+                      child: Text('📦', style: TextStyle(fontSize: 20)),
+                    ),
                   ),
-                  child: const Center(
-                    child: Text('📦', style: TextStyle(fontSize: 20)),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Télécharger mes données',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.text,
-                        ),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Fichier JSON · profil, chiens, GPS, santé, alertes',
-                        style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.blue,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.blue.withOpacity(0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: _exporting
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Télécharger mes données',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.text,
                           ),
-                        )
-                      : const Text(
-                          'Exporter',
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Fichier JSON · profil, chiens, GPS, santé, alertes',
                           style: TextStyle(
                             fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                            color: AppColors.textMuted,
                           ),
                         ),
-                ),
-              ],
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.blue,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.blue.withOpacity(0.3),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: _exporting
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation(Colors.white),
+                            ),
+                          )
+                        : const Text(
+                            'Exporter',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -537,40 +563,50 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
             ),
           ),
           const SizedBox(height: 14),
-          Material(
-            color: AppColors.redLight,
-            borderRadius: AppDimensions.borderRadiusSm,
-            child: InkWell(
-              onTap: _deleting ? null : () => _confirmDeleteAccount(context),
+          Semantics(
+            button: true,
+            enabled: !_deleting,
+            label: _deleting
+                ? 'Suppression du compte en cours'
+                : 'Supprimer définitivement mon compte — action destructive '
+                      'et irréversible, supprime le compte, les chiens et '
+                      'toutes leurs données, confirmation du mot de passe '
+                      'requise',
+            child: Material(
+              color: AppColors.redLight,
               borderRadius: AppDimensions.borderRadiusSm,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: AppColors.redDanger.withOpacity(0.25),
+              child: InkWell(
+                onTap: _deleting ? null : () => _confirmDeleteAccount(context),
+                borderRadius: AppDimensions.borderRadiusSm,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: AppColors.redDanger.withOpacity(0.25),
+                    ),
+                    borderRadius: AppDimensions.borderRadiusSm,
                   ),
-                  borderRadius: AppDimensions.borderRadiusSm,
-                ),
-                child: Center(
-                  child: _deleting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(
-                              AppColors.redDanger,
+                  child: Center(
+                    child: _deleting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation(
+                                AppColors.redDanger,
+                              ),
+                            ),
+                          )
+                        : const Text(
+                            'Supprimer définitivement mon compte',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.redDanger,
                             ),
                           ),
-                        )
-                      : const Text(
-                          'Supprimer définitivement mon compte',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.redDanger,
-                          ),
-                        ),
+                  ),
                 ),
               ),
             ),
