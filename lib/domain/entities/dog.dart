@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import 'collar.dart';
+
 /// Domain entity: dog profile.
 class Dog extends Equatable {
   final String id;
@@ -11,6 +13,7 @@ class Dog extends Equatable {
   final List<String> allergies;
   final List<String> characterTraits;
   final String? photoUrl;
+  final Collar? collar;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -24,6 +27,7 @@ class Dog extends Equatable {
     this.allergies = const [],
     this.characterTraits = const [],
     this.photoUrl,
+    this.collar,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -39,6 +43,7 @@ class Dog extends Equatable {
     allergies,
     characterTraits,
     photoUrl,
+    collar,
     createdAt,
     updatedAt,
   ];

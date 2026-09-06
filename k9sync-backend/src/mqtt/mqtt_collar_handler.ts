@@ -84,7 +84,9 @@ export async function handleHealthMessage(serial: string, raw: unknown): Promise
 
   if (isHrAnomaly || isTempAnomaly) {
     const collar = await getPrisma().collar.findUnique({ where: { id: collarId } });
-    if (collar) {
+    // A collar not yet paired to a dog (dogId null) can still broadcast — there's
+    // just no dog to attach the alert to yet, so skip it until it's paired.
+    if (collar?.dogId) {
       const type = isHrAnomaly ? 'heart_rate' : 'temperature';
       const value = isHrAnomaly ? heartRate : temperature;
       const title = isHrAnomaly

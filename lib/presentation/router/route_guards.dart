@@ -21,7 +21,6 @@ class AppRoutes {
   static const homeProfil = '/home/profil';
 
   // Full-screen routes
-  static const pairing = '/pairing';
   static const map = '/map';
   static const trailHistory = '/trail-history';
   static const lostMode = '/lost-mode';

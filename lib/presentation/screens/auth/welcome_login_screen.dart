@@ -115,18 +115,6 @@ class WelcomeLoginScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: () => context.push(AppRoutes.pairing),
-                    child: Text(
-                      'Déjà un collier ? Jumeler',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.orange,
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),

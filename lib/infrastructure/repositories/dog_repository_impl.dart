@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../../core/debug/debug_logger.dart';
+import '../../domain/entities/collar.dart';
 import '../../domain/entities/dog.dart';
 import '../../domain/enums/user_dog_role.dart';
 import '../../domain/interfaces/repositories/i_dog_repository.dart';
@@ -150,6 +151,21 @@ class DogRepositoryImpl implements IDogRepository {
     }
   }
 
+  // ── POST /dogs/:dogId/collar/pair ───────────────────────────────────────────
+
+  @override
+  Future<Collar> pairCollar(String dogId, {required String serialNumber}) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/dogs/$dogId/collar/pair',
+        data: {'serialNumber': serialNumber},
+      );
+      return _collarFromJson(response.data!);
+    } on DioException catch (e) {
+      throw defaultMap(e);
+    }
+  }
+
   // ── JSON mapper ─────────────────────────────────────────────────────────────
 
   Dog _dogFromJson(Map<String, dynamic> j) {
@@ -175,6 +191,29 @@ class DogRepositoryImpl implements IDogRepository {
               .toList() ??
           [],
       photoUrl: j['photoUrl'] as String?,
+      collar: j['collar'] != null
+          ? _collarFromJson(j['collar'] as Map<String, dynamic>)
+          : null,
+      createdAt: j['createdAt'] != null
+          ? DateTime.tryParse(j['createdAt'] as String) ?? DateTime.now()
+          : DateTime.now(),
+      updatedAt: j['updatedAt'] != null
+          ? DateTime.tryParse(j['updatedAt'] as String) ?? DateTime.now()
+          : DateTime.now(),
+    );
+  }
+
+  Collar _collarFromJson(Map<String, dynamic> j) {
+    return Collar(
+      id: j['id'] as String,
+      dogId: j['dogId'] as String?,
+      serialNumber: j['serialNumber'] as String,
+      batteryLevel: j['batteryLevel'] as int?,
+      firmwareVersion: j['firmwareVersion'] as String?,
+      isOnline: j['isOnline'] as bool? ?? false,
+      lastSeenAt: j['lastSeenAt'] != null
+          ? DateTime.tryParse(j['lastSeenAt'] as String)
+          : null,
       createdAt: j['createdAt'] != null
           ? DateTime.tryParse(j['createdAt'] as String) ?? DateTime.now()
           : DateTime.now(),

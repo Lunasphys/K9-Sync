@@ -88,14 +88,6 @@ class WelcomeScreen extends StatelessWidget {
                   style: TextStyle(color: Colors.grey.shade700),
                 ),
               ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () => context.push(AppRoutes.pairing),
-                child: Text(
-                  'Déjà un collier ? Jumeler',
-                  style: TextStyle(color: AppColors.primary, fontSize: 14),
-                ),
-              ),
               const SizedBox(height: 24),
               _buildPawDecorations(),
             ],

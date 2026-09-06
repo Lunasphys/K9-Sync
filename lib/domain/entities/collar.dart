@@ -5,7 +5,7 @@ class Collar extends Equatable {
   final String id;
   final String? dogId;
   final String serialNumber;
-  final int batteryLevel;
+  final int? batteryLevel;
   final String? firmwareVersion;
   final bool isOnline;
   final DateTime? lastSeenAt;
@@ -16,7 +16,7 @@ class Collar extends Equatable {
     required this.id,
     this.dogId,
     required this.serialNumber,
-    required this.batteryLevel,
+    this.batteryLevel,
     this.firmwareVersion,
     required this.isOnline,
     this.lastSeenAt,

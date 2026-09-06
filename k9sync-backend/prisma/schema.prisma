@@ -87,10 +87,13 @@ model PendingInvite {
   @@index([email])
 }
 
+// dogId est nullable : un collier peut exister "non réclamé" (numéro de
+// série connu — vu via MQTT ou provisionné à l'avance — mais jamais encore
+// jumelé à un chien) avant d'être associé via POST /dogs/:dogId/collar/pair.
 model Collar {
   id             String    @id @default(uuid())
   serialNumber   String    @unique @map("serial_number")
-  dogId          String    @unique @map("dog_id")
+  dogId          String?   @unique @map("dog_id")
   batteryLevel   Int?      @map("battery_level")
   firmwareVersion String?  @map("firmware_version")
   lastSeenAt     DateTime? @map("last_seen_at")
@@ -98,7 +101,7 @@ model Collar {
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  dog             Dog             @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  dog             Dog?            @relation(fields: [dogId], references: [id], onDelete: Cascade)
   gpsLocations    GpsLocation[]
   healthRecords   HealthRecord[]
   activityRecords ActivityRecord[]

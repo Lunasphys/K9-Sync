@@ -148,10 +148,6 @@ GoRouter createAppRouter({
       ),
 
       // ── Full-screen routes (outside shell) ─────────────────────────
-      GoRoute(
-        path: AppRoutes.pairing,
-        builder: (c, s) => const PairingScreen(),
-      ),
       GoRoute(path: AppRoutes.map, builder: (c, s) => const MapScreen()),
       GoRoute(
         path: AppRoutes.trailHistory,
@@ -201,12 +197,17 @@ GoRouter createAppRouter({
               dogName: s.extra as String?,
             ),
           ),
+          GoRoute(
+            path: 'collar',
+            builder: (c, s) =>
+                CollarStatusScreen(dogId: s.pathParameters['dogId']!),
+          ),
+          GoRoute(
+            path: 'pair-collar',
+            builder: (c, s) =>
+                PairingScreen(dogId: s.pathParameters['dogId']!),
+          ),
         ],
-      ),
-      GoRoute(
-        path: '/collar/:collarId',
-        builder: (c, s) =>
-            CollarStatusScreen(collarId: s.pathParameters['collarId']!),
       ),
       GoRoute(
         path: AppRoutes.alertsList,

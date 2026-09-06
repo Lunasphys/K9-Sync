@@ -384,7 +384,7 @@ class _ActionsSection extends StatelessWidget {
             icon: '📡',
             label: 'Statut du collier',
             subtitle: 'Batterie, connexion, firmware',
-            onTap: () => context.push('/collar/$dogId'),
+            onTap: () => context.push('/dogs/$dogId/collar'),
           ),
           const SizedBox(height: 8),
           _ActionTile(

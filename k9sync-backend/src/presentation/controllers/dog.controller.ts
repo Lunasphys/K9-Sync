@@ -3,6 +3,7 @@ import { getPrisma } from '../../config/database.js';
 import { logger } from '../../shared/logger.js';
 import { ConflictError, ForbiddenError, ValidationError } from '../../shared/errors.js';
 import { inviteBodySchema } from '../schemas/dog.schema.js';
+import { pairCollarBodySchema } from '../schemas/collar.schema.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -101,7 +102,10 @@ export async function getDog(
   const { dogId } = req.params;
   await requireDogAccess(req.userId, dogId);
 
-  const dog = await getPrisma().dog.findUnique({ where: { id: dogId } });
+  const dog = await getPrisma().dog.findUnique({
+    where: { id: dogId },
+    include: { collar: true },
+  });
   if (!dog) return reply.status(404).send({ error: 'Dog not found' });
 
   return reply.send(dog);
@@ -253,5 +257,63 @@ export async function revokeDogUser(
 
   logger.info({ dogId, userId }, 'Dog access revoked');
   return reply.status(204).send();
+}
+
+// ── POST /dogs/:dogId/collar/pair ───────────────────────────────────────────────
+
+/**
+ * Owner-only. Jumelage par saisie manuelle du numéro de série (pas de scan
+ * BLE). Trois cas :
+ *  - le numéro n'existe pas encore en base -> on le crée et le jumelle
+ *    (aucune autre voie de création n'existe : ni le simulateur ni le
+ *    handler MQTT ne provisionnent de Collar avant un premier jumelage) ;
+ *  - il existe mais n'est jumelé à aucun chien (dogId null) -> on le réclame ;
+ *  - il est déjà jumelé à CE chien -> succès idempotent, aucune écriture ;
+ *  - il est déjà jumelé à un AUTRE chien -> 409.
+ * Un chien déjà équipé d'un collier différent ne peut pas en jumeler un
+ * second sans être d'abord dé-jumelé (hors périmètre ce soir) -> 409.
+ */
+export async function pairCollar(
+  req: FastifyRequest<{ Params: { dogId: string }; Body: unknown }>,
+  reply: FastifyReply,
+) {
+  const { dogId } = req.params;
+  await requireDogAccess(req.userId, dogId, true); // owner only
+
+  const body = pairCollarBodySchema.safeParse(req.body);
+  if (!body.success) throw new ValidationError(body.error.flatten());
+  const { serialNumber } = body.data;
+
+  const prisma = getPrisma();
+
+  const dog = await prisma.dog.findUnique({ where: { id: dogId }, include: { collar: true } });
+  if (!dog) return reply.status(404).send({ error: 'Dog not found' });
+
+  if (dog.collar && dog.collar.serialNumber !== serialNumber) {
+    throw new ConflictError('dogId', 'This dog is already paired with a different collar');
+  }
+
+  const existing = await prisma.collar.findUnique({ where: { serialNumber } });
+
+  if (existing) {
+    if (existing.dogId === dogId) {
+      // Already paired to this exact dog — idempotent success, no-op.
+      return reply.status(200).send(existing);
+    }
+    if (existing.dogId !== null) {
+      throw new ConflictError('serialNumber', 'This collar is already paired with another dog');
+    }
+
+    const claimed = await prisma.collar.update({
+      where: { id: existing.id },
+      data: { dogId },
+    });
+    logger.info({ dogId, serialNumber }, 'Existing unclaimed collar paired');
+    return reply.status(200).send(claimed);
+  }
+
+  const created = await prisma.collar.create({ data: { serialNumber, dogId } });
+  logger.info({ dogId, serialNumber }, 'New collar provisioned and paired');
+  return reply.status(201).send(created);
 }
 

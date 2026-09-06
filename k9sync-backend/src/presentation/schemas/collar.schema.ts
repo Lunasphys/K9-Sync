@@ -29,3 +29,10 @@ export const healthMessageSchema = z.object({
 });
 
 export type HealthMessage = z.infer<typeof healthMessageSchema>;
+
+// Jumelage manuel (saisie du numéro de série côté app — pas de scan BLE).
+export const pairCollarBodySchema = z.object({
+  serialNumber: z.string().trim().min(3).max(64),
+});
+
+export type PairCollarBody = z.infer<typeof pairCollarBodySchema>;

@@ -33,7 +33,7 @@ class CollarModel extends Collar {
     'id': id,
     if (dogId != null) 'dogId': dogId,
     'serialNumber': serialNumber,
-    if (batteryLevel > 0) 'batteryLevel': batteryLevel,
+    if ((batteryLevel ?? 0) > 0) 'batteryLevel': batteryLevel,
     if (firmwareVersion != null) 'firmwareVersion': firmwareVersion,
     'isOnline': isOnline,
     if (lastSeenAt != null) 'lastSeenAt': lastSeenAt!.toIso8601String(),

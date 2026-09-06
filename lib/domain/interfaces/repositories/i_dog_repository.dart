@@ -1,3 +1,4 @@
+import '../../entities/collar.dart';
 import '../../entities/dog.dart';
 import '../../enums/user_dog_role.dart';
 
@@ -22,6 +23,13 @@ abstract interface class IDogRepository {
     DateTime? expiresAt,
   });
   Future<void> removeUser(String dogId, String userId);
+
+  /// Pair a collar to [dogId] by its serial number (manual entry, no BLE
+  /// scan). Provisions the collar if the serial is unknown, claims it if it
+  /// exists but is unpaired, or succeeds idempotently if already paired to
+  /// this exact dog. Throws (409 mapped) if the serial belongs to another
+  /// dog, or if this dog already has a different collar paired.
+  Future<Collar> pairCollar(String dogId, {required String serialNumber});
 }
 
 enum InviteOutcome {

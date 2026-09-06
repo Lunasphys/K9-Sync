@@ -8,12 +8,12 @@ import { randomUUID } from 'node:crypto';
 import bcrypt from 'bcrypt';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { initPrisma, getPrisma } from '../../config/database.js';
-import { inviteToDog, listDogUsers, revokeDogUser } from './dog.controller.js';
+import { inviteToDog, listDogUsers, revokeDogUser, pairCollar, getDog } from './dog.controller.js';
 import { AuthController } from './auth.controller.js';
 
 initPrisma(process.env.DATABASE_URL ?? '');
 const prisma = getPrisma();
-const dogController = { inviteToDog, listDogUsers, revokeDogUser };
+const dogController = { inviteToDog, listDogUsers, revokeDogUser, pairCollar, getDog };
 const authController = new AuthController();
 
 function fakeRequest(
@@ -286,4 +286,170 @@ test('DELETE /dogs/:dogId/users/:userId refuses to revoke the owner\'s own acces
   // cleanup
   await prisma.dog.delete({ where: { id: dog.id } });
   await prisma.user.delete({ where: { id: owner.id } });
+});
+
+test('POST /dogs/:dogId/collar/pair provisions a brand-new serial number and pairs it', async () => {
+  const { owner, dog } = await createOwnerWithDog('NewSerialDog');
+  const serialNumber = `NEW-${randomUUID()}`;
+
+  const reply = fakeReply();
+  await pairCollar(
+    fakeRequest(owner.id, { dogId: dog.id }, { serialNumber }),
+    reply as unknown as FastifyReply,
+  );
+
+  assert.equal(reply.statusCode, 201);
+  const collar = reply.payload as { serialNumber: string; dogId: string | null };
+  assert.equal(collar.serialNumber, serialNumber);
+  assert.equal(collar.dogId, dog.id);
+
+  const inDb = await prisma.collar.findUnique({ where: { serialNumber } });
+  assert.ok(inDb);
+  assert.equal(inDb?.dogId, dog.id);
+
+  // GET /dogs/:dogId must now expose the collar relation
+  const getReply = fakeReply();
+  await getDog(fakeRequest(owner.id, { dogId: dog.id }), getReply as unknown as FastifyReply);
+  const dogPayload = getReply.payload as { collar: { serialNumber: string } | null };
+  assert.equal(dogPayload.collar?.serialNumber, serialNumber);
+
+  // cleanup
+  await prisma.dog.delete({ where: { id: dog.id } });
+  await prisma.user.delete({ where: { id: owner.id } });
+});
+
+test('POST /dogs/:dogId/collar/pair claims an existing unclaimed collar', async () => {
+  const { owner, dog } = await createOwnerWithDog('ClaimUnclaimedDog');
+  const serialNumber = `UNCLAIMED-${randomUUID()}`;
+  await prisma.collar.create({ data: { serialNumber, dogId: null } });
+
+  const reply = fakeReply();
+  await pairCollar(
+    fakeRequest(owner.id, { dogId: dog.id }, { serialNumber }),
+    reply as unknown as FastifyReply,
+  );
+
+  assert.equal(reply.statusCode, 200);
+  const inDb = await prisma.collar.findUnique({ where: { serialNumber } });
+  assert.equal(inDb?.dogId, dog.id);
+
+  // cleanup
+  await prisma.dog.delete({ where: { id: dog.id } });
+  await prisma.user.delete({ where: { id: owner.id } });
+});
+
+test('POST /dogs/:dogId/collar/pair is idempotent when re-pairing the same collar to the same dog', async () => {
+  const { owner, dog } = await createOwnerWithDog('IdempotentPairDog');
+  const serialNumber = `IDEMPOTENT-${randomUUID()}`;
+
+  const firstReply = fakeReply();
+  await pairCollar(
+    fakeRequest(owner.id, { dogId: dog.id }, { serialNumber }),
+    firstReply as unknown as FastifyReply,
+  );
+  assert.equal(firstReply.statusCode, 201);
+
+  const secondReply = fakeReply();
+  await pairCollar(
+    fakeRequest(owner.id, { dogId: dog.id }, { serialNumber }),
+    secondReply as unknown as FastifyReply,
+  );
+  assert.equal(secondReply.statusCode, 200);
+
+  const count = await prisma.collar.count({ where: { serialNumber } });
+  assert.equal(count, 1, 're-pairing must not create a duplicate collar row');
+
+  // cleanup
+  await prisma.dog.delete({ where: { id: dog.id } });
+  await prisma.user.delete({ where: { id: owner.id } });
+});
+
+test('POST /dogs/:dogId/collar/pair refuses a serial already paired to another dog', async () => {
+  const { owner: ownerA, dog: dogA } = await createOwnerWithDog('SerialOwnerADog');
+  const { owner: ownerB, dog: dogB } = await createOwnerWithDog('SerialOwnerBDog');
+  const serialNumber = `TAKEN-${randomUUID()}`;
+  await prisma.collar.create({ data: { serialNumber, dogId: dogA.id } });
+
+  const reply = fakeReply();
+  await assert.rejects(
+    () =>
+      pairCollar(
+        fakeRequest(ownerB.id, { dogId: dogB.id }, { serialNumber }),
+        reply as unknown as FastifyReply,
+      ),
+    (err: unknown) => {
+      assert.equal((err as { statusCode?: number }).statusCode, 409);
+      return true;
+    },
+  );
+
+  const stillDogA = await prisma.collar.findUnique({ where: { serialNumber } });
+  assert.equal(stillDogA?.dogId, dogA.id);
+
+  // cleanup
+  await prisma.dog.delete({ where: { id: dogA.id } });
+  await prisma.dog.delete({ where: { id: dogB.id } });
+  await prisma.user.delete({ where: { id: ownerA.id } });
+  await prisma.user.delete({ where: { id: ownerB.id } });
+});
+
+test('POST /dogs/:dogId/collar/pair refuses a second, different collar for a dog that already has one', async () => {
+  const { owner, dog } = await createOwnerWithDog('AlreadyEquippedDog');
+  const firstSerial = `FIRST-${randomUUID()}`;
+  await prisma.collar.create({ data: { serialNumber: firstSerial, dogId: dog.id } });
+  const secondSerial = `SECOND-${randomUUID()}`;
+
+  const reply = fakeReply();
+  await assert.rejects(
+    () =>
+      pairCollar(
+        fakeRequest(owner.id, { dogId: dog.id }, { serialNumber: secondSerial }),
+        reply as unknown as FastifyReply,
+      ),
+    (err: unknown) => {
+      assert.equal((err as { statusCode?: number }).statusCode, 409);
+      return true;
+    },
+  );
+
+  assert.equal(await prisma.collar.count({ where: { serialNumber: secondSerial } }), 0);
+
+  // cleanup
+  await prisma.dog.delete({ where: { id: dog.id } });
+  await prisma.user.delete({ where: { id: owner.id } });
+});
+
+test('POST /dogs/:dogId/collar/pair refuses when the caller is not the owner', async () => {
+  const { owner, dog } = await createOwnerWithDog('NonOwnerPairDog');
+  const hash = await bcrypt.hash('irrelevant', 4);
+  const familyMember = await prisma.user.create({
+    data: {
+      email: `family-${randomUUID()}@test.local`,
+      passwordHash: hash,
+      firstName: 'Family',
+      lastName: 'Member',
+    },
+  });
+  await prisma.dogUser.create({ data: { dogId: dog.id, userId: familyMember.id, role: 'family' } });
+  const serialNumber = `NONOWNER-${randomUUID()}`;
+
+  const reply = fakeReply();
+  await assert.rejects(
+    () =>
+      pairCollar(
+        fakeRequest(familyMember.id, { dogId: dog.id }, { serialNumber }),
+        reply as unknown as FastifyReply,
+      ),
+    (err: unknown) => {
+      assert.equal((err as { statusCode?: number }).statusCode, 403);
+      return true;
+    },
+  );
+
+  assert.equal(await prisma.collar.count({ where: { serialNumber } }), 0);
+
+  // cleanup
+  await prisma.dog.delete({ where: { id: dog.id } });
+  await prisma.user.delete({ where: { id: owner.id } });
+  await prisma.user.delete({ where: { id: familyMember.id } });
 });

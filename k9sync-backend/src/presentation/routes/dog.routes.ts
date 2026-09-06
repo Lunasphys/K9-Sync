@@ -9,6 +9,7 @@ import {
   inviteToDog,
   listDogUsers,
   revokeDogUser,
+  pairCollar,
 } from '../controllers/dog.controller.js';
 import { getHealthLatest, syncHealth } from '../controllers/health.controller.js';
 
@@ -35,6 +36,9 @@ export async function dogRoutes(app: FastifyInstance) {
   app.post('/dogs/:dogId/invite', inviteToDog);
   app.get('/dogs/:dogId/users', listDogUsers);
   app.delete('/dogs/:dogId/users/:userId', revokeDogUser);
+
+  // Jumelage du collier
+  app.post('/dogs/:dogId/collar/pair', pairCollar);
 
   app.get('/dogs/:dogId/health/latest', getHealthLatest);
   app.post('/dogs/:dogId/health/sync', syncHealth);
