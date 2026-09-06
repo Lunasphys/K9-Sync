@@ -49,22 +49,42 @@ model Dog {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
 
-  collar   Collar?
-  dogUsers DogUser[]
-  alerts   Alert[]
+  collar         Collar?
+  dogUsers       DogUser[]
+  alerts         Alert[]
+  pendingInvites PendingInvite[]
 }
 
 model DogUser {
-  id     String   @id @default(uuid())
-  dogId  String   @map("dog_id")
-  userId String   @map("user_id")
-  role   String   @default("owner") // owner | family | viewer
-  createdAt DateTime @default(now()) @map("created_at")
+  id        String    @id @default(uuid())
+  dogId     String    @map("dog_id")
+  userId    String    @map("user_id")
+  role      String    @default("owner") // owner | family | dog_sitter
+  expiresAt DateTime? @map("expires_at") // null = accès permanent (owner/family) ; daté pour un dog_sitter
+  createdAt DateTime  @default(now()) @map("created_at")
 
   dog  Dog  @relation(fields: [dogId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([dogId, userId])
   @@index([userId])
+}
+
+// Invitation vers un email qui n'a pas encore de compte K9 Sync. Résolue
+// automatiquement en DogUser dès que quelqu'un s'inscrit avec cet email
+// (voir AuthController.register) ; pas de FK vers User côté invitedBy —
+// simple valeur informative, pas besoin de cascade sur ce champ.
+model PendingInvite {
+  id        String    @id @default(uuid())
+  dogId     String    @map("dog_id")
+  email     String
+  role      String // family | dog_sitter
+  expiresAt DateTime? @map("expires_at") // reporté sur le DogUser une fois résolu
+  invitedBy String    @map("invited_by")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  dog Dog @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  @@unique([dogId, email])
+  @@index([email])
 }
 
 model Collar {

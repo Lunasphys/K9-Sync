@@ -1,7 +1,15 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { jwtAuth } from '../../shared/middleware/jwt.middleware.js';
 import { getPrisma } from '../../config/database.js';
-import { getDogs, createDog, getDog, updateDog } from '../controllers/dog.controller.js';
+import {
+  getDogs,
+  createDog,
+  getDog,
+  updateDog,
+  inviteToDog,
+  listDogUsers,
+  revokeDogUser,
+} from '../controllers/dog.controller.js';
 import { getHealthLatest, syncHealth } from '../controllers/health.controller.js';
 
 async function requireDogAccess(userId: string, dogId: string) {
@@ -22,6 +30,11 @@ export async function dogRoutes(app: FastifyInstance) {
   app.post('/dogs', createDog);
   app.get('/dogs/:dogId', getDog);
   app.patch('/dogs/:dogId', updateDog);
+
+  // Partage multi-utilisateurs
+  app.post('/dogs/:dogId/invite', inviteToDog);
+  app.get('/dogs/:dogId/users', listDogUsers);
+  app.delete('/dogs/:dogId/users/:userId', revokeDogUser);
 
   app.get('/dogs/:dogId/health/latest', getHealthLatest);
   app.post('/dogs/:dogId/health/sync', syncHealth);

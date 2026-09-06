@@ -55,6 +55,28 @@ export class AuthController {
       data: { email, passwordHash, firstName, lastName, subscriptionPlan: 'free' },
     });
 
+    // Resolve any dog-share invitation sent to this email before the account existed.
+    const pendingInvites = await getPrisma().pendingInvite.findMany({ where: { email } });
+    if (pendingInvites.length > 0) {
+      await getPrisma().$transaction([
+        ...pendingInvites.map((invite) =>
+          getPrisma().dogUser.create({
+            data: {
+              dogId: invite.dogId,
+              userId: user.id,
+              role: invite.role,
+              expiresAt: invite.expiresAt,
+            },
+          }),
+        ),
+        getPrisma().pendingInvite.deleteMany({ where: { email } }),
+      ]);
+      logger.info(
+        { userId: user.id, email, count: pendingInvites.length },
+        'Pending dog-share invites resolved at registration',
+      );
+    }
+
     const accessToken = signAccessToken({ sub: user.id });
     const refreshRaw = uuidv4();
     const refreshHash = await bcrypt.hash(refreshRaw, 12);

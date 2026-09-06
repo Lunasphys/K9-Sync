@@ -1,6 +1,8 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { getPrisma } from '../../config/database.js';
 import { logger } from '../../shared/logger.js';
+import { ConflictError, ForbiddenError, ValidationError } from '../../shared/errors.js';
+import { inviteBodySchema } from '../schemas/dog.schema.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -142,5 +144,114 @@ export async function updateDog(
 
   logger.info({ userId: req.userId, dogId }, 'Dog updated');
   return reply.send(dog);
+}
+
+// ── POST /dogs/:dogId/invite ──────────────────────────────────────────────────
+
+/**
+ * Owner-only. If the invited email already has an account, access is
+ * granted immediately (DogUser created). Otherwise the invitation is
+ * deferred: a PendingInvite row is stored and resolved into a DogUser as
+ * soon as someone registers with that exact email (see AuthController.register).
+ */
+export async function inviteToDog(
+  req: FastifyRequest<{
+    Params: { dogId: string };
+    Body: unknown;
+  }>,
+  reply: FastifyReply,
+) {
+  const { dogId } = req.params;
+  await requireDogAccess(req.userId, dogId, true); // owner only
+
+  const body = inviteBodySchema.safeParse(req.body);
+  if (!body.success) throw new ValidationError(body.error.flatten());
+  const { email, role, expiresAt } = body.data;
+  const grantExpiresAt = role === 'dog_sitter' ? new Date(expiresAt!) : null;
+
+  const prisma = getPrisma();
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+
+  if (existingUser) {
+    const alreadyHasAccess = await prisma.dogUser.findFirst({
+      where: { dogId, userId: existingUser.id },
+    });
+    if (alreadyHasAccess) {
+      throw new ConflictError('userId', 'This user already has access to this dog');
+    }
+
+    const dogUser = await prisma.dogUser.create({
+      data: { dogId, userId: existingUser.id, role, expiresAt: grantExpiresAt },
+    });
+
+    logger.info({ dogId, userId: existingUser.id, role }, 'Dog access granted (invite resolved immediately)');
+    return reply.status(201).send({ status: 'granted', dogUser });
+  }
+
+  const pendingInvite = await prisma.pendingInvite.upsert({
+    where: { dogId_email: { dogId, email } },
+    create: { dogId, email, role, expiresAt: grantExpiresAt, invitedBy: req.userId },
+    update: { role, expiresAt: grantExpiresAt, invitedBy: req.userId },
+  });
+
+  logger.info({ dogId, email, role }, 'Invite deferred — no account for this email yet');
+  return reply.status(202).send({ status: 'pending', pendingInvite });
+}
+
+// ── GET /dogs/:dogId/users ─────────────────────────────────────────────────────
+
+/** Active accesses on a dog — excludes any dog_sitter grant already expired. */
+export async function listDogUsers(
+  req: FastifyRequest<{ Params: { dogId: string } }>,
+  reply: FastifyReply,
+) {
+  const { dogId } = req.params;
+  await requireDogAccess(req.userId, dogId);
+
+  const dogUsers = await getPrisma().dogUser.findMany({
+    where: {
+      dogId,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+    },
+    include: {
+      user: { select: { id: true, email: true, firstName: true, lastName: true } },
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  return reply.send(
+    dogUsers.map((du) => ({
+      userId: du.userId,
+      email: du.user.email,
+      firstName: du.user.firstName,
+      lastName: du.user.lastName,
+      role: du.role,
+      expiresAt: du.expiresAt,
+      since: du.createdAt,
+    })),
+  );
+}
+
+// ── DELETE /dogs/:dogId/users/:userId ───────────────────────────────────────────
+
+/** Owner-only. The owner's own access can never be revoked this way. */
+export async function revokeDogUser(
+  req: FastifyRequest<{ Params: { dogId: string; userId: string } }>,
+  reply: FastifyReply,
+) {
+  const { dogId, userId } = req.params;
+  await requireDogAccess(req.userId, dogId, true); // owner only
+
+  const target = await getPrisma().dogUser.findFirst({ where: { dogId, userId } });
+  if (!target) return reply.status(404).send({ error: 'Access not found' });
+
+  if (target.role === 'owner') {
+    throw new ForbiddenError('cannot revoke the owner\'s own access');
+  }
+
+  await getPrisma().dogUser.delete({ where: { id: target.id } });
+
+  logger.info({ dogId, userId }, 'Dog access revoked');
+  return reply.status(204).send();
 }
 
