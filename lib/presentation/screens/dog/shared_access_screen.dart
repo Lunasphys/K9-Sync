@@ -8,8 +8,18 @@ import 'package:k9sync/domain/interfaces/repositories/i_dog_repository.dart';
 import 'package:k9sync/injection.dart';
 
 const _months = [
-  'jan.', 'fév.', 'mars', 'avr.', 'mai', 'juin',
-  'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.',
+  'jan.',
+  'fév.',
+  'mars',
+  'avr.',
+  'mai',
+  'juin',
+  'juil.',
+  'août',
+  'sept.',
+  'oct.',
+  'nov.',
+  'déc.',
 ];
 
 String _formatDate(DateTime d) => '${d.day} ${_months[d.month - 1]} ${d.year}';
@@ -109,7 +119,9 @@ class _SharedAccessScreenState extends State<SharedAccessScreen> {
       final message = e is AppError
           ? (e.userMessage ?? 'Échec de la révocation.')
           : 'Échec de la révocation.';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -130,22 +142,26 @@ class _SharedAccessScreenState extends State<SharedAccessScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              border: Border.all(color: AppColors.border, width: 1),
-              borderRadius: BorderRadius.circular(12),
+        leading: Semantics(
+          button: true,
+          label: 'Retour',
+          child: IconButton(
+            icon: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                border: Border.all(color: AppColors.border, width: 1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.arrow_back,
+                size: 18,
+                color: AppColors.textMuted,
+              ),
             ),
-            child: const Icon(
-              Icons.arrow_back,
-              size: 18,
-              color: AppColors.textMuted,
-            ),
+            onPressed: () => context.pop(),
           ),
-          onPressed: () => context.pop(),
         ),
         title: const Text(
           'Accès partagés',
@@ -156,17 +172,21 @@ class _SharedAccessScreenState extends State<SharedAccessScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: AppColors.blueLight,
-                borderRadius: BorderRadius.circular(12),
+          Semantics(
+            button: true,
+            label: 'Inviter quelqu\'un à accéder à ce chien',
+            child: IconButton(
+              icon: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.blueLight,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.add, color: AppColors.blue, size: 20),
               ),
-              child: const Icon(Icons.add, color: AppColors.blue, size: 20),
+              onPressed: _goInvite,
             ),
-            onPressed: _goInvite,
           ),
           const SizedBox(width: 8),
         ],
@@ -200,8 +220,12 @@ class _SharedAccessScreenState extends State<SharedAccessScreen> {
       );
     }
 
-    final family = _accesses.where((a) => a.role == UserDogRole.family).toList();
-    final sitters = _accesses.where((a) => a.role == UserDogRole.dogSitter).toList();
+    final family = _accesses
+        .where((a) => a.role == UserDogRole.family)
+        .toList();
+    final sitters = _accesses
+        .where((a) => a.role == UserDogRole.dogSitter)
+        .toList();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 24),
@@ -310,80 +334,95 @@ class _SharedAccessScreenState extends State<SharedAccessScreen> {
         ? 'Expire le ${_formatDate(access.expiresAt!)}'
         : access.email;
 
-    return Material(
-      color: AppColors.cardBg,
-      child: InkWell(
-        onTap: () => _confirmRevoke(access),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [AppColors.blue, AppColors.blueLight],
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    access.firstName.isNotEmpty
-                        ? access.firstName[0].toUpperCase()
-                        : '?',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.text,
+    return Semantics(
+      button: true,
+      label:
+          'Révoquer l\'accès de ${access.firstName} ${access.lastName}, '
+          '$roleLabel — action destructive, retire immédiatement l\'accès '
+          'à ce chien',
+      child: Material(
+        color: AppColors.cardBg,
+        child: InkWell(
+          onTap: () => _confirmRevoke(access),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [AppColors.blue, AppColors.blueLight],
                     ),
+                    shape: BoxShape.circle,
                   ),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${access.firstName} ${access.lastName}',
+                  child: Center(
+                    child: Text(
+                      access.firstName.isNotEmpty
+                          ? access.firstName[0].toUpperCase()
+                          : '?',
                       style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
                         color: AppColors.text,
                       ),
                     ),
-                    Text(
-                      sub,
-                      style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: isSitter ? AppColors.orangeLight : AppColors.greenMint,
-                  borderRadius: BorderRadius.circular(7),
-                ),
-                child: Text(
-                  roleLabel,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: roleColor,
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.person_remove_outlined,
-                color: AppColors.textMuted,
-                size: 20,
-              ),
-            ],
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${access.firstName} ${access.lastName}',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.text,
+                        ),
+                      ),
+                      Text(
+                        sub,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSitter
+                        ? AppColors.orangeLight
+                        : AppColors.greenMint,
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: Text(
+                    roleLabel,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: roleColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.person_remove_outlined,
+                  color: AppColors.textMuted,
+                  size: 20,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -393,61 +432,69 @@ class _SharedAccessScreenState extends State<SharedAccessScreen> {
   Widget _vetExportTile() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Material(
-        color: AppColors.cardBg,
-        borderRadius: AppDimensions.borderRadiusSm,
-        child: InkWell(
-          onTap: () {},
+      child: Semantics(
+        button: true,
+        enabled: false,
+        label: 'Export vétérinaire au format PDF, bientôt disponible',
+        child: Material(
+          color: AppColors.cardBg,
           borderRadius: AppDimensions.borderRadiusSm,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.border, width: 1),
-              borderRadius: AppDimensions.borderRadiusSm,
-              boxShadow: [AppDimensions.cardShadowSm],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.blueLight,
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [AppDimensions.cardShadowSm],
+          child: InkWell(
+            onTap: () {},
+            borderRadius: AppDimensions.borderRadiusSm,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.border, width: 1),
+                borderRadius: AppDimensions.borderRadiusSm,
+                boxShadow: [AppDimensions.cardShadowSm],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.blueLight,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [AppDimensions.cardShadowSm],
+                    ),
+                    child: const Icon(
+                      Icons.medical_services_outlined,
+                      color: AppColors.blue,
+                      size: 20,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.medical_services_outlined,
-                    color: AppColors.blue,
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Export vétérinaire (PDF)',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.text,
+                          ),
+                        ),
+                        Text(
+                          'Bientôt disponible',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: AppColors.textMuted,
                     size: 20,
                   ),
-                ),
-                const SizedBox(width: 14),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Export vétérinaire (PDF)',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.text,
-                        ),
-                      ),
-                      Text(
-                        'Bientôt disponible',
-                        style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(
-                  Icons.chevron_right,
-                  color: AppColors.textMuted,
-                  size: 20,
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

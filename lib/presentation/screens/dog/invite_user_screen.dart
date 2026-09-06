@@ -7,8 +7,18 @@ import 'package:k9sync/domain/interfaces/repositories/i_dog_repository.dart';
 import 'package:k9sync/injection.dart';
 
 const _months = [
-  'jan.', 'fév.', 'mars', 'avr.', 'mai', 'juin',
-  'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.',
+  'jan.',
+  'fév.',
+  'mars',
+  'avr.',
+  'mai',
+  'juin',
+  'juil.',
+  'août',
+  'sept.',
+  'oct.',
+  'nov.',
+  'déc.',
 ];
 
 String _formatDate(DateTime d) => '${d.day} ${_months[d.month - 1]} ${d.year}';
@@ -43,7 +53,9 @@ class _InviteUserScreenState extends State<InviteUserScreen> {
 
   bool get _emailValid => _emailRegex.hasMatch(_emailController.text.trim());
   bool get _canContinue =>
-      _emailValid && (!_roleDogSitter || _expiresAt != null) && widget.dogId != null;
+      _emailValid &&
+      (!_roleDogSitter || _expiresAt != null) &&
+      widget.dogId != null;
 
   Future<void> _pickExpiryDate() async {
     final now = DateTime.now();
@@ -83,7 +95,9 @@ class _InviteUserScreenState extends State<InviteUserScreen> {
       final message = e is AppError
           ? (e.userMessage ?? 'Échec de l\'invitation.')
           : 'Échec de l\'invitation.';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -117,22 +131,26 @@ class _InviteUserScreenState extends State<InviteUserScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              border: Border.all(color: AppColors.border, width: 1),
-              borderRadius: BorderRadius.circular(12),
+        leading: Semantics(
+          button: true,
+          label: 'Retour',
+          child: IconButton(
+            icon: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                border: Border.all(color: AppColors.border, width: 1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.arrow_back,
+                size: 18,
+                color: AppColors.textMuted,
+              ),
             ),
-            child: const Icon(
-              Icons.arrow_back,
-              size: 18,
-              color: AppColors.textMuted,
-            ),
+            onPressed: () => context.pop(),
           ),
-          onPressed: () => context.pop(),
         ),
         title: const Text(
           'Inviter',
@@ -179,7 +197,9 @@ class _InviteUserScreenState extends State<InviteUserScreen> {
                               children: [
                                 TextSpan(
                                   text: widget.dogName ?? '',
-                                  style: const TextStyle(fontWeight: FontWeight.w800),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                  ),
                                 ),
                               ],
                             ),
@@ -192,25 +212,32 @@ class _InviteUserScreenState extends State<InviteUserScreen> {
                 _inputLabel('ADRESSE EMAIL'),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: TextField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    onChanged: (_) => setState(() {}),
-                    decoration: InputDecoration(
-                      hintText: 'julie.m@gmail.com',
-                      filled: true,
-                      fillColor: AppColors.surface,
-                      suffixIcon: _emailController.text.isEmpty
-                          ? null
-                          : Icon(
-                              _emailValid ? Icons.check : Icons.close,
-                              color: _emailValid
-                                  ? AppColors.greenStatus
-                                  : AppColors.redDanger,
-                            ),
-                      border: OutlineInputBorder(
-                        borderRadius: AppDimensions.borderRadiusSm,
-                        borderSide: BorderSide(color: AppColors.border),
+                  child: Semantics(
+                    textField: true,
+                    label: 'Adresse email de la personne à inviter',
+                    hint: _emailController.text.isEmpty
+                        ? null
+                        : (_emailValid ? 'Adresse valide' : 'Adresse invalide'),
+                    child: TextField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        hintText: 'julie.m@gmail.com',
+                        filled: true,
+                        fillColor: AppColors.surface,
+                        suffixIcon: _emailController.text.isEmpty
+                            ? null
+                            : Icon(
+                                _emailValid ? Icons.check : Icons.close,
+                                color: _emailValid
+                                    ? AppColors.greenStatus
+                                    : AppColors.redDanger,
+                              ),
+                        border: OutlineInputBorder(
+                          borderRadius: AppDimensions.borderRadiusSm,
+                          borderSide: BorderSide(color: AppColors.border),
+                        ),
                       ),
                     ),
                   ),
@@ -248,48 +275,55 @@ class _InviteUserScreenState extends State<InviteUserScreen> {
                   _inputLabel('DATE DE FIN D\'ACCÈS'),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: InkWell(
-                      onTap: _pickExpiryDate,
-                      borderRadius: AppDimensions.borderRadiusSm,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 13,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _expiresAt != null
-                              ? AppColors.cardBg
-                              : AppColors.surface,
-                          border: Border.all(
-                            color: _expiresAt != null
-                                ? AppColors.blue
-                                : AppColors.border,
-                            width: 1.5,
+                    child: Semantics(
+                      button: true,
+                      label: _expiresAt != null
+                          ? 'Date de fin d\'accès : ${_formatDate(_expiresAt!)}. '
+                                'Modifier'
+                          : 'Sélectionner une date de fin d\'accès',
+                      child: InkWell(
+                        onTap: _pickExpiryDate,
+                        borderRadius: AppDimensions.borderRadiusSm,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 13,
                           ),
-                          borderRadius: AppDimensions.borderRadiusSm,
-                          boxShadow: [AppDimensions.cardShadowSm],
-                        ),
-                        child: Row(
-                          children: [
-                            Text(
-                              _expiresAt != null
-                                  ? _formatDate(_expiresAt!)
-                                  : 'Sélectionner une date',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: _expiresAt != null
-                                    ? AppColors.text
-                                    : AppColors.textMuted,
-                                fontWeight: FontWeight.w500,
+                          decoration: BoxDecoration(
+                            color: _expiresAt != null
+                                ? AppColors.cardBg
+                                : AppColors.surface,
+                            border: Border.all(
+                              color: _expiresAt != null
+                                  ? AppColors.blue
+                                  : AppColors.border,
+                              width: 1.5,
+                            ),
+                            borderRadius: AppDimensions.borderRadiusSm,
+                            boxShadow: [AppDimensions.cardShadowSm],
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                _expiresAt != null
+                                    ? _formatDate(_expiresAt!)
+                                    : 'Sélectionner une date',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: _expiresAt != null
+                                      ? AppColors.text
+                                      : AppColors.textMuted,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                            ),
-                            const Spacer(),
-                            Icon(
-                              Icons.calendar_today_outlined,
-                              size: 16,
-                              color: AppColors.textMuted,
-                            ),
-                          ],
+                              const Spacer(),
+                              Icon(
+                                Icons.calendar_today_outlined,
+                                size: 16,
+                                color: AppColors.textMuted,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -324,13 +358,22 @@ class _InviteUserScreenState extends State<InviteUserScreen> {
                 const SizedBox(height: 20),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _canContinue
-                          ? () => setState(() => _showConfirmModal = true)
-                          : null,
-                      child: const Text('Continuer →'),
+                  child: Semantics(
+                    button: true,
+                    enabled: _canContinue,
+                    label: _canContinue
+                        ? 'Continuer vers la confirmation de l\'invitation'
+                        : 'Continuer — indisponible tant que l\'adresse '
+                              'email et les informations requises ne sont '
+                              'pas renseignées',
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _canContinue
+                            ? () => setState(() => _showConfirmModal = true)
+                            : null,
+                        child: const Text('Continuer →'),
+                      ),
                     ),
                   ),
                 ),
@@ -373,43 +416,50 @@ class _InviteUserScreenState extends State<InviteUserScreen> {
     required bool selected,
     required VoidCallback onTap,
   }) {
-    return Material(
-      color: selected ? AppColors.blueLight : AppColors.surface,
-      borderRadius: AppDimensions.borderRadiusSm,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: AppDimensions.borderRadiusSm,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: selected ? AppColors.blue : AppColors.border,
-              width: selected ? 2 : 1,
-            ),
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: 'Rôle $name, $sub',
+      child: MergeSemantics(
+        child: Material(
+          color: selected ? AppColors.blueLight : AppColors.surface,
+          borderRadius: AppDimensions.borderRadiusSm,
+          child: InkWell(
+            onTap: onTap,
             borderRadius: AppDimensions.borderRadiusSm,
-            boxShadow: [AppDimensions.cardShadowSm],
-          ),
-          child: Column(
-            children: [
-              Text(icon, style: const TextStyle(fontSize: 22)),
-              const SizedBox(height: 4),
-              Text(
-                name,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.text,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: selected ? AppColors.blue : AppColors.border,
+                  width: selected ? 2 : 1,
                 ),
+                borderRadius: AppDimensions.borderRadiusSm,
+                boxShadow: [AppDimensions.cardShadowSm],
               ),
-              Text(
-                sub,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: selected ? AppColors.blue : AppColors.textMuted,
-                  fontWeight: FontWeight.w500,
-                ),
+              child: Column(
+                children: [
+                  Text(icon, style: const TextStyle(fontSize: 22)),
+                  const SizedBox(height: 4),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.text,
+                    ),
+                  ),
+                  Text(
+                    sub,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: selected ? AppColors.blue : AppColors.textMuted,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -439,26 +489,29 @@ class _InviteUserScreenState extends State<InviteUserScreen> {
   }
 
   Widget _permRow(String label, bool allowed) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-      child: Row(
-        children: [
-          Icon(
-            allowed ? Icons.check : Icons.close,
-            size: 14,
-            color: allowed ? AppColors.greenStatus : AppColors.redDanger,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                color: allowed ? AppColors.text : AppColors.textMuted,
+    return Semantics(
+      label: '$label : ${allowed ? "autorisé" : "non autorisé"}',
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        child: Row(
+          children: [
+            Icon(
+              allowed ? Icons.check : Icons.close,
+              size: 14,
+              color: allowed ? AppColors.greenStatus : AppColors.redDanger,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: allowed ? AppColors.text : AppColors.textMuted,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -490,9 +543,11 @@ class _ConfirmRgpdModal extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Expanded(
-              child: GestureDetector(
-                onTap: submitting ? null : onCancel,
-                child: const SizedBox.expand(),
+              child: ExcludeSemantics(
+                child: GestureDetector(
+                  onTap: submitting ? null : onCancel,
+                  child: const SizedBox.expand(),
+                ),
               ),
             ),
             Container(
@@ -591,20 +646,31 @@ class _ConfirmRgpdModal extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: submitting ? null : onConfirm,
-                      child: submitting
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation(Colors.white),
-                              ),
-                            )
-                          : const Text('✓ Confirmer l\'invitation'),
+                  Semantics(
+                    button: true,
+                    enabled: !submitting,
+                    label: submitting
+                        ? 'Envoi de l\'invitation en cours'
+                        : 'Confirmer l\'invitation de $email en tant que '
+                              '$roleLabel, avec accès à la position GPS et '
+                              'aux données de santé du chien',
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: submitting ? null : onConfirm,
+                        child: submitting
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : const Text('✓ Confirmer l\'invitation'),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 10),
