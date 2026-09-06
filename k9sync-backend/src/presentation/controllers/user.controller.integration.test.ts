@@ -21,11 +21,16 @@ function fakeRequest(userId: string): FastifyRequest {
 function fakeReply() {
   const reply = {
     statusCode: 200,
+    payload: undefined as unknown,
     status(code: number) {
       reply.statusCode = code;
       return reply;
     },
-    send(_payload?: unknown) {
+    header(_name: string, _value: string) {
+      return reply;
+    },
+    send(payload?: unknown) {
+      reply.payload = payload;
       return reply;
     },
   };
@@ -145,4 +150,96 @@ test('deleting an account does not delete a dog shared with another user', async
   // cleanup — the owner's account was never deleted by this test
   await prisma.dog.delete({ where: { id: dog.id } });
   await prisma.user.delete({ where: { id: owner.id } });
+});
+
+test('GET /users/me/export returns only the authenticated user\'s own data', async () => {
+  const hash = await bcrypt.hash('irrelevant', 4);
+
+  const user = await prisma.user.create({
+    data: {
+      email: `export-${randomUUID()}@test.local`,
+      passwordHash: hash,
+      firstName: 'Export',
+      lastName: 'Tester',
+    },
+  });
+  const otherUser = await prisma.user.create({
+    data: {
+      email: `other-${randomUUID()}@test.local`,
+      passwordHash: hash,
+      firstName: 'Other',
+      lastName: 'User',
+    },
+  });
+
+  // This user's own dog, with a collar and telemetry
+  const dog = await prisma.dog.create({ data: { name: 'ExportDog', breed: 'Labrador' } });
+  await prisma.dogUser.create({
+    data: { dogId: dog.id, userId: user.id, role: 'owner' },
+  });
+  const collar = await prisma.collar.create({
+    data: { serialNumber: `EXPORT-${randomUUID()}`, dogId: dog.id },
+  });
+  await prisma.gpsLocation.create({
+    data: { collarId: collar.id, latitude: 45.1, longitude: 4.1, recordedAt: new Date() },
+  });
+  await prisma.healthRecord.create({
+    data: { collarId: collar.id, heartRate: 95, recordedAt: new Date() },
+  });
+  await prisma.activityRecord.create({
+    data: { collarId: collar.id, steps: 500, recordedAt: new Date() },
+  });
+  await prisma.alert.create({
+    data: { dogId: dog.id, type: 'health', title: 'Export test alert' },
+  });
+
+  // Another user's dog — must never leak into this user's export
+  const otherDog = await prisma.dog.create({ data: { name: 'OtherDog' } });
+  await prisma.dogUser.create({
+    data: { dogId: otherDog.id, userId: otherUser.id, role: 'owner' },
+  });
+  const otherCollar = await prisma.collar.create({
+    data: { serialNumber: `OTHER-${randomUUID()}`, dogId: otherDog.id },
+  });
+  await prisma.gpsLocation.create({
+    data: { collarId: otherCollar.id, latitude: 1, longitude: 1, recordedAt: new Date() },
+  });
+
+  const reply = fakeReply();
+  await controller.exportMyData(fakeRequest(user.id), reply as unknown as FastifyReply);
+
+  assert.equal(reply.statusCode, 200);
+  const payload = reply.payload as {
+    user: { id: string; email: string; passwordHash?: string };
+    dogs: Array<{
+      id: string;
+      gpsLocations: unknown[];
+      healthRecords: unknown[];
+      activityRecords: unknown[];
+      alerts: unknown[];
+    }>;
+  };
+
+  // Contains this user's own profile — and never the password hash
+  assert.equal(payload.user.id, user.id);
+  assert.equal(payload.user.email, user.email);
+  assert.equal(payload.user.passwordHash, undefined);
+
+  // Contains exactly this user's owned dog, with its full telemetry
+  assert.equal(payload.dogs.length, 1);
+  assert.equal(payload.dogs[0].id, dog.id);
+  assert.equal(payload.dogs[0].gpsLocations.length, 1);
+  assert.equal(payload.dogs[0].healthRecords.length, 1);
+  assert.equal(payload.dogs[0].activityRecords.length, 1);
+  assert.equal(payload.dogs[0].alerts.length, 1);
+
+  // Never contains the other user's dog or its telemetry
+  const dogIds = payload.dogs.map((d) => d.id);
+  assert.ok(!dogIds.includes(otherDog.id));
+
+  // cleanup
+  await prisma.dog.delete({ where: { id: dog.id } });
+  await prisma.user.delete({ where: { id: user.id } });
+  await prisma.dog.delete({ where: { id: otherDog.id } });
+  await prisma.user.delete({ where: { id: otherUser.id } });
 });

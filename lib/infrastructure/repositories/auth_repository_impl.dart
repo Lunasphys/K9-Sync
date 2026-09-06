@@ -1,9 +1,12 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 
+import '../../core/constants/api_constants.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/interfaces/repositories/i_auth_repository.dart';
+import '../../injection.dart';
 import '../datasources/remote/auth_remote_datasource.dart';
 import '../storage/secure_storage.dart';
 
@@ -122,4 +125,15 @@ class AuthRepositoryImpl implements IAuthRepository {
   @override
   Future<void> forgotPassword({required String email}) async =>
       _remote.forgotPassword(email: email);
+
+  @override
+  Future<Map<String, dynamic>> exportMyData() async {
+    if (!_isRest) {
+      throw UnsupportedError('Data export is only available in REST mode.');
+    }
+    final response = await getIt<Dio>().get<Map<String, dynamic>>(
+      ApiConstants.userExport,
+    );
+    return response.data ?? {};
+  }
 }

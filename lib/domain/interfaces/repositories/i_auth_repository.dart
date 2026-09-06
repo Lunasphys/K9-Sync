@@ -14,6 +14,10 @@ abstract interface class IAuthRepository {
   Future<void> forgotPassword({required String email});
   Future<User?> getCurrentUser();
 
+  /// RGPD art. 20 — export complet des données de l'utilisateur authentifié
+  /// (profil, chiens possédés, GPS, santé, activité, alertes, accès partagés).
+  Future<Map<String, dynamic>> exportMyData();
+
   /// Vérifie le stockage (token) de façon asynchrone. À appeler au démarrage pour que [isLoggedIn] reflète l’état réel (REST).
   Future<void> ensureAuthChecked();
   bool get isLoggedIn;

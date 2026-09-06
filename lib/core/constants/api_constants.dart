@@ -58,6 +58,7 @@ abstract final class ApiConstants {
 
   // User
   static const String userMe = '/users/me';
+  static const String userExport = '/users/me/export';
   static const String userPushToken = '/users/me/push-token';
   static const String userSubscription = '/users/me/subscription';
 }

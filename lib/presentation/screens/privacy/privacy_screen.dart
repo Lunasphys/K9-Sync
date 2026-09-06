@@ -1,10 +1,52 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:k9sync/core/theme/app_theme.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
-/// Confidentialité (mockup light) : 4 sections RGPD — consentements, export, durées, suppression.
-class PrivacyScreen extends StatelessWidget {
+import 'package:k9sync/core/theme/app_theme.dart';
+import 'package:k9sync/domain/interfaces/repositories/i_auth_repository.dart';
+import 'package:k9sync/injection.dart';
+
+/// Confidentialité : 4 sections RGPD — consentements, export, durées, suppression.
+class PrivacyScreen extends StatefulWidget {
   const PrivacyScreen({super.key});
+
+  @override
+  State<PrivacyScreen> createState() => _PrivacyScreenState();
+}
+
+class _PrivacyScreenState extends State<PrivacyScreen> {
+  bool _exporting = false;
+
+  Future<void> _exportData(BuildContext context) async {
+    if (_exporting) return;
+    setState(() => _exporting = true);
+    try {
+      final data = await getIt<IAuthRepository>().exportMyData();
+      final json = const JsonEncoder.withIndent('  ').convert(data);
+
+      final dir = await getTemporaryDirectory();
+      final file = File(
+        '${dir.path}/k9sync-export-${DateTime.now().millisecondsSinceEpoch}.json',
+      );
+      await file.writeAsString(json);
+
+      if (!context.mounted) return;
+      await SharePlus.instance.share(
+        ShareParams(files: [XFile(file.path)], subject: 'Mes données K9 Sync'),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Échec de l\'export : $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -197,76 +239,96 @@ class PrivacyScreen extends StatelessWidget {
   Widget _exportCard(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.blueLight, AppColors.blueLight],
-          ),
-          border: Border.all(color: AppColors.blue.withOpacity(0.15)),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: AppDimensions.borderRadiusSm,
+        child: InkWell(
+          onTap: _exporting ? null : () => _exportData(context),
           borderRadius: AppDimensions.borderRadiusSm,
-          boxShadow: [AppDimensions.cardShadowSm],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: AppColors.cardBg,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [AppDimensions.cardShadowSm],
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.blueLight, AppColors.blueLight],
               ),
-              child: const Center(
-                child: Text('📦', style: TextStyle(fontSize: 20)),
-              ),
+              border: Border.all(color: AppColors.blue.withOpacity(0.15)),
+              borderRadius: AppDimensions.borderRadiusSm,
+              boxShadow: [AppDimensions.cardShadowSm],
             ),
-            const SizedBox(width: 14),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Télécharger mes données',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.text,
-                    ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.cardBg,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [AppDimensions.cardShadowSm],
                   ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Archive ZIP · JSON + CSV · sous 30 jours',
-                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  child: const Center(
+                    child: Text('📦', style: TextStyle(fontSize: 20)),
                   ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.blue,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.blue.withOpacity(0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: const Text(
-                'Exporter',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
                 ),
-              ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Télécharger mes données',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.text,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Fichier JSON · profil, chiens, GPS, santé, alertes',
+                        style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.blue,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.blue.withOpacity(0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: _exporting
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Exporter',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
