@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 
 import 'application/auth/delete_account_use_case.dart';
+import 'application/auth/register_push_token_use_case.dart';
 import 'application/health/sync_offline_health_use_case.dart';
 import 'domain/interfaces/repositories/i_auth_repository.dart';
 import 'domain/interfaces/repositories/i_dog_repository.dart';
@@ -107,6 +108,12 @@ void setupDependencies({required bool firebaseAvailable}) {
   );
   getIt.registerLazySingleton<DeleteAccountUseCase>(
     () => DeleteAccountUseCase(getIt<IAuthRepository>()),
+  );
+  getIt.registerLazySingleton<RegisterPushTokenUseCase>(
+    () => RegisterPushTokenUseCase(
+      getIt<INotificationService>(),
+      getIt<IAuthRepository>(),
+    ),
   );
 
   // Services

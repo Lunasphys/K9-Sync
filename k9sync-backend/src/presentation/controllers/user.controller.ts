@@ -3,7 +3,11 @@ import bcrypt from 'bcrypt';
 import { getPrisma } from '../../config/database.js';
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../shared/errors.js';
 import { logger } from '../../shared/logger.js';
-import { deleteAccountBodySchema, postConsentsBodySchema } from '../schemas/user.schema.js';
+import {
+  deleteAccountBodySchema,
+  postConsentsBodySchema,
+  pushTokenBodySchema,
+} from '../schemas/user.schema.js';
 
 export class UserController {
   /**
@@ -248,5 +252,26 @@ export class UserController {
     }
 
     return reply.send({ consents });
+  }
+
+  /**
+   * Enregistre le token FCM de l'appareil courant pour l'utilisateur
+   * authentifié. Un seul token par compte — le dernier appareil connecté
+   * gagne (voir commentaire sur User.pushToken).
+   */
+  async registerPushToken(req: FastifyRequest<{ Body: unknown }>, reply: FastifyReply) {
+    const userId = req.userId;
+
+    const body = pushTokenBodySchema.safeParse(req.body);
+    if (!body.success) throw new ValidationError(body.error.flatten());
+    const { token } = body.data;
+
+    await getPrisma().user.update({
+      where: { id: userId },
+      data: { pushToken: token },
+    });
+
+    logger.info({ userId }, 'Push token registered');
+    return reply.status(204).send();
   }
 }

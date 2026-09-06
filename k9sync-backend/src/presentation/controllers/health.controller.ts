@@ -1,6 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { getPrisma } from '../../config/database.js';
 import { logger } from '../../shared/logger.js';
+import { pushNotifications } from '../../shared/push_notifications.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -110,6 +111,11 @@ export async function syncHealth(
           type,
           title: label,
         },
+      });
+      await pushNotifications.notifyDogAccessHolders(dogId, {
+        title: 'Alerte santé',
+        body: label,
+        data: { type, dogId },
       });
 
       logger.warn({ dogId, type, value }, 'Anomaly alert created');

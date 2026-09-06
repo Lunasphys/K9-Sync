@@ -1,6 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { getPrisma } from '../../config/database.js';
 import { logger } from '../../shared/logger.js';
+import { pushNotifications } from '../../shared/push_notifications.js';
 
 async function requireDogAccess(userId: string, dogId: string) {
   const access = await getPrisma().dogUser.findFirst({
@@ -76,6 +77,11 @@ export async function syncActivity(
         type: r.anomalyType,
         title,
       },
+    });
+    await pushNotifications.notifyDogAccessHolders(dogId, {
+      title: 'Alerte activité',
+      body: title,
+      data: { type: r.anomalyType, dogId },
     });
     logger.warn({ dogId, anomalyType: r.anomalyType }, 'Activity anomaly alert created');
   }

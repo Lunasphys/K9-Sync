@@ -1,6 +1,7 @@
 import { getPrisma } from '../config/database.js';
 import { logger } from '../shared/logger.js';
 import { gpsMessageSchema, healthMessageSchema } from '../presentation/schemas/collar.schema.js';
+import { pushNotifications } from '../shared/push_notifications.js';
 
 const HR_MIN = 50;
 const HR_MAX = 180;
@@ -95,6 +96,11 @@ export async function handleHealthMessage(serial: string, raw: unknown): Promise
 
       await getPrisma().alert.create({
         data: { dogId: collar.dogId, type, title },
+      });
+      await pushNotifications.notifyDogAccessHolders(collar.dogId, {
+        title: 'Alerte santé',
+        body: title,
+        data: { type, dogId: collar.dogId },
       });
 
       logger.warn({ serial, collarId, type, value }, 'Anomaly alert created from MQTT');

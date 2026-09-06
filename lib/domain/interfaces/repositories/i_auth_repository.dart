@@ -32,6 +32,11 @@ abstract interface class IAuthRepository {
   /// enregistré), par type. Un type jamais soumis est absent de la map.
   Future<Map<String, bool>> getConsentStatus();
 
+  /// Enregistre le token FCM de l'appareil courant pour l'utilisateur
+  /// authentifié (un seul token par compte — le dernier appareil connecté
+  /// gagne). À appeler à la connexion.
+  Future<void> registerPushToken(String token);
+
   /// Vérifie le stockage (token) de façon asynchrone. À appeler au démarrage pour que [isLoggedIn] reflète l’état réel (REST).
   Future<void> ensureAuthChecked();
   bool get isLoggedIn;

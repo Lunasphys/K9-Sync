@@ -12,4 +12,5 @@ export async function userRoutes(app: FastifyInstance) {
   app.delete('/me', { preHandler: jwtAuth, handler: controller.deleteMe });
   app.post('/me/consents', { preHandler: jwtAuth, handler: controller.postConsents });
   app.get('/me/consents', { preHandler: jwtAuth, handler: controller.getConsents });
+  app.post('/me/push-token', { preHandler: jwtAuth, handler: controller.registerPushToken });
 }

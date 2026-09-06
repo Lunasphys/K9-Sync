@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "604899296922",
+    "project_id": "k9sync-mvp",
+    "storage_bucket": "k9sync-mvp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:604899296922:android:6f45a853dc080873d8c123",
+        "android_client_info": {
+          "package_name": "com.company.k9sync"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "604899296922-rtkkb6jc640fon8so5p05n203qu5vne6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyANpg6wBn-OL9fLTVEA1VZGHLLX--sFFTY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "604899296922-rtkkb6jc640fon8so5p05n203qu5vne6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:604899296922:android:09311ee66d675e26d8c123",
+        "android_client_info": {
+          "package_name": "com.example.k9sync"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "604899296922-rtkkb6jc640fon8so5p05n203qu5vne6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyANpg6wBn-OL9fLTVEA1VZGHLLX--sFFTY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "604899296922-rtkkb6jc640fon8so5p05n203qu5vne6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

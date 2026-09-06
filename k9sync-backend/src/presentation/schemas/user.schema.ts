@@ -26,3 +26,9 @@ export const postConsentsBodySchema = z.object({
 
 export type ConsentType = z.infer<typeof consentTypeSchema>;
 export type PostConsentsBody = z.infer<typeof postConsentsBodySchema>;
+
+export const pushTokenBodySchema = z.object({
+  token: z.string().min(1),
+});
+
+export type PushTokenBody = z.infer<typeof pushTokenBodySchema>;

@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:k9sync/application/auth/register_push_token_use_case.dart';
 import 'package:k9sync/core/errors/auth_error.dart';
 import 'package:k9sync/core/theme/app_theme.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_auth_repository.dart';
@@ -63,6 +66,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         firstName: _firstNameCtrl.text.trim(),
         lastName: _lastNameCtrl.text.trim(),
       );
+      // Best effort — les notifications push ne doivent jamais bloquer l'inscription.
+      unawaited(getIt<RegisterPushTokenUseCase>()().catchError((_) {}));
       if (!mounted) return;
       // A brand-new account has no consent recorded yet — always route
       // through the real (backend-wired) consent screen before dog setup.

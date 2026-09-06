@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:k9sync/application/auth/register_push_token_use_case.dart';
 import 'package:k9sync/core/errors/auth_error.dart';
 import 'package:k9sync/core/theme/app_theme.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_auth_repository.dart';
@@ -47,6 +50,8 @@ class _LoginScreenState extends State<LoginScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
+      // Best effort — les notifications push ne doivent jamais bloquer la connexion.
+      unawaited(getIt<RegisterPushTokenUseCase>()().catchError((_) {}));
       if (!mounted) return;
       context.go(AppRoutes.homeAccueil);
     } on AuthError catch (e) {

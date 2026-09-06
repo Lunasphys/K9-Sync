@@ -193,4 +193,15 @@ class AuthRepositoryImpl implements IAuthRepository {
           MapEntry(type, (value as Map<String, dynamic>)['accepted'] as bool),
     );
   }
+
+  @override
+  Future<void> registerPushToken(String token) async {
+    if (!_isRest) {
+      throw UnsupportedError('Push token registration is only available in REST mode.');
+    }
+    await getIt<Dio>().post<void>(
+      ApiConstants.userPushToken,
+      data: {'token': token},
+    );
+  }
 }
