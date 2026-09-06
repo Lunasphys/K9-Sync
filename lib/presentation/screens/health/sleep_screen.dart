@@ -158,7 +158,10 @@ class _SleepScreenState extends State<SleepScreen> {
                 'Aucune donnée de sommeil pour $_dogName sur '
                 '${_days == 1 ? 'les dernières 24h' : 'les 7 derniers jours'}.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: 6),
               Text(
@@ -185,25 +188,32 @@ class _SleepScreenState extends State<SleepScreen> {
           ),
           child: Column(
             children: [
-              SizedBox(
-                height: 180,
-                child: PieChart(
-                  PieChartData(
-                    sectionsSpace: 3,
-                    centerSpaceRadius: 40,
-                    sections: breakdown.phases.map((p) {
-                      return PieChartSectionData(
-                        value: p.count.toDouble(),
-                        color: _phaseColor(p.phase),
-                        title: '${p.percentage.toStringAsFixed(0)}%',
-                        radius: 46,
-                        titleStyle: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                        ),
-                      );
-                    }).toList(),
+              Semantics(
+                label:
+                    'Camembert de répartition du sommeil : '
+                    '${breakdown.phases.map((p) => '${_phaseLabel(p.phase)} ${p.percentage.toStringAsFixed(0)}%').join(', ')}',
+                child: ExcludeSemantics(
+                  child: SizedBox(
+                    height: 180,
+                    child: PieChart(
+                      PieChartData(
+                        sectionsSpace: 3,
+                        centerSpaceRadius: 40,
+                        sections: breakdown.phases.map((p) {
+                          return PieChartSectionData(
+                            value: p.count.toDouble(),
+                            color: _phaseColor(p.phase),
+                            title: '${p.percentage.toStringAsFixed(0)}%',
+                            radius: 46,
+                            titleStyle: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -280,25 +290,30 @@ class _PeriodToggle extends StatelessWidget {
 
   Widget _chip(String label, int value) {
     final selected = days == value;
-    return GestureDetector(
-      onTap: () => onChanged(value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selected ? AppColors.orange : AppColors.cardBg,
-          border: Border.all(
-            color: selected ? AppColors.orange : AppColors.border,
-            width: 2,
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: 'Période $label',
+      child: GestureDetector(
+        onTap: () => onChanged(value),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected ? AppColors.orange : AppColors.cardBg,
+            border: Border.all(
+              color: selected ? AppColors.orange : AppColors.border,
+              width: 2,
+            ),
+            borderRadius: BorderRadius.circular(20),
           ),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w800,
-            color: selected ? Colors.white : AppColors.text,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: selected ? Colors.white : AppColors.text,
+            ),
           ),
         ),
       ),
