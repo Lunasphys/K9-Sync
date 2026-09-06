@@ -15,6 +15,7 @@ import 'package:k9sync/domain/interfaces/services/i_mqtt_service.dart';
 import 'package:k9sync/injection.dart';
 import 'package:k9sync/presentation/providers/health_provider.dart';
 import 'package:k9sync/presentation/router/route_guards.dart';
+import 'package:k9sync/presentation/widgets/common/live_badge.dart';
 
 class HealthDashboardScreen extends ConsumerStatefulWidget {
   const HealthDashboardScreen({super.key});
@@ -160,7 +161,7 @@ class _HealthDashboardScreenState extends ConsumerState<HealthDashboardScreen>
           ),
           Padding(
             padding: const EdgeInsets.only(right: 16),
-            child: _MqttDot(connected: _mqttConnected),
+            child: LiveBadge(connected: _mqttConnected),
           ),
         ],
         bottom: PreferredSize(
@@ -867,36 +868,6 @@ class _SectionTitle extends StatelessWidget {
   );
 }
 
-class _MqttDot extends StatelessWidget {
-  final bool connected;
-  const _MqttDot({required this.connected});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: connected ? AppColors.greenStatus : Colors.grey,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 5),
-        Text(
-          connected ? 'Live' : 'Off',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w800,
-            color: connected ? AppColors.greenStatus : Colors.grey,
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 class _StatusDot extends StatelessWidget {
   final bool ok;

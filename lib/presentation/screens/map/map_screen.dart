@@ -15,6 +15,7 @@ import 'package:k9sync/domain/interfaces/services/i_mqtt_service.dart';
 import 'package:k9sync/injection.dart';
 import 'package:k9sync/presentation/router/route_guards.dart';
 import 'package:k9sync/presentation/providers/trail_provider.dart';
+import 'package:k9sync/presentation/widgets/common/live_badge.dart';
 
 // Parsed GPS point from MQTT payload
 class _GpsPoint {
@@ -272,7 +273,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 Positioned(
                   top: 60,
                   left: 16,
-                  child: _MqttBadge(connected: _mqttConnected),
+                  child: LiveBadge(
+                    connected: _mqttConnected,
+                    liveLabel: 'MQTT • Live',
+                    offlineLabel: 'MQTT • Off',
+                  ),
                 ),
 
                 // ── Follow button ──────────────────────────────────────
@@ -701,41 +706,6 @@ class _DogMarker extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _MqttBadge extends StatelessWidget {
-  final bool connected;
-  const _MqttBadge({required this.connected});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: connected ? AppColors.greenMint : Colors.grey.shade200,
-        border: Border.all(color: AppColors.border, width: 2),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 7,
-            height: 7,
-            decoration: BoxDecoration(
-              color: connected ? AppColors.greenStatus : Colors.grey,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 5),
-          Text(
-            connected ? 'MQTT • Live' : 'MQTT • Off',
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
-          ),
-        ],
-      ),
     );
   }
 }
