@@ -71,7 +71,7 @@ GoRouter createAppRouter({
       ),
       GoRoute(
         path: AppRoutes.consent,
-        builder: (c, s) => const ConsentScreen(),
+        builder: (c, s) => ConsentScreen(nextRoute: s.extra as String?),
       ),
       GoRoute(
         path: AppRoutes.login,

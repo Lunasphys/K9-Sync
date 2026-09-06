@@ -23,6 +23,15 @@ abstract interface class IAuthRepository {
   /// auquel cas rien n'est supprimé côté serveur.
   Future<void> deleteAccount({required String password});
 
+  /// RGPD — enregistre un ou plusieurs consentements pour l'utilisateur
+  /// authentifié (append-only côté serveur, chaque appel crée une nouvelle
+  /// entrée d'historique).
+  Future<void> submitConsents(List<ConsentSubmission> consents);
+
+  /// RGPD — état actuel de chaque type de consentement (le plus récent
+  /// enregistré), par type. Un type jamais soumis est absent de la map.
+  Future<Map<String, bool>> getConsentStatus();
+
   /// Vérifie le stockage (token) de façon asynchrone. À appeler au démarrage pour que [isLoggedIn] reflète l’état réel (REST).
   Future<void> ensureAuthChecked();
   bool get isLoggedIn;
@@ -36,6 +45,20 @@ abstract interface class IAuthRepository {
 
   /// Marque la session comme expirée (isLoggedIn → false) et émet false sur [sessionStream].
   void invalidateSession();
+}
+
+/// One consent entry to submit — [type] matches [ConsentType.value] strings
+/// ('terms_of_service', 'gps_data_collection', 'health_data_collection').
+class ConsentSubmission {
+  final String type;
+  final bool accepted;
+  final String version;
+
+  const ConsentSubmission({
+    required this.type,
+    required this.accepted,
+    required this.version,
+  });
 }
 
 /// Result of login/register/refresh.

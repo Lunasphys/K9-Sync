@@ -41,11 +41,17 @@ class AppRoutes {
 
 /// Auth guard — called by GoRouter redirect.
 /// Returns a redirect path or null (= stay on current route).
+///
+/// [AppRoutes.consent] is deliberately NOT in [publicRoutes]: it is only
+/// ever reached by an already-logged-in user (post-login from splash, or
+/// right after registration) who must review it before the rest of the
+/// app. Treating it as "public" would bounce them straight back to
+/// [AppRoutes.homeAccueil] via the isLoggedIn-on-a-public-route rule below,
+/// defeating the whole point of the screen.
 String? authGuard(bool isLoggedIn, String currentPath) {
   const publicRoutes = {
     AppRoutes.splash,
     AppRoutes.onboarding,
-    AppRoutes.consent,
     AppRoutes.login,
     AppRoutes.signIn,
     AppRoutes.register,

@@ -64,7 +64,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         lastName: _lastNameCtrl.text.trim(),
       );
       if (!mounted) return;
-      context.go(AppRoutes.dogSetup);
+      // A brand-new account has no consent recorded yet — always route
+      // through the real (backend-wired) consent screen before dog setup.
+      context.go(AppRoutes.consent, extra: AppRoutes.dogSetup);
     } on AuthError catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(

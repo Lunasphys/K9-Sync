@@ -155,4 +155,42 @@ class AuthRepositoryImpl implements IAuthRepository {
     await _secureStorage!.clear();
     _cachedLoggedIn = false;
   }
+
+  @override
+  Future<void> submitConsents(List<ConsentSubmission> consents) async {
+    if (!_isRest) {
+      throw UnsupportedError('Consents are only available in REST mode.');
+    }
+    await getIt<Dio>().post<void>(
+      ApiConstants.userConsents,
+      data: {
+        'consents': consents
+            .map(
+              (c) => {
+                'type': c.type,
+                'accepted': c.accepted,
+                'version': c.version,
+              },
+            )
+            .toList(),
+      },
+    );
+  }
+
+  @override
+  Future<Map<String, bool>> getConsentStatus() async {
+    if (!_isRest) {
+      throw UnsupportedError('Consents are only available in REST mode.');
+    }
+    final response = await getIt<Dio>().get<Map<String, dynamic>>(
+      ApiConstants.userConsents,
+    );
+    final raw =
+        (response.data?['consents'] as Map<String, dynamic>?) ??
+        <String, dynamic>{};
+    return raw.map(
+      (type, value) =>
+          MapEntry(type, (value as Map<String, dynamic>)['accepted'] as bool),
+    );
+  }
 }

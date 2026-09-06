@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import { getPrisma } from '../../config/database.js';
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../shared/errors.js';
 import { logger } from '../../shared/logger.js';
-import { deleteAccountBodySchema } from '../schemas/user.schema.js';
+import { deleteAccountBodySchema, postConsentsBodySchema } from '../schemas/user.schema.js';
 
 export class UserController {
   /**
@@ -194,5 +194,59 @@ export class UserController {
 
     reply.header('Content-Disposition', `attachment; filename="k9sync-export-${userId}.json"`);
     return reply.send(payload);
+  }
+
+  /**
+   * RGPD — enregistre un ou plusieurs consentements pour l'utilisateur
+   * authentifié. Chaque appel INSÈRE de nouvelles lignes plutôt que de
+   * mettre à jour les existantes : c'est un registre de preuve légale
+   * append-only, l'historique complet (qui a accepté/refusé quoi et quand)
+   * doit rester consultable, pas seulement le dernier état.
+   */
+  async postConsents(req: FastifyRequest<{ Body: unknown }>, reply: FastifyReply) {
+    const userId = req.userId;
+
+    const body = postConsentsBodySchema.safeParse(req.body);
+    if (!body.success) throw new ValidationError(body.error.flatten());
+    const { consents } = body.data;
+
+    const created = await getPrisma().consentLog.createMany({
+      data: consents.map((c) => ({
+        userId,
+        type: c.type,
+        accepted: c.accepted,
+        version: c.version,
+      })),
+    });
+
+    logger.info({ userId, count: created.count }, 'Consents recorded');
+    return reply.status(201).send({ recorded: created.count });
+  }
+
+  /**
+   * RGPD — état actuel de chaque type de consentement pour l'utilisateur
+   * authentifié : le dernier enregistrement par type (l'historique complet
+   * reste en base, seule la vue "état courant" est renvoyée ici).
+   */
+  async getConsents(req: FastifyRequest, reply: FastifyReply) {
+    const userId = req.userId;
+
+    const logs = await getPrisma().consentLog.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const consents: Record<string, { accepted: boolean; version: string; createdAt: Date }> = {};
+    for (const log of logs) {
+      if (!(log.type in consents)) {
+        consents[log.type] = {
+          accepted: log.accepted,
+          version: log.version,
+          createdAt: log.createdAt,
+        };
+      }
+    }
+
+    return reply.send({ consents });
   }
 }

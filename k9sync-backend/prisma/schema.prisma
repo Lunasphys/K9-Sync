@@ -21,6 +21,7 @@ model User {
 
   refreshTokens RefreshToken[]
   dogUsers     DogUser[]
+  consentLogs  ConsentLog[]
 }
 
 model RefreshToken {
@@ -136,6 +137,22 @@ model HealthRecord {
 
   collar Collar @relation(fields: [collarId], references: [id], onDelete: Cascade)
   @@index([collarId, recordedAt])
+}
+
+// Registre de preuve légale (RGPD) — jamais supprimé, même si le compte l'est.
+// userId est mis à NULL (onDelete: SetNull) plutôt que la ligne supprimée :
+// la trace de consentement (type, accepted, version, date) survit à la
+// suppression du compte, seul le lien vers l'utilisateur est détaché.
+model ConsentLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  type      String   // terms_of_service | gps_data_collection | health_data_collection
+  accepted  Boolean
+  version   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  @@index([userId, type])
 }
 
 model Alert {

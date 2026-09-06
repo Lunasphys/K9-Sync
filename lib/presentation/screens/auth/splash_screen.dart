@@ -5,6 +5,7 @@ import 'package:k9sync/core/theme/app_theme.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_auth_repository.dart';
 import 'package:k9sync/injection.dart';
 import 'package:k9sync/presentation/router/route_guards.dart';
+import 'package:k9sync/presentation/screens/privacy/consent_screen.dart';
 
 /// Initial screen — checks auth token then redirects.
 /// Shows for at least 1.5s to avoid flash.
@@ -55,7 +56,9 @@ class _SplashScreenState extends State<SplashScreen>
       final isLoggedIn = auth.isLoggedIn;
       if (!mounted) return;
       if (isLoggedIn) {
-        context.go(AppRoutes.homeAccueil);
+        final hasConsented = await hasAcceptedRequiredConsent();
+        if (!mounted) return;
+        context.go(hasConsented ? AppRoutes.homeAccueil : AppRoutes.consent);
       } else {
         context.go(AppRoutes.login);
       }

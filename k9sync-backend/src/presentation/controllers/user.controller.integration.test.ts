@@ -192,6 +192,100 @@ test('DELETE /users/me refuses deletion with an incorrect password and deletes n
   await prisma.user.delete({ where: { id: user.id } });
 });
 
+test('POST/GET /users/me/consents records consents and returns the latest state per type', async () => {
+  const hash = await bcrypt.hash('irrelevant', 4);
+  const user = await prisma.user.create({
+    data: {
+      email: `consent-${randomUUID()}@test.local`,
+      passwordHash: hash,
+      firstName: 'Consent',
+      lastName: 'Tester',
+    },
+  });
+
+  const postReply = fakeReply();
+  await controller.postConsents(
+    fakeRequest(user.id, {
+      consents: [
+        { type: 'terms_of_service', accepted: true, version: '1.0' },
+        { type: 'gps_data_collection', accepted: true, version: '1.0' },
+        { type: 'health_data_collection', accepted: false, version: '1.0' },
+      ],
+    }),
+    postReply as unknown as FastifyReply,
+  );
+  assert.equal(postReply.statusCode, 201);
+  assert.equal((postReply.payload as { recorded: number }).recorded, 3);
+
+  const getReply1 = fakeReply();
+  await controller.getConsents(fakeRequest(user.id), getReply1 as unknown as FastifyReply);
+  const state1 = (
+    getReply1.payload as { consents: Record<string, { accepted: boolean; version: string }> }
+  ).consents;
+  assert.equal(state1.terms_of_service.accepted, true);
+  assert.equal(state1.gps_data_collection.accepted, true);
+  assert.equal(state1.health_data_collection.accepted, false);
+
+  // The user later revokes GPS consent — this appends a new row, it never
+  // rewrites the previous one (append-only audit trail).
+  const postReply2 = fakeReply();
+  await controller.postConsents(
+    fakeRequest(user.id, {
+      consents: [{ type: 'gps_data_collection', accepted: false, version: '1.0' }],
+    }),
+    postReply2 as unknown as FastifyReply,
+  );
+  assert.equal(postReply2.statusCode, 201);
+
+  const getReply2 = fakeReply();
+  await controller.getConsents(fakeRequest(user.id), getReply2 as unknown as FastifyReply);
+  const state2 = (
+    getReply2.payload as { consents: Record<string, { accepted: boolean; version: string }> }
+  ).consents;
+  assert.equal(state2.gps_data_collection.accepted, false, 'latest state must reflect the revocation');
+  assert.equal(state2.terms_of_service.accepted, true, 'unrelated consent types must be unaffected');
+
+  // The full history is preserved — two rows for gps_data_collection, not an update
+  const gpsHistory = await prisma.consentLog.findMany({
+    where: { userId: user.id, type: 'gps_data_collection' },
+  });
+  assert.equal(gpsHistory.length, 2);
+
+  // cleanup
+  await prisma.consentLog.deleteMany({ where: { userId: user.id } });
+  await prisma.user.delete({ where: { id: user.id } });
+});
+
+test('deleting an account detaches (never deletes) their consent logs', async () => {
+  const hash = await bcrypt.hash('irrelevant', 4);
+  const user = await prisma.user.create({
+    data: {
+      email: `consent-delete-${randomUUID()}@test.local`,
+      passwordHash: hash,
+      firstName: 'Detach',
+      lastName: 'Test',
+    },
+  });
+  const consent = await prisma.consentLog.create({
+    data: { userId: user.id, type: 'terms_of_service', accepted: true, version: '1.0' },
+  });
+
+  const reply = fakeReply();
+  await controller.deleteMe(
+    fakeRequest(user.id, { password: 'irrelevant' }),
+    reply as unknown as FastifyReply,
+  );
+  assert.equal(reply.statusCode, 204);
+
+  const stillThere = await prisma.consentLog.findUnique({ where: { id: consent.id } });
+  assert.ok(stillThere, 'the consent log row must survive account deletion');
+  assert.equal(stillThere?.userId, null, 'its user link must be detached, not the row deleted');
+  assert.equal(stillThere?.accepted, true);
+
+  // cleanup
+  await prisma.consentLog.delete({ where: { id: consent.id } });
+});
+
 test('GET /users/me/export returns only the authenticated user\'s own data', async () => {
   const hash = await bcrypt.hash('irrelevant', 4);
 

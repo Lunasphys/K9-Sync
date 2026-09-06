@@ -10,4 +10,6 @@ export async function userRoutes(app: FastifyInstance) {
   app.get('/me', { preHandler: jwtAuth, handler: controller.getMe });
   app.get('/me/export', { preHandler: jwtAuth, handler: controller.exportMyData });
   app.delete('/me', { preHandler: jwtAuth, handler: controller.deleteMe });
+  app.post('/me/consents', { preHandler: jwtAuth, handler: controller.postConsents });
+  app.get('/me/consents', { preHandler: jwtAuth, handler: controller.getConsents });
 }
