@@ -10,6 +10,7 @@ import 'package:k9sync/core/debug/debug_logger.dart';
 import 'package:k9sync/core/theme/app_theme.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_auth_repository.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_dog_repository.dart';
+import 'package:k9sync/domain/interfaces/repositories/i_health_repository.dart';
 import 'package:k9sync/domain/interfaces/services/i_mqtt_service.dart';
 import 'package:k9sync/injection.dart';
 import 'package:k9sync/presentation/providers/health_provider.dart';
@@ -38,9 +39,35 @@ class _HealthDashboardScreenState extends ConsumerState<HealthDashboardScreen>
     WidgetsBinding.instance.addObserver(this);
     _initMqtt();
     _loadDogName();
+    _loadLastKnownHealth();
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
+  }
+
+  // Seeds the dashboard with the last known health record from the backend
+  // so it shows real (if possibly stale) data instead of "En attente des
+  // données..." the moment there's actually something to show.
+  Future<void> _loadLastKnownHealth() async {
+    final dogId = await _getDogId();
+    if (dogId == null || !mounted) return;
+    try {
+      final record = await getIt<IHealthRepository>().getLatestHealth(dogId);
+      if (record == null || !mounted) return;
+      ref
+          .read(healthProvider.notifier)
+          .seedFromRest(
+            HealthSnapshot(
+              heartRate: record.heartRate,
+              temperature: record.temperature,
+              steps: 0,
+              activeMinutes: 0,
+              anomalyDetected: false,
+              anomalyType: 'none',
+              recordedAt: record.recordedAt,
+            ),
+          );
+    } catch (_) {}
   }
 
   @override
@@ -142,7 +169,7 @@ class _HealthDashboardScreenState extends ConsumerState<HealthDashboardScreen>
         ),
       ),
       body: latest == null
-          ? _WaitingState(connected: _mqttConnected)
+          ? _WaitingState(connected: _mqttConnected, dogName: _dogName)
           : _Dashboard(
               latest: latest,
               history: state.history,
@@ -157,7 +184,8 @@ class _HealthDashboardScreenState extends ConsumerState<HealthDashboardScreen>
 
 class _WaitingState extends StatelessWidget {
   final bool connected;
-  const _WaitingState({required this.connected});
+  final String dogName;
+  const _WaitingState({required this.connected, required this.dogName});
 
   @override
   Widget build(BuildContext context) {
@@ -168,7 +196,9 @@ class _WaitingState extends StatelessWidget {
           const Text('🐕', style: TextStyle(fontSize: 56)),
           const SizedBox(height: 16),
           Text(
-            connected ? 'En attente des données...' : 'Collier hors ligne',
+            connected
+                ? 'En attente des données de $dogName...'
+                : 'Collier de $dogName hors ligne',
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 8),

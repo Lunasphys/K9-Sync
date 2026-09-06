@@ -171,6 +171,17 @@ class HealthNotifier extends StateNotifier<HealthState> {
     await box.put(activity.date, jsonEncode(activity.toJson()));
   }
 
+  /// Seeds [latest] with the last known record fetched from the backend
+  /// (REST), so the dashboard can show "dernier relevé il y a Xmin" instead
+  /// of a contentless waiting state before any MQTT message arrives this
+  /// session. Never overwrites live data, and — unlike [onSnapshot] — does
+  /// not touch history/today's activity/the offline sync buffer, since this
+  /// is already-synced, possibly stale data, not a new measurement.
+  void seedFromRest(HealthSnapshot snap) {
+    if (state.latest != null) return;
+    state = state.copyWith(latest: snap);
+  }
+
   void onSnapshot(HealthSnapshot snap) {
     // Update rolling history for charts
     final updated = [...state.history, snap];

@@ -10,6 +10,7 @@ import 'package:k9sync/core/debug/debug_logger.dart';
 import 'package:k9sync/core/theme/app_theme.dart';
 import 'package:k9sync/domain/entities/trail.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_dog_repository.dart';
+import 'package:k9sync/domain/interfaces/repositories/i_gps_repository.dart';
 import 'package:k9sync/domain/interfaces/services/i_mqtt_service.dart';
 import 'package:k9sync/injection.dart';
 import 'package:k9sync/presentation/router/route_guards.dart';
@@ -74,7 +75,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   void initState() {
     super.initState();
     _initMqtt();
-    _loadDogName();
+    _loadDogAndLastKnownPosition();
     // Refresh "Il y a Xs" label every second
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted && _lastGps != null) setState(() {});
@@ -100,12 +101,28 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     mqtt.connect(collarSerial: _collarSerial);
   }
 
-  Future<void> _loadDogName() async {
+  // Loads the dog's name and, if no live MQTT position has arrived yet,
+  // seeds the map with the last known position from the backend — so the
+  // screen shows "dernière position il y a Xmin" instead of a contentless
+  // "waiting for signal" the moment there's actually something to say.
+  Future<void> _loadDogAndLastKnownPosition() async {
     try {
       final dogs = await getIt<IDogRepository>().getDogs();
-      if (dogs.isNotEmpty && mounted) {
-        setState(() => _dogName = dogs.first.name);
-      }
+      if (dogs.isEmpty || !mounted) return;
+      final dog = dogs.first;
+      setState(() => _dogName = dog.name);
+
+      if (_lastGps != null) return; // MQTT already delivered a live point
+      final last = await getIt<IGpsRepository>().getLatestLocation(dog.id);
+      if (last == null || !mounted || _lastGps != null) return;
+      setState(() {
+        _lastGps = _GpsPoint(
+          lat: last.latitude,
+          lng: last.longitude,
+          accuracy: last.accuracy ?? 0,
+          recordedAt: last.recordedAt,
+        );
+      });
     } catch (_) {}
   }
 
@@ -181,7 +198,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   }
 
   String get _locationLabel {
-    if (_lastGps == null) return 'En attente du signal...';
+    if (_lastGps == null) return 'En attente du signal de $_dogName...';
     return '${_lastGps!.lat.toStringAsFixed(5)}, '
         '${_lastGps!.lng.toStringAsFixed(5)}';
   }
