@@ -261,15 +261,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         ],
                       ),
                     if (_lastGps != null)
-                      MarkerLayer(
-                        markers: [
-                          Marker(
-                            point: LatLng(_lastGps!.lat, _lastGps!.lng),
-                            width: 60,
-                            height: 72,
-                            child: _DogMarker(live: _mqttConnected),
-                          ),
-                        ],
+                      _AnimatedDogMarkerLayer(
+                        target: LatLng(_lastGps!.lat, _lastGps!.lng),
+                        live: _mqttConnected,
                       ),
                   ],
                 ),
@@ -617,6 +611,55 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 }
 
 // ── Extracted widgets ─────────────────────────────────────────────────────────
+
+/// Linear interpolation between two [LatLng] — lets [TweenAnimationBuilder]
+/// glide the marker smoothly to each new position instead of teleporting.
+class LatLngTween extends Tween<LatLng> {
+  LatLngTween({required super.begin, required super.end});
+
+  @override
+  LatLng lerp(double t) {
+    final b = begin!;
+    final e = end!;
+    return LatLng(
+      b.latitude + (e.latitude - b.latitude) * t,
+      b.longitude + (e.longitude - b.longitude) * t,
+    );
+  }
+}
+
+/// Animates the dog marker between successive GPS points over 3s instead of
+/// jumping straight to the new position. [TweenAnimationBuilder] retargets
+/// automatically from wherever it currently is whenever [target] changes —
+/// passing begin == end here is intentional, only the very first build uses it.
+class _AnimatedDogMarkerLayer extends StatelessWidget {
+  final LatLng target;
+  final bool live;
+
+  const _AnimatedDogMarkerLayer({required this.target, required this.live});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<LatLng>(
+      tween: LatLngTween(begin: target, end: target),
+      duration: const Duration(seconds: 3),
+      curve: Curves.easeInOut,
+      builder: (context, animatedPoint, child) {
+        return MarkerLayer(
+          markers: [
+            Marker(
+              point: animatedPoint,
+              width: 60,
+              height: 72,
+              child: child!,
+            ),
+          ],
+        );
+      },
+      child: _DogMarker(live: live),
+    );
+  }
+}
 
 class _DogMarker extends StatelessWidget {
   final bool live;
