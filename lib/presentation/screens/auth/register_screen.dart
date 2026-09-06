@@ -280,6 +280,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  // TODO: redondant avec ConsentScreen (lib/presentation/screens/privacy/consent_screen.dart),
+  // qui suit désormais cette étape (voir _submit -> AppRoutes.consent) et est le seul des
+  // deux à appeler POST /users/me/consents. Cette étape 2 ne fait plus que bloquer le
+  // bouton "Suivant" sur CGU+GPS, sans rien persister — à supprimer et remplacer par une
+  // simple étape 1 (identité) suivie directement de ConsentScreen.
   Widget _buildStep2() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
