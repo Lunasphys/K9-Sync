@@ -128,9 +128,13 @@ class _CollarStatusScreenState extends State<CollarStatusScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _goPair,
-                child: const Text('Jumeler maintenant'),
+              Semantics(
+                button: true,
+                label: 'Jumeler maintenant un collier pour ce chien',
+                child: ElevatedButton(
+                  onPressed: _goPair,
+                  child: const Text('Jumeler maintenant'),
+                ),
               ),
             ],
           ),
@@ -208,6 +212,13 @@ class _CollarStatusScreenState extends State<CollarStatusScreen> {
           label: 'Batterie',
           value: batteryLevel != null ? '$batteryLevel %' : 'Inconnue',
           valueColor: batteryColor,
+          semanticSuffix: batteryLevel == null
+              ? ''
+              : batteryLevel < 15
+              ? ', niveau critique, recharge nécessaire'
+              : batteryLevel < 40
+              ? ', niveau faible'
+              : '',
         ),
         _statRow(
           icon: Icons.memory,
@@ -228,32 +239,34 @@ class _CollarStatusScreenState extends State<CollarStatusScreen> {
     required String label,
     required String value,
     Color? valueColor,
+    String semanticSuffix = '',
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-      decoration: BoxDecoration(
-        color: AppColors.cardBg,
-        border: Border.all(color: AppColors.border, width: 1),
-        borderRadius: AppDimensions.borderRadiusSm,
-        boxShadow: [AppDimensions.cardShadowSm],
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: AppColors.textMuted),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(label, style: const TextStyle(fontSize: 14)),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: valueColor ?? AppColors.text,
+    return Semantics(
+      label: '$label : $value$semanticSuffix',
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        decoration: BoxDecoration(
+          color: AppColors.cardBg,
+          border: Border.all(color: AppColors.border, width: 1),
+          borderRadius: AppDimensions.borderRadiusSm,
+          boxShadow: [AppDimensions.cardShadowSm],
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: AppColors.textMuted),
+            const SizedBox(width: 10),
+            Expanded(child: Text(label, style: const TextStyle(fontSize: 14))),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: valueColor ?? AppColors.text,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

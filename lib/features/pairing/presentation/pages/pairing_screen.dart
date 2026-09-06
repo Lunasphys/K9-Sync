@@ -66,9 +66,13 @@ class _PairingScreenState extends State<PairingScreen> {
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () => context.pop(),
+        leading: Semantics(
+          button: true,
+          label: 'Retour',
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new),
+            onPressed: () => context.pop(),
+          ),
         ),
         title: const Text('Jumelage du collier GPS'),
       ),
@@ -106,17 +110,21 @@ class _PairingScreenState extends State<PairingScreen> {
                   ),
                 ),
                 const SizedBox(height: 6),
-                TextField(
-                  controller: _serialController,
-                  textCapitalization: TextCapitalization.characters,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    hintText: 'Ex : K9S-0042',
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.cardBorderWeak),
+                Semantics(
+                  textField: true,
+                  label: 'Numéro de série du collier',
+                  child: TextField(
+                    controller: _serialController,
+                    textCapitalization: TextCapitalization.characters,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      hintText: 'Ex : K9S-0042',
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.cardBorderWeak),
+                      ),
                     ),
                   ),
                 ),
@@ -140,27 +148,39 @@ class _PairingScreenState extends State<PairingScreen> {
                   ),
                 ],
                 const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _canSubmit ? _pair : null,
-                    child: _pairing
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation(Colors.white),
+                Semantics(
+                  button: true,
+                  enabled: _canSubmit,
+                  label: _pairing
+                      ? 'Jumelage du collier en cours'
+                      : (_canSubmit
+                            ? 'Connecter le collier'
+                            : 'Connecter — indisponible tant qu\'un numéro '
+                                  'de série valide n\'est pas saisi'),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _canSubmit ? _pair : null,
+                      child: _pairing
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text('Connecter'),
+                                SizedBox(width: 8),
+                                Icon(Icons.arrow_forward, size: 20),
+                              ],
                             ),
-                          )
-                        : const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text('Connecter'),
-                              SizedBox(width: 8),
-                              Icon(Icons.arrow_forward, size: 20),
-                            ],
-                          ),
+                    ),
                   ),
                 ),
               ],
