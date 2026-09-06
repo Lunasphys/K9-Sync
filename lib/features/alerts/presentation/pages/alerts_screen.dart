@@ -41,24 +41,7 @@ class _AlertsView extends ConsumerWidget {
                 ),
                 if (state.unreadCount > 0) ...[
                   const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${state.unreadCount}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
+                  _PopBadge(count: state.unreadCount),
                 ],
               ],
             );
@@ -109,7 +92,14 @@ class _AlertsView extends ConsumerWidget {
                     itemCount: alerts.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
-                      return _AlertCard(alert: alerts[index]);
+                      final alert = alerts[index];
+                      // Keyed by id so only a genuinely new alert (not an
+                      // existing one re-rendered e.g. after mark-as-read)
+                      // replays the entrance animation.
+                      return _AnimatedAlertEntry(
+                        key: ValueKey(alert.id),
+                        child: _AlertCard(alert: alert),
+                      );
                     },
                   );
                 },
@@ -160,6 +150,56 @@ class _EmptyState extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── Entrance animation for newly-arrived alerts ────────────────────────────────
+
+/// Plays a one-time slide-down + fade-in when mounted. Relies on the caller
+/// keying this widget by a stable alert id so it only mounts fresh (and thus
+/// only animates) for a genuinely new alert — an existing card re-rendering
+/// (e.g. after mark-as-read) reuses the same State and does not replay it.
+class _AnimatedAlertEntry extends StatefulWidget {
+  final Widget child;
+  const _AnimatedAlertEntry({super.key, required this.child});
+
+  @override
+  State<_AnimatedAlertEntry> createState() => _AnimatedAlertEntryState();
+}
+
+class _AnimatedAlertEntryState extends State<_AnimatedAlertEntry>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _fade;
+  late final Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+    _slide = Tween<Offset>(
+      begin: const Offset(0, -0.15),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(position: _slide, child: widget.child),
     );
   }
 }
@@ -328,6 +368,83 @@ class _AlertCard extends StatelessWidget {
           badge: Colors.blue,
         );
     }
+  }
+}
+
+// ── Unread count badge — pops when it increments ────────────────────────────────
+
+class _PopBadge extends StatefulWidget {
+  final int count;
+  const _PopBadge({required this.count});
+
+  @override
+  State<_PopBadge> createState() => _PopBadgeState();
+}
+
+class _PopBadgeState extends State<_PopBadge>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+    _scale = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 1.0,
+          end: 1.35,
+        ).chain(CurveTween(curve: Curves.easeOut)),
+        weight: 50,
+      ),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 1.35,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
+        weight: 50,
+      ),
+    ]).animate(_controller);
+  }
+
+  @override
+  void didUpdateWidget(covariant _PopBadge oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.count > oldWidget.count) {
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: _scale,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: Colors.red,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          '${widget.count}',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+    );
   }
 }
 
