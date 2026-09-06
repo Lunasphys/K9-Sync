@@ -100,7 +100,7 @@ export async function handleHealthMessage(serial: string, raw: unknown): Promise
       await pushNotifications.notifyDogAccessHolders(collar.dogId, {
         title: 'Alerte santé',
         body: title,
-        data: { type, dogId: collar.dogId },
+        data: { type, dogId: collar.dogId, severity: 'critical' },
       });
 
       logger.warn({ serial, collarId, type, value }, 'Anomaly alert created from MQTT');

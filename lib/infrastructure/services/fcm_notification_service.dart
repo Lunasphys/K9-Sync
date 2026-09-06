@@ -1,4 +1,5 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../../core/debug/debug_logger.dart';
@@ -73,6 +74,15 @@ class FcmNotificationService implements INotificationService {
         ),
       ),
     );
+
+    // Extra haptic nudge for critical alerts (see backend severity: 'critical'
+    // on health anomalies — heart_rate/temperature past their threshold).
+    // The system already plays the notification sound; this only adds
+    // physical feedback, and only while the app is open — a closed app's
+    // system notification is handled entirely by the OS, nothing to add here.
+    if (message.data['severity'] == 'critical') {
+      HapticFeedback.heavyImpact();
+    }
   }
 
   @override

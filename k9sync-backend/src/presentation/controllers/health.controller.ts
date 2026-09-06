@@ -115,7 +115,7 @@ export async function syncHealth(
       await pushNotifications.notifyDogAccessHolders(dogId, {
         title: 'Alerte santé',
         body: label,
-        data: { type, dogId },
+        data: { type, dogId, severity: 'critical' },
       });
 
       logger.warn({ dogId, type, value }, 'Anomaly alert created');

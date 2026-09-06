@@ -81,7 +81,9 @@ export async function syncActivity(
     await pushNotifications.notifyDogAccessHolders(dogId, {
       title: 'Alerte activité',
       body: title,
-      data: { type: r.anomalyType, dogId },
+      // Not 'critical' — no numeric threshold behind this like heart_rate/temperature,
+      // just a boolean anomaly flag from the collar (see mqtt_collar_handler.ts / here).
+      data: { type: r.anomalyType, dogId, severity: 'normal' },
     });
     logger.warn({ dogId, anomalyType: r.anomalyType }, 'Activity anomaly alert created');
   }
