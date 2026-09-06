@@ -33,18 +33,31 @@ class _LiveBadgeState extends State<LiveBadge>
       vsync: this,
       duration: const Duration(milliseconds: 1100),
     );
-    _pulse = Tween<double>(begin: 1.0, end: 0.35).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-    if (widget.connected) _controller.repeat(reverse: true);
+    _pulse = Tween<double>(
+      begin: 1.0,
+      end: 0.35,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _applyMotionPreference();
   }
 
   @override
   void didUpdateWidget(covariant LiveBadge oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.connected && !oldWidget.connected) {
-      _controller.repeat(reverse: true);
-    } else if (!widget.connected && oldWidget.connected) {
+    if (widget.connected != oldWidget.connected) _applyMotionPreference();
+  }
+
+  // Respecte la préférence système "réduire les animations" : le point ne
+  // pulse pas, il reste simplement plein (visible) ou statique.
+  void _applyMotionPreference() {
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    if (widget.connected && !reduceMotion) {
+      if (!_controller.isAnimating) _controller.repeat(reverse: true);
+    } else {
       _controller.stop();
       _controller.value = 0;
     }
@@ -58,27 +71,34 @@ class _LiveBadgeState extends State<LiveBadge>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: widget.connected ? AppColors.greenMint : Colors.grey.shade200,
-        border: Border.all(color: AppColors.border, width: 2),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FadeTransition(opacity: _pulse, child: _dot()),
-          const SizedBox(width: 5),
-          Text(
-            widget.connected ? widget.liveLabel : widget.offlineLabel,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: widget.connected ? AppColors.greenStatus : Colors.grey,
-            ),
+    return Semantics(
+      label: widget.connected ? 'Connexion en direct' : 'Connexion hors ligne',
+      child: ExcludeSemantics(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: widget.connected
+                ? AppColors.greenMint
+                : Colors.grey.shade200,
+            border: Border.all(color: AppColors.border, width: 2),
+            borderRadius: BorderRadius.circular(20),
           ),
-        ],
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FadeTransition(opacity: _pulse, child: _dot()),
+              const SizedBox(width: 5),
+              Text(
+                widget.connected ? widget.liveLabel : widget.offlineLabel,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: widget.connected ? AppColors.greenStatus : Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

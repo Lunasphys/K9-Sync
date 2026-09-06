@@ -52,12 +52,19 @@ class _AlertsView extends ConsumerWidget {
             buildWhen: (p, c) => p.unreadCount != c.unreadCount,
             builder: (context, state) {
               if (state.unreadCount == 0) return const SizedBox.shrink();
-              return TextButton(
-                onPressed: () =>
-                    context.read<AlertsBloc>().add(const AlertsAllMarkedRead()),
-                child: const Text(
-                  'Tout lire',
-                  style: TextStyle(fontWeight: FontWeight.w800),
+              return Semantics(
+                button: true,
+                label:
+                    'Marquer les ${state.unreadCount} alertes non lues '
+                    'comme lues',
+                child: TextButton(
+                  onPressed: () => context.read<AlertsBloc>().add(
+                    const AlertsAllMarkedRead(),
+                  ),
+                  child: const Text(
+                    'Tout lire',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
                 ),
               );
             },
@@ -186,7 +193,18 @@ class _AnimatedAlertEntryState extends State<_AnimatedAlertEntry>
       begin: const Offset(0, -0.15),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
-    _controller.forward();
+    // Respecte "réduire les animations" : la carte apparaît directement à
+    // son état final plutôt que de glisser/fondre à l'écran.
+    final reduceMotion = WidgetsBinding
+        .instance
+        .platformDispatcher
+        .accessibilityFeatures
+        .disableAnimations;
+    if (reduceMotion) {
+      _controller.value = 1;
+    } else {
+      _controller.forward();
+    }
   }
 
   @override
@@ -214,107 +232,116 @@ class _AlertCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = _colorsFor(alert.category);
 
-    return GestureDetector(
-      onTap: () => context.read<AlertsBloc>().add(AlertMarkedRead(alert.id)),
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 300),
-        opacity: alert.isRead ? 0.6 : 1.0,
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: alert.isRead ? AppColors.cardBg : colors.bg,
-            border: Border.all(
-              color: alert.isRead ? AppColors.border : colors.border,
-              width: 2,
+    return Semantics(
+      button: true,
+      excludeSemantics: true,
+      label:
+          '${_labelFor(alert.category)}${alert.isPriority ? ", prioritaire" : ""}, '
+          '${alert.isRead ? "lue" : "non lue"}. ${alert.title}. '
+          '${alert.subtitle}. ${_ago(alert.triggeredAt)}'
+          '${alert.isRead ? "" : ". Appuyer pour marquer comme lue"}',
+      child: GestureDetector(
+        onTap: () => context.read<AlertsBloc>().add(AlertMarkedRead(alert.id)),
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 300),
+          opacity: alert.isRead ? 0.6 : 1.0,
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: alert.isRead ? AppColors.cardBg : colors.bg,
+              border: Border.all(
+                color: alert.isRead ? AppColors.border : colors.border,
+                width: 2,
+              ),
+              borderRadius: AppDimensions.borderRadius,
+              boxShadow: alert.isRead ? [] : [AppDimensions.cardShadow],
             ),
-            borderRadius: AppDimensions.borderRadius,
-            boxShadow: alert.isRead ? [] : [AppDimensions.cardShadow],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  // Category badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colors.badge,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      _labelFor(alert.category),
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  if (alert.isPriority)
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    // Category badge
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
+                        horizontal: 8,
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.red,
+                        color: colors.badge,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Text(
-                        'PRIORITAIRE',
-                        style: TextStyle(
-                          fontSize: 9,
+                      child: Text(
+                        _labelFor(alert.category),
+                        style: const TextStyle(
+                          fontSize: 10,
                           fontWeight: FontWeight.w900,
                           color: Colors.white,
                         ),
                       ),
                     ),
-                  const Spacer(),
-                  Text(
-                    _ago(alert.triggeredAt),
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textMuted,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (!alert.isRead) ...[
                     const SizedBox(width: 6),
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
+                    if (alert.isPriority)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text(
+                          'PRIORITAIRE',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    const Spacer(),
+                    Text(
+                      _ago(alert.triggeredAt),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textMuted,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
+                    if (!alert.isRead) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                alert.title,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  color: alert.isRead ? AppColors.textMuted : AppColors.text,
                 ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                alert.subtitle,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textMuted,
-                  fontWeight: FontWeight.w600,
+                const SizedBox(height: 8),
+                Text(
+                  alert.title,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    color: alert.isRead ? AppColors.textMuted : AppColors.text,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 3),
+                Text(
+                  alert.subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -414,7 +441,8 @@ class _PopBadgeState extends State<_PopBadge>
   @override
   void didUpdateWidget(covariant _PopBadge oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.count > oldWidget.count) {
+    if (widget.count > oldWidget.count &&
+        !MediaQuery.of(context).disableAnimations) {
       _controller.forward(from: 0);
     }
   }
@@ -427,20 +455,26 @@ class _PopBadgeState extends State<_PopBadge>
 
   @override
   Widget build(BuildContext context) {
-    return ScaleTransition(
-      scale: _scale,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        decoration: BoxDecoration(
-          color: Colors.red,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          '${widget.count}',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.w900,
+    return Semantics(
+      label:
+          '${widget.count} alerte${widget.count > 1 ? "s" : ""} non lue'
+          '${widget.count > 1 ? "s" : ""}',
+      excludeSemantics: true,
+      child: ScaleTransition(
+        scale: _scale,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: Colors.red,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            '${widget.count}',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ),
       ),
@@ -502,24 +536,29 @@ class _TabChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.orange : AppColors.cardBg,
-          border: Border.all(
-            color: selected ? AppColors.orange : AppColors.border,
-            width: 2,
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: 'Onglet $label',
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.orange : AppColors.cardBg,
+            border: Border.all(
+              color: selected ? AppColors.orange : AppColors.border,
+              width: 2,
+            ),
+            borderRadius: BorderRadius.circular(20),
           ),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w800,
-            color: selected ? Colors.white : AppColors.text,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: selected ? Colors.white : AppColors.text,
+            ),
           ),
         ),
       ),
@@ -590,45 +629,51 @@ class _ConfigToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.bg,
-        border: Border.all(color: AppColors.border, width: 2),
-        borderRadius: AppDimensions.borderRadiusSm,
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 22, color: AppColors.textMuted),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textMuted,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+    return Semantics(
+      toggled: value,
+      label: '$label. $subtitle',
+      child: MergeSemantics(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: AppColors.bg,
+            border: Border.all(color: AppColors.border, width: 2),
+            borderRadius: AppDimensions.borderRadiusSm,
           ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeTrackColor: AppColors.orange,
+          child: Row(
+            children: [
+              Icon(icon, size: 22, color: AppColors.textMuted),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textMuted,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Switch(
+                value: value,
+                onChanged: onChanged,
+                activeTrackColor: AppColors.orange,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -642,45 +687,52 @@ class LostModeBanner extends ConsumerWidget {
     final isActive = ref.watch(lostModeProvider);
     if (!isActive) return const SizedBox.shrink();
 
-    return GestureDetector(
-      onTap: () => context.push('/lost-mode'),
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFF0F0),
-          border: Border.all(color: Colors.red.shade400, width: 2),
-          borderRadius: AppDimensions.borderRadiusSm,
-        ),
-        child: Row(
-          children: [
-            const Text('🚨', style: TextStyle(fontSize: 22)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Mode chien perdu actif',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.red,
+    return Semantics(
+      button: true,
+      excludeSemantics: true,
+      label:
+          'Mode chien perdu actif, le collier émet un signal. Appuyer '
+          'pour gérer ou désactiver le mode chien perdu',
+      child: GestureDetector(
+        onTap: () => context.push('/lost-mode'),
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF0F0),
+            border: Border.all(color: Colors.red.shade400, width: 2),
+            borderRadius: AppDimensions.borderRadiusSm,
+          ),
+          child: Row(
+            children: [
+              const Text('🚨', style: TextStyle(fontSize: 22)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Mode chien perdu actif',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.red,
+                      ),
                     ),
-                  ),
-                  Text(
-                    'Le collier émet un signal. Appuyez pour gérer.',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.red.shade400,
+                    Text(
+                      'Le collier émet un signal. Appuyez pour gérer.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.red.shade400,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Icon(Icons.chevron_right, color: Colors.red.shade400, size: 20),
-          ],
+              Icon(Icons.chevron_right, color: Colors.red.shade400, size: 20),
+            ],
+          ),
         ),
       ),
     );
