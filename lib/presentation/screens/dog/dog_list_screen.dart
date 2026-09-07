@@ -54,7 +54,7 @@ class DogListScreen extends ConsumerWidget {
               ),
               child: const Icon(Icons.add, color: AppColors.blue, size: 20),
             ),
-            onPressed: () {}, // TODO: add dog flow
+            onPressed: () => context.push(AppRoutes.dogSetup),
           ),
           const SizedBox(width: 8),
         ],
@@ -213,47 +213,58 @@ class _AddDogCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.cardBg,
-          border: Border.all(color: AppColors.border, width: 2),
+      child: Material(
+        color: AppColors.cardBg,
+        borderRadius: AppDimensions.borderRadius,
+        child: InkWell(
+          onTap: () => context.push(AppRoutes.dogSetup),
           borderRadius: AppDimensions.borderRadius,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppColors.blueLight,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Center(
-                child: Text('➕', style: TextStyle(fontSize: 22)),
-              ),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.cardBg,
+              border: Border.all(color: AppColors.border, width: 2),
+              borderRadius: AppDimensions.borderRadius,
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Ajouter un chien',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.text,
-                    ),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.blueLight,
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  Text(
-                    'Associer un nouveau collier',
-                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  child: const Center(
+                    child: Text('➕', style: TextStyle(fontSize: 22)),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Ajouter un chien',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.text,
+                        ),
+                      ),
+                      Text(
+                        'Associer un nouveau collier',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

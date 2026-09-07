@@ -5,6 +5,7 @@ import 'package:k9sync/core/debug/debug_logger.dart';
 import 'package:k9sync/core/theme/app_theme.dart';
 import 'package:k9sync/domain/entities/user.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_auth_repository.dart';
+import 'package:k9sync/domain/interfaces/repositories/i_dog_repository.dart';
 import 'package:k9sync/injection.dart';
 import 'package:k9sync/presentation/router/route_guards.dart';
 
@@ -18,6 +19,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   User? _user;
   bool _isLoggingOut = false;
+  String? _cachedDogId;
 
   @override
   void initState() {
@@ -32,6 +34,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       DebugLogger.auth('Failed to load user: $e');
     }
+  }
+
+  Future<String?> _getDogId() async {
+    if (_cachedDogId != null) return _cachedDogId;
+    try {
+      final dogs = await getIt<IDogRepository>().getDogs();
+      final id = dogs.isNotEmpty ? dogs.first.id : null;
+      if (id != null) _cachedDogId = id;
+      return id;
+    } catch (e) {
+      DebugLogger.log('DOG_REPO', 'Failed to resolve dog id: $e');
+      return null;
+    }
+  }
+
+  Future<void> _openSharedAccess() async {
+    final dogId = await _getDogId();
+    if (!mounted) return;
+    if (dogId == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Aucun chien enregistré.')));
+      return;
+    }
+    context.push('/dogs/$dogId/shared-access');
+  }
+
+  Future<void> _openCollarStatus() async {
+    final dogId = await _getDogId();
+    if (!mounted) return;
+    if (dogId == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Aucun chien enregistré.')));
+      return;
+    }
+    context.push('/dogs/$dogId/collar');
   }
 
   Future<void> _logout() async {
@@ -126,7 +165,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 icon: '👥',
                 iconBg: AppColors.blueLight,
                 title: 'Accès partagés',
-                onTap: () {},
+                onTap: _openSharedAccess,
               ),
               _settingsTile(
                 icon: '📡',
@@ -134,7 +173,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: 'Collier GPS',
                 trailing: '● En ligne',
                 trailingColor: AppColors.greenStatus,
-                onTap: () {},
+                onTap: _openCollarStatus,
               ),
               _sectionLabel('Notifications'),
               _settingsTile(
@@ -507,7 +546,7 @@ class _DeleteButton extends StatelessWidget {
         color: AppColors.redLight,
         borderRadius: BorderRadius.circular(50),
         child: InkWell(
-          onTap: () {},
+          onTap: () => context.push(AppRoutes.privacy),
           borderRadius: BorderRadius.circular(50),
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 13),
