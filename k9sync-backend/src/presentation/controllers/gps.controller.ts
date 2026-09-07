@@ -86,6 +86,7 @@ export async function syncGps(
         accuracy?: number;
         recordedAt: string;
       }>;
+      trailId?: string;
     };
   }>,
   reply: FastifyReply,
@@ -96,8 +97,15 @@ export async function syncGps(
   const collarId = await getCollarId(dogId);
   if (!collarId) return reply.status(404).send({ error: 'No collar paired' });
 
-  const { locations } = req.body;
+  const { locations, trailId } = req.body;
   if (!locations?.length) return reply.send({ synced: 0 });
+
+  // trailId is optional and, when given, must belong to this dog's collar —
+  // otherwise a client could link points onto another dog's trail.
+  if (trailId) {
+    const trail = await getPrisma().trail.findFirst({ where: { id: trailId, collarId } });
+    if (!trail) return reply.status(404).send({ error: 'Trail not found' });
+  }
 
   const result = await getPrisma().gpsLocation.createMany({
     data: locations.map((l) => ({
@@ -107,6 +115,7 @@ export async function syncGps(
       accuracy: l.accuracy,
       recordedAt: new Date(l.recordedAt),
       syncedAt: new Date(),
+      trailId,
     })),
     skipDuplicates: true,
   });

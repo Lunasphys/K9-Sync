@@ -127,6 +127,7 @@ model Collar {
   gpsLocations    GpsLocation[]
   healthRecords   HealthRecord[]
   activityRecords ActivityRecord[]
+  trails          Trail[]
 }
 
 model ActivityRecord {
@@ -156,6 +157,9 @@ model GpsLocation {
   trailId   String?   @map("trail_id")
 
   collar Collar @relation(fields: [collarId], references: [id], onDelete: Cascade)
+  // SetNull, not Cascade: a GPS point outlives the trail summary it was
+  // grouped under — deleting a Trail should orphan its points, not erase them.
+  trail  Trail?  @relation(fields: [trailId], references: [id], onDelete: SetNull)
   @@index([collarId, recordedAt])
   @@index([trailId])
 }
@@ -168,6 +172,10 @@ model Trail {
   distanceM   Int      @map("distance_m")
   durationS   Int      @map("duration_s")
   pointsCount Int      @map("points_count")
+
+  collar       Collar        @relation(fields: [collarId], references: [id], onDelete: Cascade)
+  gpsLocations GpsLocation[]
+  @@index([collarId, startedAt])
 }
 
 model HealthRecord {
