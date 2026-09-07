@@ -9,6 +9,7 @@ import bcrypt from 'bcrypt';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { initPrisma, getPrisma } from '../../config/database.js';
 import { AuthController } from './auth.controller.js';
+import { mailer } from '../../shared/mailer.js';
 
 initPrisma(process.env.DATABASE_URL ?? '');
 const prisma = getPrisma();
@@ -163,5 +164,212 @@ test('POST /auth/refresh — a token already consumed by a prior refresh is reje
 
   // cleanup
   await prisma.refreshToken.deleteMany({ where: { userId: user.id } });
+  await prisma.user.delete({ where: { id: user.id } });
+});
+
+// ── Password reset ───────────────────────────────────────────────────────────
+
+async function createUser(prefix: string) {
+  const hash = await bcrypt.hash('OldPassword1', 12);
+  return prisma.user.create({
+    data: {
+      email: `${prefix}-${randomUUID()}@test.local`,
+      passwordHash: hash,
+      firstName: 'Reset',
+      lastName: 'Test',
+    },
+  });
+}
+
+test('POST /auth/forgot-password generates a hashed reset code and emails it', async (t) => {
+  const user = await createUser('forgot');
+
+  const sent: Array<{ to: string; code: string; expiresInMinutes: number }> = [];
+  t.mock.method(
+    mailer,
+    'sendPasswordResetEmail',
+    async (to: string, code: string, expiresInMinutes: number) => {
+      sent.push({ to, code, expiresInMinutes });
+    },
+  );
+
+  const reply = fakeReply();
+  await controller.forgotPassword(fakeRequest({ email: user.email }), reply as unknown as FastifyReply);
+
+  // Never leaks whether the account exists via the response.
+  assert.equal(reply.statusCode, 202);
+
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].to, user.email);
+  assert.match(sent[0].code, /^\d{6}$/, 'code must be exactly 6 digits');
+
+  const stored = await prisma.passwordResetToken.findFirst({ where: { userId: user.id } });
+  assert.ok(stored, 'a PasswordResetToken row must be created');
+  assert.ok(
+    await bcrypt.compare(sent[0].code, stored!.token),
+    'the stored token must be a bcrypt hash of the emailed code, never the code itself',
+  );
+
+  // cleanup
+  await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
+  await prisma.user.delete({ where: { id: user.id } });
+});
+
+test('POST /auth/forgot-password responds 202 for an unknown email too, without creating anything', async () => {
+  const reply = fakeReply();
+  await controller.forgotPassword(
+    fakeRequest({ email: `nobody-${randomUUID()}@test.local` }),
+    reply as unknown as FastifyReply,
+  );
+  assert.equal(reply.statusCode, 202, 'must not reveal that the account does not exist');
+});
+
+test('POST /auth/reset-password with a valid code sets the new password and invalidates every existing session', async () => {
+  const user = await createUser('reset-success');
+  const code = '123456';
+  await prisma.passwordResetToken.create({
+    data: {
+      userId: user.id,
+      token: await bcrypt.hash(code, 12),
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+    },
+  });
+  // Simulate two logged-in devices — both sessions must die on reset.
+  await prisma.refreshToken.createMany({
+    data: [
+      { userId: user.id, token: await bcrypt.hash('device-a', 4), expiresAt: new Date(Date.now() + 86400000) },
+      { userId: user.id, token: await bcrypt.hash('device-b', 4), expiresAt: new Date(Date.now() + 86400000) },
+    ],
+  });
+
+  const reply = fakeReply();
+  await controller.resetPassword(
+    fakeRequest({ email: user.email, code, newPassword: 'BrandNewPassword1' }),
+    reply as unknown as FastifyReply,
+  );
+
+  assert.equal(reply.statusCode, 204);
+
+  const updated = await prisma.user.findUnique({ where: { id: user.id } });
+  assert.ok(await bcrypt.compare('BrandNewPassword1', updated!.passwordHash));
+  assert.equal(
+    await bcrypt.compare('OldPassword1', updated!.passwordHash),
+    false,
+    'the old password must no longer work',
+  );
+
+  assert.equal(
+    await prisma.refreshToken.count({ where: { userId: user.id } }),
+    0,
+    'every existing session must be invalidated by a password reset',
+  );
+  assert.equal(
+    await prisma.passwordResetToken.count({ where: { userId: user.id } }),
+    0,
+    'the used code (and any other outstanding one) must be gone',
+  );
+
+  // cleanup
+  await prisma.user.delete({ where: { id: user.id } });
+});
+
+test('POST /auth/reset-password refuses an invalid code and leaves the password unchanged', async () => {
+  const user = await createUser('reset-invalid');
+  await prisma.passwordResetToken.create({
+    data: {
+      userId: user.id,
+      token: await bcrypt.hash('123456', 12),
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+    },
+  });
+
+  const reply = fakeReply();
+  await assert.rejects(
+    () =>
+      controller.resetPassword(
+        fakeRequest({ email: user.email, code: '999999', newPassword: 'BrandNewPassword1' }),
+        reply as unknown as FastifyReply,
+      ),
+    (err: unknown) => {
+      assert.equal((err as { statusCode?: number }).statusCode, 401);
+      return true;
+    },
+  );
+
+  const stillThere = await prisma.user.findUnique({ where: { id: user.id } });
+  assert.ok(await bcrypt.compare('OldPassword1', stillThere!.passwordHash));
+
+  // cleanup
+  await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
+  await prisma.user.delete({ where: { id: user.id } });
+});
+
+test('POST /auth/reset-password refuses an expired code', async () => {
+  const user = await createUser('reset-expired');
+  const code = '123456';
+  await prisma.passwordResetToken.create({
+    data: {
+      userId: user.id,
+      token: await bcrypt.hash(code, 12),
+      expiresAt: new Date(Date.now() - 60 * 1000), // 1 minute in the past
+    },
+  });
+
+  const reply = fakeReply();
+  await assert.rejects(
+    () =>
+      controller.resetPassword(
+        fakeRequest({ email: user.email, code, newPassword: 'BrandNewPassword1' }),
+        reply as unknown as FastifyReply,
+      ),
+    (err: unknown) => {
+      assert.equal((err as { statusCode?: number }).statusCode, 401);
+      return true;
+    },
+  );
+
+  // cleanup
+  await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
+  await prisma.user.delete({ where: { id: user.id } });
+});
+
+test('POST /auth/reset-password refuses a code that was already used', async () => {
+  const user = await createUser('reset-reuse');
+  const code = '123456';
+  await prisma.passwordResetToken.create({
+    data: {
+      userId: user.id,
+      token: await bcrypt.hash(code, 12),
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+    },
+  });
+
+  // First use — succeeds and consumes the code.
+  const firstReply = fakeReply();
+  await controller.resetPassword(
+    fakeRequest({ email: user.email, code, newPassword: 'FirstNewPassword1' }),
+    firstReply as unknown as FastifyReply,
+  );
+  assert.equal(firstReply.statusCode, 204);
+
+  // Second use of the same code — must be rejected, not silently accepted.
+  const secondReply = fakeReply();
+  await assert.rejects(
+    () =>
+      controller.resetPassword(
+        fakeRequest({ email: user.email, code, newPassword: 'SecondNewPassword1' }),
+        secondReply as unknown as FastifyReply,
+      ),
+    (err: unknown) => {
+      assert.equal((err as { statusCode?: number }).statusCode, 401);
+      return true;
+    },
+  );
+
+  // The password from the first (successful) reset must still be in effect.
+  const finalUser = await prisma.user.findUnique({ where: { id: user.id } });
+  assert.ok(await bcrypt.compare('FirstNewPassword1', finalUser!.passwordHash));
+
+  // cleanup
   await prisma.user.delete({ where: { id: user.id } });
 });

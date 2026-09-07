@@ -25,12 +25,30 @@ model User {
   refreshTokens RefreshToken[]
   dogUsers     DogUser[]
   consentLogs  ConsentLog[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model RefreshToken {
   id        String   @id @default(uuid())
   userId    String   @map("user_id")
   token     String   // bcrypt hash
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// Code de reset à 6 chiffres (pas un long token à copier-coller — saisi
+// manuellement dans l'app juste après réception de l'email), hashé comme
+// un RefreshToken. Durée de vie courte (15-30 min, voir PASSWORD_RESET_EXPIRES_MIN
+// dans auth.controller.ts) — plus courte qu'un refresh token puisqu'il est
+// utilisé dans la foulée, jamais conservé sur la durée.
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   // bcrypt hash of the 6-digit code
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
 

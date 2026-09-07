@@ -15,4 +15,5 @@ export async function authRoutes(app: FastifyInstance) {
   app.post<{ Body: unknown }>('/refresh', { handler: controller.refresh });
   app.post('/logout', { handler: controller.logout });
   app.post<{ Body: unknown }>('/forgot-password', { handler: controller.forgotPassword });
+  app.post<{ Body: unknown }>('/reset-password', { handler: controller.resetPassword });
 }
