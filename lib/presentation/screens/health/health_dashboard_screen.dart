@@ -281,6 +281,8 @@ class _Dashboard extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         _ActivityCard(todayActivity: todayActivity),
+        const SizedBox(height: 12),
+        const _SleepEntryCard(),
         const SizedBox(height: 16),
         if (history.length > 2) ...[
           _SectionTitle('Fréquence cardiaque — 20 dernières mesures'),
@@ -615,6 +617,58 @@ class _ActivityCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Sleep entry point ─────────────────────────────────────────────────────────
+
+class _SleepEntryCard extends StatelessWidget {
+  const _SleepEntryCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Sommeil — répartition éveillé, léger, profond',
+      child: GestureDetector(
+        onTap: () => context.push(AppRoutes.sleep),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.cardBg,
+            border: Border.all(color: AppColors.border, width: 2),
+            borderRadius: AppDimensions.borderRadius,
+            boxShadow: [AppDimensions.cardShadow],
+          ),
+          child: Row(
+            children: [
+              const Text('😴', style: TextStyle(fontSize: 20)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Sommeil',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+                    ),
+                    Text(
+                      'Répartition éveillé / léger / profond',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textMuted,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: AppColors.textMuted, size: 22),
+            ],
+          ),
         ),
       ),
     );
