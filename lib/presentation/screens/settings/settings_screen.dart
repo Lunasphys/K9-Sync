@@ -411,7 +411,7 @@ class _RgpdCard extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () {},
+                  onPressed: () => context.push(AppRoutes.privacy),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 7),
                     textStyle: const TextStyle(
@@ -421,7 +421,7 @@ class _RgpdCard extends StatelessWidget {
                     foregroundColor: AppColors.text,
                     side: BorderSide(color: AppColors.border, width: 2),
                   ),
-                  child: const Text('📥 Télécharger'),
+                  child: const Text('📥 Mes données'),
                 ),
               ),
               const SizedBox(width: 6),
