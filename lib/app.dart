@@ -9,6 +9,7 @@ import 'injection.dart';
 import 'domain/interfaces/repositories/i_auth_repository.dart';
 import 'presentation/router/app_router.dart';
 import 'presentation/router/route_guards.dart';
+import 'presentation/screens/privacy/consent_screen.dart';
 
 /// MaterialApp + GoRouter + Riverpod. [setupDependencies] après Firebase.initializeApp().
 /// Écoute [sessionStream] pour rediriger vers /login quand le token expire (intercepteur 401).
@@ -28,9 +29,13 @@ class _K9SyncAppState extends State<K9SyncApp> {
     super.initState();
     _router = createAppRouter(
       isLoggedIn: () => getIt<IAuthRepository>().isLoggedIn,
+      hasAcceptedConsent: hasAcceptedRequiredConsent,
     );
     _sessionSub = getIt<IAuthRepository>().sessionStream.listen((loggedIn) {
-      if (!loggedIn && mounted) _router.go(AppRoutes.login);
+      if (!loggedIn) {
+        resetConsentCache();
+        if (mounted) _router.go(AppRoutes.login);
+      }
     });
   }
 

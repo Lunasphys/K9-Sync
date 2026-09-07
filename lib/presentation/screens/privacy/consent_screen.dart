@@ -64,6 +64,7 @@ class _ConsentScreenState extends State<ConsentScreen> {
           version: _consentVersion,
         ),
       ]);
+      markConsentAccepted();
       if (!mounted) return;
       context.go(widget.nextRoute ?? AppRoutes.homeAccueil);
     } catch (_) {

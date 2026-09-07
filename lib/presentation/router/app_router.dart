@@ -44,15 +44,17 @@ import '../screens/community/community_screen.dart';
 /// no manual context.go() needed anywhere.
 GoRouter createAppRouter({
   bool Function()? isLoggedIn,
+  Future<bool> Function()? hasAcceptedConsent,
   Listenable? sessionExpiredNotifier,
 }) {
   final loggedIn = isLoggedIn ?? () => false;
+  final hasConsented = hasAcceptedConsent ?? () async => true;
 
   return GoRouter(
     initialLocation: AppRoutes.splash,
     // Re-evaluate redirect whenever the notifier fires (session expired)
     refreshListenable: sessionExpiredNotifier,
-    redirect: (context, state) {
+    redirect: (context, state) async {
       final path = state.matchedLocation;
 
       // Redirect bare /home to the default tab
@@ -60,7 +62,7 @@ GoRouter createAppRouter({
         return AppRoutes.homeAccueil;
       }
 
-      return authGuard(loggedIn(), path);
+      return authGuard(loggedIn(), path, hasAcceptedConsent: hasConsented);
     },
     routes: [
       // ── Auth & onboarding ───────────────────────────────────────────
@@ -204,8 +206,7 @@ GoRouter createAppRouter({
           ),
           GoRoute(
             path: 'pair-collar',
-            builder: (c, s) =>
-                PairingScreen(dogId: s.pathParameters['dogId']!),
+            builder: (c, s) => PairingScreen(dogId: s.pathParameters['dogId']!),
           ),
         ],
       ),

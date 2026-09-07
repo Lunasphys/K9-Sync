@@ -38,7 +38,26 @@ class AppRoutes {
   static const community = '/community';
 }
 
-/// Auth guard — called by GoRouter redirect.
+/// In-memory cache of the mandatory-consent check used by [authGuard].
+/// `null` means "not checked yet this session" — once known, [authGuard]
+/// reads this instead of hitting the network on every navigation.
+///
+/// This is the single source of truth for "has this session accepted the
+/// mandatory consent" across every entry point (cold-start splash,
+/// interactive login, a future deep link): none of them run their own
+/// check anymore, they all resolve through [authGuard].
+bool? _hasAcceptedConsentCache;
+
+/// Call when the session ends (explicit logout, expired-token redirect)
+/// so a new session on the same app instance gets a fresh check.
+void resetConsentCache() => _hasAcceptedConsentCache = null;
+
+/// Call right after [ConsentScreen] successfully submits, so the redirect
+/// that follows doesn't re-fetch from the server to learn what it just
+/// wrote.
+void markConsentAccepted() => _hasAcceptedConsentCache = true;
+
+/// Auth + consent guard — called by GoRouter redirect on every navigation.
 /// Returns a redirect path or null (= stay on current route).
 ///
 /// [AppRoutes.consent] is deliberately NOT in [publicRoutes]: it is only
@@ -47,7 +66,15 @@ class AppRoutes {
 /// app. Treating it as "public" would bounce them straight back to
 /// [AppRoutes.homeAccueil] via the isLoggedIn-on-a-public-route rule below,
 /// defeating the whole point of the screen.
-String? authGuard(bool isLoggedIn, String currentPath) {
+///
+/// [hasAcceptedConsent] is only ever awaited once per session (see
+/// [_hasAcceptedConsentCache]) — every navigation after that resolves
+/// synchronously.
+Future<String?> authGuard(
+  bool isLoggedIn,
+  String currentPath, {
+  required Future<bool> Function() hasAcceptedConsent,
+}) async {
   const publicRoutes = {
     AppRoutes.splash,
     AppRoutes.onboarding,
@@ -59,8 +86,19 @@ String? authGuard(bool isLoggedIn, String currentPath) {
 
   final isPublic = publicRoutes.contains(currentPath);
 
-  if (!isLoggedIn && !isPublic) return AppRoutes.login;
-  if (isLoggedIn && isPublic && currentPath != AppRoutes.splash) {
+  if (!isLoggedIn) {
+    resetConsentCache();
+    return isPublic ? null : AppRoutes.login;
+  }
+
+  // Logged in. Every protected route — including a direct deep link — is
+  // gated on the mandatory consent, except the consent screen itself.
+  if (currentPath != AppRoutes.consent) {
+    _hasAcceptedConsentCache ??= await hasAcceptedConsent();
+    if (!_hasAcceptedConsentCache!) return AppRoutes.consent;
+  }
+
+  if (isPublic && currentPath != AppRoutes.splash) {
     return AppRoutes.homeAccueil;
   }
   return null;

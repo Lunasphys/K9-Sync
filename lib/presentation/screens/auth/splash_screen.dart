@@ -5,7 +5,6 @@ import 'package:k9sync/core/theme/app_theme.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_auth_repository.dart';
 import 'package:k9sync/injection.dart';
 import 'package:k9sync/presentation/router/route_guards.dart';
-import 'package:k9sync/presentation/screens/privacy/consent_screen.dart';
 
 /// Initial screen — checks auth token then redirects.
 /// Shows for at least 1.5s to avoid flash.
@@ -48,20 +47,18 @@ class _SplashScreenState extends State<SplashScreen>
     _resolveDestination();
   }
 
+  // Destination is only ever /home/accueil or /login here — if the session
+  // is logged in but hasn't accepted the mandatory consent yet, GoRouter's
+  // redirect (authGuard) intercepts this and sends it to /consent instead.
+  // That check lives in exactly one place so every entry point (this one,
+  // interactive login, a future deep link) is covered without duplicating it.
   Future<void> _resolveDestination() async {
     await Future.delayed(const Duration(milliseconds: 1500));
 
     try {
-      final auth = getIt<IAuthRepository>();
-      final isLoggedIn = auth.isLoggedIn;
+      final isLoggedIn = getIt<IAuthRepository>().isLoggedIn;
       if (!mounted) return;
-      if (isLoggedIn) {
-        final hasConsented = await hasAcceptedRequiredConsent();
-        if (!mounted) return;
-        context.go(hasConsented ? AppRoutes.homeAccueil : AppRoutes.consent);
-      } else {
-        context.go(AppRoutes.login);
-      }
+      context.go(isLoggedIn ? AppRoutes.homeAccueil : AppRoutes.login);
     } catch (_) {
       if (mounted) context.go(AppRoutes.login);
     }
