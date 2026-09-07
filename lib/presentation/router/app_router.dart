@@ -15,7 +15,6 @@ import '../screens/onboarding/dog_setup_screen.dart';
 import '../screens/auth/welcome_login_screen.dart';
 import '../screens/map/map_screen.dart';
 import 'package:k9sync/presentation/screens/map/trail_history_screen.dart';
-import '../screens/map/trail_detail_screen.dart';
 import '../screens/map/lost_mode_screen.dart';
 import '../screens/health/health_dashboard_screen.dart';
 import '../screens/health/activity_screen.dart';
@@ -27,8 +26,6 @@ import '../screens/dog/dog_profile_screen.dart';
 import '../screens/dog/shared_access_screen.dart';
 import '../screens/dog/invite_user_screen.dart';
 import '../screens/dog/collar_status_screen.dart';
-import '../screens/alerts/alerts_list_screen.dart';
-import '../screens/alerts/notification_settings_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/settings/subscription_screen.dart';
 import '../screens/privacy/privacy_screen.dart';
@@ -150,21 +147,9 @@ GoRouter createAppRouter({
       ),
 
       // ── Full-screen routes (outside shell) ─────────────────────────
-      GoRoute(path: AppRoutes.map, builder: (c, s) => const MapScreen()),
-      GoRoute(
-        path: AppRoutes.trailHistory,
-        builder: (c, s) => const TrailHistoryScreen(),
-        routes: [
-          GoRoute(path: 'detail', builder: (c, s) => const TrailDetailScreen()),
-        ],
-      ),
       GoRoute(
         path: AppRoutes.lostMode,
         builder: (c, s) => const LostModeScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.healthDashboard,
-        builder: (c, s) => const HealthDashboardScreen(),
       ),
       GoRoute(
         path: AppRoutes.activity,
@@ -209,18 +194,6 @@ GoRouter createAppRouter({
             builder: (c, s) => PairingScreen(dogId: s.pathParameters['dogId']!),
           ),
         ],
-      ),
-      GoRoute(
-        path: AppRoutes.alertsList,
-        builder: (c, s) => const AlertsListScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.notificationSettings,
-        builder: (c, s) => const NotificationSettingsScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.settings,
-        builder: (c, s) => const SettingsScreen(),
       ),
       GoRoute(
         path: AppRoutes.subscription,

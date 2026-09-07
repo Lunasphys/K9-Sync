@@ -21,17 +21,11 @@ class AppRoutes {
   static const homeProfil = '/home/profil';
 
   // Full-screen routes
-  static const map = '/map';
-  static const trailHistory = '/trail-history';
   static const lostMode = '/lost-mode';
-  static const healthDashboard = '/health';
   static const activity = '/health/activity';
   static const sleep = '/health/sleep';
   static const anomaly = '/health/anomaly';
   static const dogList = '/dogs';
-  static const alertsList = '/alerts';
-  static const notificationSettings = '/notification-settings';
-  static const settings = '/settings';
   static const subscription = '/subscription';
   static const privacy = '/privacy';
   static const vet = '/vet';
