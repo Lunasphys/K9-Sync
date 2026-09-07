@@ -1,5 +1,6 @@
 import '../../entities/collar.dart';
 import '../../entities/dog.dart';
+import '../../entities/geofence.dart';
 import '../../enums/user_dog_role.dart';
 
 /// Contract for dog CRUD and sharing (Clean Architecture — domain).
@@ -30,6 +31,20 @@ abstract interface class IDogRepository {
   /// this exact dog. Throws (409 mapped) if the serial belongs to another
   /// dog, or if this dog already has a different collar paired.
   Future<Collar> pairCollar(String dogId, {required String serialNumber});
+
+  /// Creates or replaces [dogId]'s single geofence zone (scope réduit — un
+  /// seul cercle par chien, upsert plutôt qu'une création distincte).
+  /// Throws (400 mapped) if [radiusM] is below the server's minimum.
+  Future<Geofence> upsertGeofence(
+    String dogId, {
+    required double latitude,
+    required double longitude,
+    required int radiusM,
+  });
+
+  /// Removes [dogId]'s geofence zone, if any. Idempotent — succeeds even if
+  /// no zone was defined.
+  Future<void> deleteGeofence(String dogId);
 }
 
 enum InviteOutcome {

@@ -388,6 +388,13 @@ class _ActionsSection extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _ActionTile(
+            icon: '🧭',
+            label: 'Zone de sécurité',
+            subtitle: 'Alerte si le chien sort du périmètre',
+            onTap: () => context.push('/dogs/$dogId/geofence'),
+          ),
+          const SizedBox(height: 8),
+          _ActionTile(
             icon: '📄',
             label: 'Exporter les données santé',
             subtitle: 'Rapport PDF pour le vétérinaire',

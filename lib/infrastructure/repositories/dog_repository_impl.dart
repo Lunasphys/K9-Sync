@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../core/debug/debug_logger.dart';
 import '../../domain/entities/collar.dart';
 import '../../domain/entities/dog.dart';
+import '../../domain/entities/geofence.dart';
 import '../../domain/enums/user_dog_role.dart';
 import '../../domain/interfaces/repositories/i_dog_repository.dart';
 import '../../injection.dart';
@@ -166,6 +167,37 @@ class DogRepositoryImpl implements IDogRepository {
     }
   }
 
+  // ── PUT /dogs/:dogId/geofence ────────────────────────────────────────────────
+
+  @override
+  Future<Geofence> upsertGeofence(
+    String dogId, {
+    required double latitude,
+    required double longitude,
+    required int radiusM,
+  }) async {
+    try {
+      final response = await _dio.put<Map<String, dynamic>>(
+        '/dogs/$dogId/geofence',
+        data: {'latitude': latitude, 'longitude': longitude, 'radiusM': radiusM},
+      );
+      return _geofenceFromJson(response.data!);
+    } on DioException catch (e) {
+      throw defaultMap(e);
+    }
+  }
+
+  // ── DELETE /dogs/:dogId/geofence ─────────────────────────────────────────────
+
+  @override
+  Future<void> deleteGeofence(String dogId) async {
+    try {
+      await _dio.delete('/dogs/$dogId/geofence');
+    } on DioException catch (e) {
+      throw defaultMap(e);
+    }
+  }
+
   // ── JSON mapper ─────────────────────────────────────────────────────────────
 
   Dog _dogFromJson(Map<String, dynamic> j) {
@@ -194,6 +226,9 @@ class DogRepositoryImpl implements IDogRepository {
       collar: j['collar'] != null
           ? _collarFromJson(j['collar'] as Map<String, dynamic>)
           : null,
+      geofenceZone: j['geofenceZone'] != null
+          ? _geofenceFromJson(j['geofenceZone'] as Map<String, dynamic>)
+          : null,
       createdAt: j['createdAt'] != null
           ? DateTime.tryParse(j['createdAt'] as String) ?? DateTime.now()
           : DateTime.now(),
@@ -220,6 +255,17 @@ class DogRepositoryImpl implements IDogRepository {
       updatedAt: j['updatedAt'] != null
           ? DateTime.tryParse(j['updatedAt'] as String) ?? DateTime.now()
           : DateTime.now(),
+    );
+  }
+
+  Geofence _geofenceFromJson(Map<String, dynamic> j) {
+    return Geofence(
+      id: j['id'] as String,
+      dogId: j['dogId'] as String,
+      latitude: (j['latitude'] as num).toDouble(),
+      longitude: (j['longitude'] as num).toDouble(),
+      radiusM: (j['radiusM'] as num).toInt(),
+      isInside: j['isInside'] as bool? ?? true,
     );
   }
 

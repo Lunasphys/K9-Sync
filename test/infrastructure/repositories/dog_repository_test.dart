@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:k9sync/domain/entities/dog.dart';
+import 'package:k9sync/domain/entities/geofence.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_dog_repository.dart';
 
 void main() {
@@ -85,7 +86,78 @@ void main() {
       expect(body.containsKey('sex'), isFalse);
       expect(body.containsKey('photoUrl'), isFalse);
     });
+
+    test('getDogById maps a null geofenceZone', () {
+      final json = {
+        'id': 'dog-123',
+        'name': 'Bucky',
+        'allergies': [],
+        'characterTraits': [],
+        'geofenceZone': null,
+        'createdAt': DateTime.now().toIso8601String(),
+        'updatedAt': DateTime.now().toIso8601String(),
+      };
+
+      final dog = _dogFromJson(json);
+
+      expect(dog.geofenceZone, isNull);
+    });
+
+    test('getDogById maps a populated geofenceZone', () {
+      final json = {
+        'id': 'dog-123',
+        'name': 'Bucky',
+        'allergies': [],
+        'characterTraits': [],
+        'geofenceZone': {
+          'id': 'zone-1',
+          'dogId': 'dog-123',
+          'latitude': 45.7578,
+          'longitude': 4.832,
+          'radiusM': 100,
+          'isInside': true,
+        },
+        'createdAt': DateTime.now().toIso8601String(),
+        'updatedAt': DateTime.now().toIso8601String(),
+      };
+
+      final dog = _dogFromJson(json);
+
+      expect(dog.geofenceZone, isNotNull);
+      expect(dog.geofenceZone!.id, equals('zone-1'));
+      expect(dog.geofenceZone!.latitude, equals(45.7578));
+      expect(dog.geofenceZone!.longitude, equals(4.832));
+      expect(dog.geofenceZone!.radiusM, equals(100));
+      expect(dog.geofenceZone!.isInside, isTrue);
+    });
+
+    test('upsertGeofence body matches PUT /dogs/:dogId/geofence expected shape', () {
+      const latitude = 45.7578;
+      const longitude = 4.832;
+      const radiusM = 50;
+
+      final body = <String, dynamic>{
+        'latitude': latitude,
+        'longitude': longitude,
+        'radiusM': radiusM,
+      };
+
+      expect(body['latitude'], equals(45.7578));
+      expect(body['longitude'], equals(4.832));
+      expect(body['radiusM'], equals(50));
+    });
   });
+}
+
+Geofence _geofenceFromJson(Map<String, dynamic> j) {
+  return Geofence(
+    id: j['id'] as String,
+    dogId: j['dogId'] as String,
+    latitude: (j['latitude'] as num).toDouble(),
+    longitude: (j['longitude'] as num).toDouble(),
+    radiusM: (j['radiusM'] as num).toInt(),
+    isInside: j['isInside'] as bool? ?? true,
+  );
 }
 
 // Mapper matching DogRepositoryImpl._dogFromJson for testing
@@ -110,6 +182,9 @@ Dog _dogFromJson(Map<String, dynamic> j) {
             .toList() ??
         [],
     photoUrl: j['photoUrl'] as String?,
+    geofenceZone: j['geofenceZone'] != null
+        ? _geofenceFromJson(j['geofenceZone'] as Map<String, dynamic>)
+        : null,
     createdAt: j['createdAt'] != null
         ? DateTime.tryParse(j['createdAt'] as String) ?? DateTime.now()
         : DateTime.now(),

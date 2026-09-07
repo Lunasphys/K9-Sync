@@ -26,6 +26,7 @@ import '../screens/dog/dog_profile_screen.dart';
 import '../screens/dog/shared_access_screen.dart';
 import '../screens/dog/invite_user_screen.dart';
 import '../screens/dog/collar_status_screen.dart';
+import '../screens/dog/geofence_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/settings/subscription_screen.dart';
 import '../screens/privacy/privacy_screen.dart';
@@ -192,6 +193,11 @@ GoRouter createAppRouter({
           GoRoute(
             path: 'pair-collar',
             builder: (c, s) => PairingScreen(dogId: s.pathParameters['dogId']!),
+          ),
+          GoRoute(
+            path: 'geofence',
+            builder: (c, s) =>
+                GeofenceScreen(dogId: s.pathParameters['dogId']!),
           ),
         ],
       ),

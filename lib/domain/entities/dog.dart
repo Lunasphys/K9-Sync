@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import 'collar.dart';
+import 'geofence.dart';
 
 /// Domain entity: dog profile.
 class Dog extends Equatable {
@@ -14,6 +15,7 @@ class Dog extends Equatable {
   final List<String> characterTraits;
   final String? photoUrl;
   final Collar? collar;
+  final Geofence? geofenceZone;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -28,6 +30,7 @@ class Dog extends Equatable {
     this.characterTraits = const [],
     this.photoUrl,
     this.collar,
+    this.geofenceZone,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -44,6 +47,7 @@ class Dog extends Equatable {
     characterTraits,
     photoUrl,
     collar,
+    geofenceZone,
     createdAt,
     updatedAt,
   ];
