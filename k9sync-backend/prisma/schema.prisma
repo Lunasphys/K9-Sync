@@ -56,6 +56,7 @@ model Dog {
   dogUsers       DogUser[]
   alerts         Alert[]
   pendingInvites PendingInvite[]
+  geofenceZone   GeofenceZone?
 }
 
 model DogUser {
@@ -179,6 +180,25 @@ model ConsentLog {
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
   @@index([userId, type])
+}
+
+// Un seul cercle de zone par chien (scope réduit du chiffrage) : dogId
+// unique en garantit un seul, pas besoin d'id de zone distinct côté client.
+// isInside est l'état de transition dedans/dehors, mis à jour à chaque
+// position GPS reçue (voir mqtt_collar_handler.ts) — persisté ici plutôt
+// que recalculé depuis l'historique d'alertes, pour ne pas re-déclencher
+// une alerte à chaque message tant que le chien reste hors zone.
+model GeofenceZone {
+  id        String   @id @default(uuid())
+  dogId     String   @unique @map("dog_id")
+  latitude  Float
+  longitude Float
+  radiusM   Int      @map("radius_m")
+  isInside  Boolean  @default(true) @map("is_inside")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  dog Dog @relation(fields: [dogId], references: [id], onDelete: Cascade)
 }
 
 model Alert {

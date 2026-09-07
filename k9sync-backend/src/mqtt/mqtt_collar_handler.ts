@@ -2,11 +2,44 @@ import { getPrisma } from '../config/database.js';
 import { logger } from '../shared/logger.js';
 import { gpsMessageSchema, healthMessageSchema } from '../presentation/schemas/collar.schema.js';
 import { pushNotifications } from '../shared/push_notifications.js';
+import { distanceMeters } from '../shared/geo.js';
 
 const HR_MIN = 50;
 const HR_MAX = 180;
 const TEMP_MIN = 36.0;
 const TEMP_MAX = 39.5;
+
+/**
+ * Compares the collar's latest position to the dog's geofence zone (if any)
+ * and reacts only on the dedans->dehors transition — an alert fires once per
+ * exit, not on every GPS message received while the dog stays outside.
+ * Re-entering the zone silently resets the state (no "welcome back" alert)
+ * so the next exit fires again.
+ */
+async function checkGeofence(dogId: string, latitude: number, longitude: number): Promise<void> {
+  const zone = await getPrisma().geofenceZone.findUnique({ where: { dogId } });
+  if (!zone) return;
+
+  const distance = distanceMeters(latitude, longitude, zone.latitude, zone.longitude);
+  const isInside = distance <= zone.radiusM;
+  if (isInside === zone.isInside) return;
+
+  await getPrisma().geofenceZone.update({ where: { dogId }, data: { isInside } });
+
+  if (isInside) {
+    logger.info({ dogId }, 'Geofence re-entry detected');
+    return;
+  }
+
+  const title = `Sortie de la zone définie (rayon ${zone.radiusM}m)`;
+  await getPrisma().alert.create({ data: { dogId, type: 'geofence', title } });
+  await pushNotifications.notifyDogAccessHolders(dogId, {
+    title: 'Sortie de zone',
+    body: title,
+    data: { type: 'geofence', dogId, severity: 'high' },
+  });
+  logger.warn({ dogId, distance, radiusM: zone.radiusM }, 'Geofence exit detected');
+}
 
 /**
  * Resolve a collar's DB id from its serial number and mark it online.
@@ -51,6 +84,11 @@ export async function handleGpsMessage(serial: string, raw: unknown): Promise<vo
   });
 
   logger.debug({ serial, collarId }, 'GPS location stored via MQTT');
+
+  const collar = await getPrisma().collar.findUnique({ where: { id: collarId } });
+  if (collar?.dogId) {
+    await checkGeofence(collar.dogId, latitude, longitude);
+  }
 }
 
 export async function handleHealthMessage(serial: string, raw: unknown): Promise<void> {

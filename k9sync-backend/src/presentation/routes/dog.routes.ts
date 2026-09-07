@@ -12,6 +12,7 @@ import {
   pairCollar,
 } from '../controllers/dog.controller.js';
 import { getHealthLatest, syncHealth } from '../controllers/health.controller.js';
+import { upsertGeofence, deleteGeofence } from '../controllers/geofence.controller.js';
 
 async function requireDogAccess(userId: string, dogId: string) {
   const access = await getPrisma().dogUser.findFirst({
@@ -39,6 +40,10 @@ export async function dogRoutes(app: FastifyInstance) {
 
   // Jumelage du collier
   app.post('/dogs/:dogId/collar/pair', pairCollar);
+
+  // Geofencing — un seul cercle de zone par chien
+  app.put('/dogs/:dogId/geofence', upsertGeofence);
+  app.delete('/dogs/:dogId/geofence', deleteGeofence);
 
   app.get('/dogs/:dogId/health/latest', getHealthLatest);
   app.post('/dogs/:dogId/health/sync', syncHealth);

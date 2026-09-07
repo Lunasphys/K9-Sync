@@ -39,3 +39,14 @@ export class ConflictError extends AppError {
     super('CONFLICT', message, 409, { field });
   }
 }
+
+export class GeofenceRadiusTooSmallError extends AppError {
+  constructor(radiusM: number, minM: number) {
+    super(
+      'GEOFENCE_RADIUS_TOO_SMALL',
+      `Geofence radius must be at least ${minM}m (got ${radiusM}m)`,
+      400,
+      { radiusM, minM },
+    );
+  }
+}

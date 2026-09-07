@@ -16,12 +16,11 @@ export interface AlertPushPayload {
  * Never throws — a push failure must never break the alert-creation flow
  * that triggered it (health sync, activity sync, MQTT ingestion, ...).
  *
- * NOT wired to lost-mode or geofence-exit: as of this commit neither one
- * creates a server-side event to hang a push off of. Lost mode is a direct
- * phone -> MQTT broker -> collar publish (see mqtt_service.dart), with no
- * backend involvement at all; geofencing doesn't exist yet (no zones model,
- * no exit detection). Wiring those requires building that server-side event
- * first — this module only reacts to alerts that actually get created today.
+ * NOT wired to lost-mode: it's a direct phone -> MQTT broker -> collar
+ * publish (see mqtt_service.dart), with no backend involvement at all, so
+ * there's no server-side event to hang a push off of. Geofence-exit IS
+ * wired (see checkGeofence in mqtt_collar_handler.ts, which creates the
+ * Alert this module reacts to).
  */
 export const pushNotifications = {
   async notifyDogAccessHolders(dogId: string, payload: AlertPushPayload): Promise<void> {
