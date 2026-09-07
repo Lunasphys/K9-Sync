@@ -211,30 +211,28 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
               title: 'Conditions générales',
               desc: 'Accepté le 14 jan. 2025 · v1.0',
               checked: true,
-              onTap: () {},
             ),
             _divider(),
             _consentItem(
               title: 'Collecte données GPS',
               desc: 'Inclut déplacements indirects du propriétaire · v1.0',
               checked: true,
-              onTap: () {},
             ),
             _divider(),
             _consentItem(
               title: 'Données de santé animale',
               desc: 'FC, température, activité · v1.0',
               checked: true,
-              onTap: () {},
             ),
             _consentItem(
               title: 'Fonctionnalités communautaires',
               desc: 'Non activé · opt-in requis',
               checked: false,
-              onTap: () {},
               trailing: Switch(
                 value: false,
-                onChanged: (_) {},
+                // Toggling isn't wired to anything yet — disabled (greyed
+                // out) rather than interactive with no effect.
+                onChanged: null,
                 activeTrackColor: AppColors.blue,
               ),
             ),
@@ -304,14 +302,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                       ],
                     ),
                   ),
-                  if (trailing != null)
-                    trailing
-                  else
-                    const Icon(
-                      Icons.chevron_right,
-                      size: 14,
-                      color: AppColors.textMuted,
-                    ),
+                  ?trailing,
                 ],
               ),
             ),
