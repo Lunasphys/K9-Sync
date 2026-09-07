@@ -11,6 +11,7 @@ class AppRoutes {
   static const register = '/register';
   static const dogSetup = '/dog-setup';
   static const forgotPassword = '/forgot-password';
+  static const resetPassword = '/reset-password';
 
   // Shell root (StatefulShellRoute branches)
   static const home = '/home';
@@ -76,6 +77,7 @@ Future<String?> authGuard(
     AppRoutes.signIn,
     AppRoutes.register,
     AppRoutes.forgotPassword,
+    AppRoutes.resetPassword,
   };
 
   final isPublic = publicRoutes.contains(currentPath);

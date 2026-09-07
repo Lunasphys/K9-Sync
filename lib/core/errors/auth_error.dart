@@ -20,6 +20,18 @@ class AuthError extends AppError {
         context: {'action': action},
       );
 
+  /// The backend deliberately doesn't distinguish invalid / expired /
+  /// already-used reset codes in its response (a precise reason would leak
+  /// information to an attacker) — this message is the honest, generic
+  /// equivalent rather than a fabricated distinction the API doesn't make.
+  const AuthError.invalidResetCode()
+    : super(
+        code: 'AUTH_007',
+        message: 'Invalid, expired or already-used password reset code',
+        userMessage:
+            'Code invalide, expiré ou déjà utilisé. Demandez un nouveau code.',
+      );
+
   /// Wrapper pour DioException (REST backend).
   factory AuthError.fromDio(Object e) {
     final code = _dioCode(e);

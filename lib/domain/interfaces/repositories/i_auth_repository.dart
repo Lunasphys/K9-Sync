@@ -12,6 +12,18 @@ abstract interface class IAuthRepository {
   Future<AuthResult> refreshToken();
   Future<void> logout();
   Future<void> forgotPassword({required String email});
+
+  /// Confirms a password reset with the 6-digit [code] emailed by
+  /// [forgotPassword]. Throws [AuthError.invalidResetCode] if the code is
+  /// invalid, expired, or already used — the backend deliberately doesn't
+  /// distinguish which, so neither does this. On success every existing
+  /// session (this device included) is invalidated server-side; the caller
+  /// must send the user back to login, never straight into the app.
+  Future<void> resetPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+  });
   Future<User?> getCurrentUser();
 
   /// RGPD art. 20 — export complet des données de l'utilisateur authentifié

@@ -128,6 +128,26 @@ class AuthRepositoryImpl implements IAuthRepository {
       _remote.forgotPassword(email: email);
 
   @override
+  Future<void> resetPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) async {
+    if (!_isRest) {
+      throw UnsupportedError('Password reset is only available in REST mode.');
+    }
+    try {
+      await getIt<Dio>().post<void>(
+        ApiConstants.authResetPassword,
+        data: {'email': email, 'code': code, 'newPassword': newPassword},
+      );
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) throw const AuthError.invalidResetCode();
+      rethrow;
+    }
+  }
+
+  @override
   Future<Map<String, dynamic>> exportMyData() async {
     if (!_isRest) {
       throw UnsupportedError('Data export is only available in REST mode.');

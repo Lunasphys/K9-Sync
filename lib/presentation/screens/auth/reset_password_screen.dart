@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:k9sync/core/errors/auth_error.dart';
 import 'package:k9sync/core/theme/app_theme.dart';
@@ -9,25 +10,40 @@ import 'package:k9sync/domain/interfaces/repositories/i_auth_repository.dart';
 import 'package:k9sync/injection.dart';
 import 'package:k9sync/presentation/router/route_guards.dart';
 
-/// Mot de passe oublié : saisie de l'email, appel
-/// IAuthRepository.forgotPassword(), puis redirection vers l'écran de saisie
-/// du code de réinitialisation avec l'email transmis via `extra`.
-class ForgotPasswordScreen extends StatefulWidget {
-  const ForgotPasswordScreen({super.key});
+/// Réinitialisation du mot de passe : code à 6 chiffres reçu par email +
+/// nouveau mot de passe. Appelle IAuthRepository.resetPassword(). Le succès
+/// invalide toutes les sessions côté serveur — on redirige donc vers /login
+/// (pas de connexion automatique), jamais dans l'app.
+///
+/// [email] est pré-rempli quand l'écran est atteint depuis
+/// [ForgotPasswordScreen] (via `extra`), mais reste éditable : un accès
+/// direct à cet écran (ex. état perdu au hot-reload) ne doit pas bloquer
+/// l'utilisateur qui a déjà son code en main.
+class ResetPasswordScreen extends StatefulWidget {
+  const ResetPasswordScreen({super.key, this.email});
+  final String? email;
 
   @override
-  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  late final _emailController = TextEditingController(text: widget.email);
+  final _codeController = TextEditingController();
+  final _newPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  bool _obscureNewPassword = true;
+  bool _obscureConfirmPassword = true;
   bool _isLoading = false;
   String? _errorMessage;
 
   @override
   void dispose() {
     _emailController.dispose();
+    _codeController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -35,20 +51,23 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     setState(() => _errorMessage = null);
     if (!_formKey.currentState!.validate()) return;
 
-    final email = _emailController.text.trim();
     setState(() => _isLoading = true);
     try {
-      await getIt<IAuthRepository>().forgotPassword(email: email);
+      await getIt<IAuthRepository>().resetPassword(
+        email: _emailController.text.trim(),
+        code: _codeController.text.trim(),
+        newPassword: _newPasswordController.text,
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Si cet email est associé à un compte, un code de réinitialisation vient de vous être envoyé. Consultez votre boîte de réception.',
+            'Mot de passe réinitialisé. Connectez-vous avec votre nouveau mot de passe.',
           ),
-          duration: Duration(seconds: 5),
+          duration: Duration(seconds: 4),
         ),
       );
-      context.push(AppRoutes.resetPassword, extra: email);
+      context.go(AppRoutes.login);
     } on AuthError catch (e) {
       if (!mounted) return;
       setState(
@@ -58,13 +77,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       if (!mounted) return;
       final authErr = AuthError.fromDio(e);
       setState(
-        () => _errorMessage = authErr.userMessage ?? 'Impossible d\'envoyer l\'email.',
+        () => _errorMessage =
+            authErr.userMessage ?? 'Impossible de réinitialiser le mot de passe.',
       );
     } catch (_) {
       if (!mounted) return;
       setState(
         () => _errorMessage =
-            'Impossible d\'envoyer l\'email. Vérifiez votre connexion.',
+            'Impossible de réinitialiser le mot de passe. Vérifiez votre connexion.',
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -108,7 +128,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               children: [
                 const SizedBox(height: 16),
                 Text(
-                  'Mot de passe oublié',
+                  'Réinitialiser le mot de passe',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w900,
                     fontSize: 24,
@@ -116,7 +136,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Indiquez votre email pour recevoir un code de réinitialisation.',
+                  'Saisissez le code à 6 chiffres reçu par email et votre nouveau mot de passe.',
                   style: TextStyle(
                     fontSize: 13,
                     color: AppColors.textMuted,
@@ -145,13 +165,117 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     },
                   ),
                 ),
+                const SizedBox(height: 16),
+                _buildLabel('Code à 6 chiffres'),
+                const SizedBox(height: 4),
+                Semantics(
+                  textField: true,
+                  label: 'Code de réinitialisation à 6 chiffres',
+                  child: TextFormField(
+                    controller: _codeController,
+                    keyboardType: TextInputType.number,
+                    enabled: !_isLoading,
+                    maxLength: 6,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    decoration: _inputDecoration(hint: '123456').copyWith(
+                      counterText: '',
+                    ),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Champ requis';
+                      if (v.length != 6) return 'Le code doit contenir 6 chiffres';
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildLabel('Nouveau mot de passe'),
+                const SizedBox(height: 4),
+                Semantics(
+                  textField: true,
+                  label: 'Nouveau mot de passe',
+                  child: TextFormField(
+                    controller: _newPasswordController,
+                    obscureText: _obscureNewPassword,
+                    enabled: !_isLoading,
+                    decoration: _inputDecoration(hint: '••••••••').copyWith(
+                      suffixIcon: Semantics(
+                        button: true,
+                        label: _obscureNewPassword
+                            ? 'Afficher le mot de passe'
+                            : 'Masquer le mot de passe',
+                        child: IconButton(
+                          icon: Icon(
+                            _obscureNewPassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: AppColors.textMuted,
+                          ),
+                          onPressed: () => setState(
+                            () => _obscureNewPassword = !_obscureNewPassword,
+                          ),
+                        ),
+                      ),
+                    ),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Champ requis';
+                      if (v.length < 8) return 'Minimum 8 caractères';
+                      final hasUpper = v.contains(RegExp(r'[A-Z]'));
+                      final hasDigit = v.contains(RegExp(r'[0-9]'));
+                      if (!hasUpper || !hasDigit) {
+                        return '1 majuscule et 1 chiffre requis';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildLabel('Confirmer le mot de passe'),
+                const SizedBox(height: 4),
+                Semantics(
+                  textField: true,
+                  label: 'Confirmation du nouveau mot de passe',
+                  child: TextFormField(
+                    controller: _confirmPasswordController,
+                    obscureText: _obscureConfirmPassword,
+                    enabled: !_isLoading,
+                    decoration: _inputDecoration(hint: '••••••••').copyWith(
+                      suffixIcon: Semantics(
+                        button: true,
+                        label: _obscureConfirmPassword
+                            ? 'Afficher le mot de passe'
+                            : 'Masquer le mot de passe',
+                        child: IconButton(
+                          icon: Icon(
+                            _obscureConfirmPassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: AppColors.textMuted,
+                          ),
+                          onPressed: () => setState(
+                            () => _obscureConfirmPassword =
+                                !_obscureConfirmPassword,
+                          ),
+                        ),
+                      ),
+                    ),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Champ requis';
+                      if (v != _newPasswordController.text) {
+                        return 'Les mots de passe ne correspondent pas';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
                 const SizedBox(height: 28),
                 Semantics(
                   button: true,
                   enabled: !_isLoading,
                   label: _isLoading
-                      ? 'Envoi du code en cours'
-                      : 'Envoyer le code de réinitialisation',
+                      ? 'Réinitialisation en cours'
+                      : 'Réinitialiser le mot de passe',
                   child: SizedBox(
                     width: double.infinity,
                     height: 52,
@@ -166,7 +290,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text('Envoyer le code'),
+                          : const Text('Réinitialiser'),
                     ),
                   ),
                 ),

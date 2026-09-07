@@ -11,6 +11,7 @@ import '../screens/auth/login_screen.dart';
 import '../screens/auth/onboarding_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/auth/forgot_password_screen.dart';
+import '../screens/auth/reset_password_screen.dart';
 import '../screens/onboarding/dog_setup_screen.dart';
 import '../screens/auth/welcome_login_screen.dart';
 import '../screens/map/map_screen.dart';
@@ -89,6 +90,10 @@ GoRouter createAppRouter({
       GoRoute(
         path: AppRoutes.forgotPassword,
         builder: (c, s) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.resetPassword,
+        builder: (c, s) => ResetPasswordScreen(email: s.extra as String?),
       ),
 
       // ── Main shell — 5-tab bottom nav ──────────────────────────────

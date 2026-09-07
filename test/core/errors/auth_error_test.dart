@@ -39,6 +39,18 @@ void main() {
       expect(err.context, {'action': 'delete_dog'});
       expect(err.message, contains('delete_dog'));
     });
+
+    test(
+      'invalidResetCode has a generic French message, not a fabricated distinction',
+      () {
+        const err = AuthError.invalidResetCode();
+        expect(err.code, 'AUTH_007');
+        expect(
+          err.userMessage,
+          'Code invalide, expiré ou déjà utilisé. Demandez un nouveau code.',
+        );
+      },
+    );
   });
 
   group('AuthError.fromDio', () {

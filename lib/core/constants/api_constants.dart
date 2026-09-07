@@ -16,6 +16,7 @@ abstract final class ApiConstants {
   static const String authRefresh = '/auth/refresh';
   static const String authLogout = '/auth/logout';
   static const String authForgotPassword = '/auth/forgot-password';
+  static const String authResetPassword = '/auth/reset-password';
 
   // Dogs
   static const String dogs = '/dogs';
