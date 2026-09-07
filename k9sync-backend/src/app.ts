@@ -17,6 +17,27 @@ const env = loadEnv();
 export async function buildApp() {
   const app = Fastify({ logger: false });
 
+  // Fastify's default JSON parser throws on an empty body even when
+  // Content-Type: application/json is set (e.g. POST /auth/logout with no
+  // payload) — treat an empty body as "no body" instead of a parse error.
+  app.addContentTypeParser(
+    'application/json',
+    { parseAs: 'string' },
+    (_req, body, done) => {
+      const raw = body as string;
+      if (raw === '') {
+        done(null, undefined);
+        return;
+      }
+      try {
+        done(null, JSON.parse(raw));
+      } catch (err) {
+        (err as { statusCode?: number }).statusCode = 400;
+        done(err as Error, undefined);
+      }
+    },
+  );
+
   app.setErrorHandler((error, request, reply) => {
     if (error instanceof AppError) {
       return reply.status(error.statusCode).send({
