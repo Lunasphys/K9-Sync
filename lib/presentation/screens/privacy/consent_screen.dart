@@ -206,7 +206,7 @@ class _ConsentScreenState extends State<ConsentScreen> {
           '$title${required ? ", obligatoire" : ", optionnel"}. $description',
       child: MergeSemantics(
         child: Material(
-          color: AppColors.cardBg,
+          color: Colors.transparent,
           borderRadius: AppDimensions.borderRadiusSm,
           child: InkWell(
             onTap: () => onChanged(!value),
@@ -214,6 +214,7 @@ class _ConsentScreenState extends State<ConsentScreen> {
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
+                color: AppColors.cardBg,
                 border: Border.all(color: AppColors.border, width: 1),
                 borderRadius: AppDimensions.borderRadiusSm,
                 boxShadow: [AppDimensions.cardShadowSm],
