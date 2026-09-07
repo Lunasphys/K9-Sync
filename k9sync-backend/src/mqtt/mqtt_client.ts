@@ -10,12 +10,26 @@ export interface MqttConnectOptions {
   password?: string;
 }
 
+let _client: MqttClient | null = null;
+
+/**
+ * The currently connected MQTT client, if any — used by mqtt_collar_handler.ts
+ * to publish server-initiated messages (e.g. a geofence-exit alert) back onto
+ * a topic the app already subscribes to. Null until connectMqtt() has run;
+ * callers must handle that (e.g. tests that call the handlers directly
+ * without a live broker).
+ */
+export function getMqttClient(): MqttClient | null {
+  return _client;
+}
+
 export function connectMqtt(brokerUrl: string, opts: MqttConnectOptions = {}): MqttClient {
   const client = mqtt.connect(brokerUrl, {
     username: opts.username || undefined,
     password: opts.password || undefined,
     reconnectPeriod: 5000,
   });
+  _client = client;
 
   client.on('connect', () => {
     logger.info({ brokerUrl }, 'MQTT connected');

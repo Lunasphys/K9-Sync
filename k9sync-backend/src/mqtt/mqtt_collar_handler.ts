@@ -3,6 +3,7 @@ import { logger } from '../shared/logger.js';
 import { gpsMessageSchema, healthMessageSchema } from '../presentation/schemas/collar.schema.js';
 import { pushNotifications } from '../shared/push_notifications.js';
 import { distanceMeters } from '../shared/geo.js';
+import { mqttPublisher } from './mqtt_publisher.js';
 
 const HR_MIN = 50;
 const HR_MAX = 180;
@@ -15,8 +16,21 @@ const TEMP_MAX = 39.5;
  * exit, not on every GPS message received while the dog stays outside.
  * Re-entering the zone silently resets the state (no "welcome back" alert)
  * so the next exit fires again.
+ *
+ * On exit, also republishes onto k9sync/collar/{serial}/alert — the same
+ * topic the collar/simulator uses for its own anomalies — so the app's
+ * single live AlertsBloc subscription picks this up too. The app's collar
+ * never sees a geofence exit itself (it's a server-side computation over
+ * stored GPS points), so without this republish the alert would only ever
+ * reach the backend Alert table and a push notification, never the in-app
+ * live alerts list.
  */
-async function checkGeofence(dogId: string, latitude: number, longitude: number): Promise<void> {
+async function checkGeofence(
+  serial: string,
+  dogId: string,
+  latitude: number,
+  longitude: number,
+): Promise<void> {
   const zone = await getPrisma().geofenceZone.findUnique({ where: { dogId } });
   if (!zone) return;
 
@@ -38,6 +52,7 @@ async function checkGeofence(dogId: string, latitude: number, longitude: number)
     body: title,
     data: { type: 'geofence', dogId, severity: 'high' },
   });
+  mqttPublisher.publishAlert(serial, { type: 'geofence', message: title, severity: 'high' });
   logger.warn({ dogId, distance, radiusM: zone.radiusM }, 'Geofence exit detected');
 }
 
@@ -87,7 +102,7 @@ export async function handleGpsMessage(serial: string, raw: unknown): Promise<vo
 
   const collar = await getPrisma().collar.findUnique({ where: { id: collarId } });
   if (collar?.dogId) {
-    await checkGeofence(collar.dogId, latitude, longitude);
+    await checkGeofence(serial, collar.dogId, latitude, longitude);
   }
 }
 

@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { initPrisma, getPrisma } from '../config/database.js';
 import { handleHealthMessage, handleGpsMessage } from './mqtt_collar_handler.js';
+import { mqttPublisher } from './mqtt_publisher.js';
 
 initPrisma(process.env.DATABASE_URL ?? '');
 const prisma = getPrisma();
@@ -82,8 +83,13 @@ function gpsPayload(serialNumber: string, dogId: string, latitude: number, longi
   };
 }
 
-test('handleGpsMessage detects a dedans->dehors transition: creates a geofence Alert and flips isInside', async () => {
+test('handleGpsMessage detects a dedans->dehors transition: creates a geofence Alert, flips isInside, and republishes onto the MQTT alert topic', async (t) => {
   const { dog, serialNumber } = await setupDogWithZone();
+
+  const publishCalls: Array<{ serial: string; alert: { type: string; message: string; severity: string } }> = [];
+  t.mock.method(mqttPublisher, 'publishAlert', (serial: string, alert: { type: string; message: string; severity: string }) => {
+    publishCalls.push({ serial, alert });
+  });
 
   await handleGpsMessage(serialNumber, gpsPayload(serialNumber, dog.id, ZONE_LAT, OUTSIDE_LNG));
 
@@ -93,12 +99,24 @@ test('handleGpsMessage detects a dedans->dehors transition: creates a geofence A
   const alerts = await prisma.alert.findMany({ where: { dogId: dog.id, type: 'geofence' } });
   assert.equal(alerts.length, 1);
 
+  // The app's AlertsBloc only ever sees this via the MQTT alert topic — no
+  // republish means the alert never reaches the in-app live list.
+  assert.equal(publishCalls.length, 1);
+  assert.equal(publishCalls[0].serial, serialNumber);
+  assert.equal(publishCalls[0].alert.type, 'geofence');
+  assert.equal(publishCalls[0].alert.severity, 'high');
+
   // cleanup
   await prisma.dog.delete({ where: { id: dog.id } });
 });
 
-test('handleGpsMessage does not re-trigger an alert on every message while the dog stays outside', async () => {
+test('handleGpsMessage does not re-trigger an alert on every message while the dog stays outside', async (t) => {
   const { dog, serialNumber } = await setupDogWithZone();
+
+  let publishCount = 0;
+  t.mock.method(mqttPublisher, 'publishAlert', () => {
+    publishCount++;
+  });
 
   await handleGpsMessage(serialNumber, gpsPayload(serialNumber, dog.id, ZONE_LAT, OUTSIDE_LNG));
   // Two more GPS pings, still outside — must not create additional alerts.
@@ -107,13 +125,19 @@ test('handleGpsMessage does not re-trigger an alert on every message while the d
 
   const alerts = await prisma.alert.findMany({ where: { dogId: dog.id, type: 'geofence' } });
   assert.equal(alerts.length, 1, 'staying outside must not create a second alert');
+  assert.equal(publishCount, 1, 'staying outside must not republish a second time either');
 
   // cleanup
   await prisma.dog.delete({ where: { id: dog.id } });
 });
 
-test('handleGpsMessage: re-entering the zone then exiting again creates a second, new alert', async () => {
+test('handleGpsMessage: re-entering the zone then exiting again creates a second, new alert (and a second republish)', async (t) => {
   const { dog, serialNumber } = await setupDogWithZone();
+
+  let publishCount = 0;
+  t.mock.method(mqttPublisher, 'publishAlert', () => {
+    publishCount++;
+  });
 
   await handleGpsMessage(serialNumber, gpsPayload(serialNumber, dog.id, ZONE_LAT, OUTSIDE_LNG));
   let zone = await prisma.geofenceZone.findUnique({ where: { dogId: dog.id } });
@@ -125,6 +149,7 @@ test('handleGpsMessage: re-entering the zone then exiting again creates a second
   assert.equal(zone?.isInside, true);
   let alerts = await prisma.alert.findMany({ where: { dogId: dog.id, type: 'geofence' } });
   assert.equal(alerts.length, 1, 're-entry must not create an alert of its own');
+  assert.equal(publishCount, 1, 're-entry must not republish either');
 
   // Exit again — this is a fresh transition, must create a second alert.
   await handleGpsMessage(serialNumber, gpsPayload(serialNumber, dog.id, ZONE_LAT, OUTSIDE_LNG));
@@ -132,6 +157,7 @@ test('handleGpsMessage: re-entering the zone then exiting again creates a second
   assert.equal(zone?.isInside, false);
   alerts = await prisma.alert.findMany({ where: { dogId: dog.id, type: 'geofence' }, orderBy: { createdAt: 'asc' } });
   assert.equal(alerts.length, 2, 'a new exit after a re-entry must create a new alert');
+  assert.equal(publishCount, 2, 'a new exit after a re-entry must republish again');
 
   // cleanup
   await prisma.dog.delete({ where: { id: dog.id } });
