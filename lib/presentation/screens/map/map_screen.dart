@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:k9sync/core/debug/debug_logger.dart';
 import 'package:k9sync/core/theme/app_theme.dart';
+import 'package:k9sync/domain/entities/geofence.dart';
 import 'package:k9sync/domain/entities/trail.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_dog_repository.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_gps_repository.dart';
@@ -68,6 +69,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   bool _followDog = true;
 
   String _dogName = 'Mon chien';
+  Geofence? _geofenceZone;
 
   static const _collarSerial = 'SIM001';
   static const _defaultCenter = LatLng(45.7578, 4.8320);
@@ -112,6 +114,15 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       if (dogs.isEmpty || !mounted) return;
       final dog = dogs.first;
       setState(() => _dogName = dog.name);
+
+      // getDogs() doesn't include the geofence relation (only GET
+      // /dogs/:dogId does) — a second call to seed the permanent zone
+      // circle, same "show it as soon as we know it" spirit as the GPS seed
+      // below.
+      getIt<IDogRepository>().getDogById(dog.id).then((full) {
+        if (!mounted || full == null) return;
+        setState(() => _geofenceZone = full.geofenceZone);
+      });
 
       if (_lastGps != null) return; // MQTT already delivered a live point
       final last = await getIt<IGpsRepository>().getLatestLocation(dog.id);
@@ -251,6 +262,22 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                           'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                       userAgentPackageName: 'com.example.k9sync',
                     ),
+                    if (_geofenceZone != null)
+                      CircleLayer(
+                        circles: [
+                          CircleMarker(
+                            point: LatLng(
+                              _geofenceZone!.latitude,
+                              _geofenceZone!.longitude,
+                            ),
+                            radius: _geofenceZone!.radiusM.toDouble(),
+                            useRadiusInMeter: true,
+                            color: AppColors.orange.withValues(alpha: 0.15),
+                            borderStrokeWidth: 2,
+                            borderColor: AppColors.orange,
+                          ),
+                        ],
+                      ),
                     if (_isTracking && _trail.length > 1)
                       PolylineLayer(
                         polylines: [
