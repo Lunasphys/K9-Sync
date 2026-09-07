@@ -137,7 +137,19 @@ export class AuthController {
     }
     if (!match) throw new UnauthorizedError('Invalid or expired refresh token');
 
-    await getPrisma().refreshToken.delete({ where: { id: match.id } });
+    // Atomic, conditional delete — avoids the TOCTOU window between the
+    // findMany above and this delete. Under concurrent refresh calls with
+    // the same raw token (e.g. several API calls 401-ing at once and each
+    // triggering a refresh), only one deleteMany can match this still-alive
+    // row; the loser gets count 0 instead of crashing on a delete-by-id of
+    // an already-deleted row. A refresh token is single-use by design, so
+    // the loser must re-authenticate — that's correct, not a bug.
+    const { count } = await getPrisma().refreshToken.deleteMany({
+      where: { id: match.id, expiresAt: { gt: new Date() } },
+    });
+    if (count === 0) {
+      throw new UnauthorizedError('Refresh token already used — please log in again');
+    }
     const newRaw = uuidv4();
     const newHash = await bcrypt.hash(newRaw, 12);
     const expiresAt = new Date(Date.now() + (Number(process.env.JWT_REFRESH_EXPIRES_DAYS) ?? 7) * 24 * 60 * 60 * 1000);
