@@ -104,7 +104,7 @@ export async function getDog(
 
   const dog = await getPrisma().dog.findUnique({
     where: { id: dogId },
-    include: { collar: true },
+    include: { collar: true, geofenceZone: true },
   });
   if (!dog) return reply.status(404).send({ error: 'Dog not found' });
 

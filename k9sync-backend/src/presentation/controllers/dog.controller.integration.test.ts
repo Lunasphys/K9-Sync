@@ -318,6 +318,29 @@ test('POST /dogs/:dogId/collar/pair provisions a brand-new serial number and pai
   await prisma.user.delete({ where: { id: owner.id } });
 });
 
+test('GET /dogs/:dogId exposes the geofenceZone relation — null when unset, populated once defined', async () => {
+  const { owner, dog } = await createOwnerWithDog('GeofenceRelationDog');
+
+  const noZoneReply = fakeReply();
+  await getDog(fakeRequest(owner.id, { dogId: dog.id }), noZoneReply as unknown as FastifyReply);
+  const noZonePayload = noZoneReply.payload as { geofenceZone: unknown };
+  assert.equal(noZonePayload.geofenceZone, null);
+
+  await prisma.geofenceZone.create({
+    data: { dogId: dog.id, latitude: 45.7578, longitude: 4.832, radiusM: 50, isInside: true },
+  });
+
+  const withZoneReply = fakeReply();
+  await getDog(fakeRequest(owner.id, { dogId: dog.id }), withZoneReply as unknown as FastifyReply);
+  const withZonePayload = withZoneReply.payload as { geofenceZone: { radiusM: number } | null };
+  assert.equal(withZonePayload.geofenceZone?.radiusM, 50);
+
+  // cleanup
+  await prisma.geofenceZone.deleteMany({ where: { dogId: dog.id } });
+  await prisma.dog.delete({ where: { id: dog.id } });
+  await prisma.user.delete({ where: { id: owner.id } });
+});
+
 test('POST /dogs/:dogId/collar/pair claims an existing unclaimed collar', async () => {
   const { owner, dog } = await createOwnerWithDog('ClaimUnclaimedDog');
   const serialNumber = `UNCLAIMED-${randomUUID()}`;
