@@ -4,13 +4,43 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:k9sync/core/theme/app_theme.dart';
 import 'package:k9sync/domain/entities/trail.dart';
+import 'package:k9sync/domain/interfaces/repositories/i_gps_repository.dart';
+import 'package:k9sync/injection.dart';
 import 'package:k9sync/presentation/providers/trail_provider.dart';
 
-class TrailHistoryScreen extends ConsumerWidget {
+class TrailHistoryScreen extends ConsumerStatefulWidget {
   const TrailHistoryScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TrailHistoryScreen> createState() =>
+      _TrailHistoryScreenState();
+}
+
+class _TrailHistoryScreenState extends ConsumerState<TrailHistoryScreen>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Local trails (Hive) are shown immediately via trailListProvider —
+    // fetch the backend's list and merge in whatever isn't on this device.
+    ref.read(trailListProvider.notifier).refreshFromRemote();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    ref.read(trailListProvider.notifier).syncPendingTrails();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final trails = ref.watch(trailListProvider);
 
     return Scaffold(
@@ -333,9 +363,39 @@ class _TrailMiniMap extends StatelessWidget {
 
 // ── Detail bottom sheet ───────────────────────────────────────────────────────
 
-class _TrailDetailSheet extends StatelessWidget {
+class _TrailDetailSheet extends ConsumerStatefulWidget {
   final Trail trail;
   const _TrailDetailSheet({required this.trail});
+
+  @override
+  ConsumerState<_TrailDetailSheet> createState() => _TrailDetailSheetState();
+}
+
+class _TrailDetailSheetState extends ConsumerState<_TrailDetailSheet> {
+  late Trail _trail;
+
+  @override
+  void initState() {
+    super.initState();
+    _trail = widget.trail;
+    // Trails synced from another device only carry summary fields (no GPS
+    // points) until fetched individually — load the full polyline on open.
+    if (_trail.points.isEmpty) _loadFullTrail();
+  }
+
+  Future<void> _loadFullTrail() async {
+    try {
+      final dogId = await ref.read(trailListProvider.notifier).getDogId();
+      if (dogId == null) return;
+      final full = await getIt<IGpsRepository>().getTrailById(
+        dogId,
+        _trail.id,
+      );
+      if (full != null && mounted) setState(() => _trail = full);
+    } catch (_) {
+      // Keep showing the summary without a polyline — non-critical.
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -363,7 +423,7 @@ class _TrailDetailSheet extends StatelessWidget {
             child: Row(
               children: [
                 Text(
-                  _formatDate(trail.startedAt),
+                  _formatDate(_trail.startedAt),
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w900,
@@ -380,9 +440,9 @@ class _TrailDetailSheet extends StatelessWidget {
           Container(height: 2, color: AppColors.border),
           // Full-size map
           Expanded(
-            child: trail.points.isEmpty
+            child: _trail.points.isEmpty
                 ? const Center(child: Text('Pas de points GPS'))
-                : _TrailMiniMap(trail: trail),
+                : _TrailMiniMap(trail: _trail),
           ),
           Container(height: 2, color: AppColors.border),
           // Stats
@@ -392,15 +452,15 @@ class _TrailDetailSheet extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _bigStat(
-                  '${(trail.distanceMeters / 1000).toStringAsFixed(2)} km',
+                  '${(_trail.distanceMeters / 1000).toStringAsFixed(2)} km',
                   'Distance',
                 ),
                 _divider(),
-                _bigStat(_formatDuration(trail.duration), 'Durée'),
+                _bigStat(_formatDuration(_trail.duration), 'Durée'),
                 _divider(),
-                _bigStat('${trail.points.length}', 'Points GPS'),
+                _bigStat('${_trail.points.length}', 'Points GPS'),
                 _divider(),
-                _bigStat('${_avgSpeed(trail)} km/h', 'Vitesse moy.'),
+                _bigStat('${_avgSpeed(_trail)} km/h', 'Vitesse moy.'),
               ],
             ),
           ),

@@ -31,32 +31,3 @@ class GpsLocation extends Equatable {
     syncedAt,
   ];
 }
-
-/// Trail = list of points for a walk.
-class Trail extends Equatable {
-  final String id;
-  final String dogId;
-  final DateTime startAt;
-  final DateTime endAt;
-  final double? distanceMeters;
-  final int pointCount;
-
-  const Trail({
-    required this.id,
-    required this.dogId,
-    required this.startAt,
-    required this.endAt,
-    this.distanceMeters,
-    required this.pointCount,
-  });
-
-  @override
-  List<Object?> get props => [
-    id,
-    dogId,
-    startAt,
-    endAt,
-    distanceMeters,
-    pointCount,
-  ];
-}

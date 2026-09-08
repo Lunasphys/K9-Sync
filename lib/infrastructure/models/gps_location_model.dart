@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../domain/entities/gps_location.dart';
+import '../../domain/entities/trail.dart';
 import '_parsers.dart';
 
 /// DTO GPS — Firestore ou REST (Prisma Decimal lat/lng en String).
@@ -133,12 +135,11 @@ class TrailModel {
     );
   }
 
-  Trail toEntity(String dogId) => Trail(
+  Trail toEntity() => Trail(
     id: id,
-    dogId: dogId,
-    startAt: startedAt,
-    endAt: endedAt,
+    startedAt: startedAt,
+    endedAt: endedAt,
+    points: points.map((p) => LatLng(p.latitude, p.longitude)).toList(),
     distanceMeters: distanceM.toDouble(),
-    pointCount: pointsCount,
   );
 }

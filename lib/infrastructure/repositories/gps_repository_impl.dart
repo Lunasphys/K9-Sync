@@ -2,8 +2,10 @@ import 'package:dio/dio.dart';
 
 import '../../core/debug/debug_logger.dart';
 import '../../domain/entities/gps_location.dart';
+import '../../domain/entities/trail.dart';
 import '../../domain/interfaces/repositories/i_gps_repository.dart';
 import '../../injection.dart';
+import '../models/gps_location_model.dart';
 
 /// GPS repository — 100% REST.
 /// Replaces GpsRemoteDatasourceFirestore.
@@ -47,16 +49,48 @@ class GpsRepositoryImpl implements IGpsRepository {
     String dogId, {
     DateTime? from,
     DateTime? to,
-  }) async => [];
+  }) async {
+    final response = await _dio.get<List<dynamic>>('/dogs/$dogId/trails');
+    final list = response.data ?? [];
+    return list
+        .map((e) => TrailModel.fromJson(e as Map<String, dynamic>).toEntity())
+        .toList();
+  }
 
   @override
-  Future<Trail?> getTrailById(String dogId, String trailId) async => null;
+  Future<Trail?> getTrailById(String dogId, String trailId) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/dogs/$dogId/trails/$trailId',
+      );
+      return TrailModel.fromJson(response.data!).toEntity();
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      rethrow;
+    }
+  }
+
+  @override
+  Future<String> createTrail(String dogId, Trail trail) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/dogs/$dogId/trails',
+      data: {
+        'startedAt': trail.startedAt.toIso8601String(),
+        'endedAt': trail.endedAt.toIso8601String(),
+        'distanceM': trail.distanceMeters.round(),
+        'durationS': trail.duration.inSeconds,
+        'pointsCount': trail.points.length,
+      },
+    );
+    return response.data!['id'] as String;
+  }
 
   @override
   Future<int> syncOfflineLocations(
     String dogId,
-    List<GpsLocation> locations,
-  ) async {
+    List<GpsLocation> locations, {
+    String? trailId,
+  }) async {
     if (locations.isEmpty) return 0;
 
     try {
@@ -73,6 +107,7 @@ class GpsRepositoryImpl implements IGpsRepository {
                 },
               )
               .toList(),
+          if (trailId != null) 'trailId': trailId,
         },
       );
       final synced = response.data?['synced'] as int? ?? 0;
