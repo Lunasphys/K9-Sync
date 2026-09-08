@@ -9,9 +9,11 @@ import 'package:latlong2/latlong.dart';
 import 'package:k9sync/core/debug/debug_logger.dart';
 import 'package:k9sync/core/theme/app_theme.dart';
 import 'package:k9sync/domain/entities/geofence.dart';
+import 'package:k9sync/domain/entities/place_search_result.dart';
 import 'package:k9sync/domain/entities/trail.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_dog_repository.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_gps_repository.dart';
+import 'package:k9sync/domain/interfaces/services/i_geocoding_service.dart';
 import 'package:k9sync/domain/interfaces/services/i_mqtt_service.dart';
 import 'package:k9sync/injection.dart';
 import 'package:k9sync/presentation/router/route_guards.dart';
@@ -71,6 +73,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   String _dogName = 'Mon chien';
   Geofence? _geofenceZone;
 
+  // Place search
+  final _searchController = TextEditingController();
+  final _searchFocusNode = FocusNode();
+  bool _searching = false;
+  String? _searchError;
+  List<PlaceSearchResult> _searchResults = [];
+  bool _showSearchResults = false;
+
   static const _collarSerial = 'SIM001';
   static const _defaultCenter = LatLng(45.7578, 4.8320);
 
@@ -90,6 +100,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     _ticker?.cancel();
     _inactivityTimer?.cancel();
     _connectionStateSub?.cancel();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
     getIt<IMqttService>().disconnect();
     super.dispose();
   }
@@ -234,6 +246,81 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     return total;
   }
 
+  // ── Place search ──────────────────────────────────────────────────────────
+
+  Future<void> _performSearch(String query) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) {
+      // Empty search — nothing to look up, just clear any stale results.
+      setState(() {
+        _searchResults = [];
+        _searchError = null;
+        _showSearchResults = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _searching = true;
+      _searchError = null;
+      _showSearchResults = true;
+    });
+
+    try {
+      final results = await getIt<IGeocodingService>().search(trimmed);
+      if (!mounted) return;
+
+      if (results.isEmpty) {
+        setState(() {
+          _searching = false;
+          _searchResults = [];
+          _searchError = 'Aucun lieu trouvé pour « $trimmed ».';
+        });
+        return;
+      }
+
+      if (results.length == 1) {
+        _selectSearchResult(results.first);
+        return;
+      }
+
+      setState(() {
+        _searching = false;
+        _searchResults = results;
+      });
+    } catch (e) {
+      DebugLogger.log('MAP', 'Place search failed: $e');
+      if (!mounted) return;
+      setState(() {
+        _searching = false;
+        _searchResults = [];
+        _searchError = 'Recherche indisponible — vérifie ta connexion.';
+      });
+    }
+  }
+
+  void _selectSearchResult(PlaceSearchResult result) {
+    setState(() {
+      _searching = false;
+      _showSearchResults = false;
+      _searchResults = [];
+      _searchError = null;
+      _followDog = false;
+      _searchController.text = result.name;
+    });
+    _searchFocusNode.unfocus();
+    _mapController.move(LatLng(result.latitude, result.longitude), 15);
+  }
+
+  void _clearSearch() {
+    setState(() {
+      _searchController.clear();
+      _searchResults = [];
+      _searchError = null;
+      _showSearchResults = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final savedTrails = ref.watch(trailListProvider);
@@ -253,6 +340,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     onPositionChanged: (camera, hasGesture) {
                       if (hasGesture && _followDog) {
                         setState(() => _followDog = false);
+                      }
+                    },
+                    onTap: (tapPosition, point) {
+                      if (_showSearchResults) {
+                        setState(() => _showSearchResults = false);
                       }
                     },
                   ),
@@ -368,55 +460,27 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   top: 12,
                   left: 12,
                   right: 12,
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
+                      Row(
+                        children: [
+                          Expanded(child: _buildSearchField()),
+                          const SizedBox(width: 8),
+                          _mapIconBtn(
+                            Icons.history,
+                            () => context.push('/home/carte/history'),
+                            semanticLabel: 'Historique des balades',
                           ),
-                          decoration: BoxDecoration(
-                            color: AppColors.cardBg,
-                            border: Border.all(
-                              color: AppColors.border,
-                              width: 2,
-                            ),
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [AppDimensions.cardShadowSm],
+                          const SizedBox(width: 8),
+                          _mapIconBtn(
+                            Icons.pets,
+                            () => context.push(AppRoutes.lostMode),
+                            semanticLabel: 'Mode chien perdu',
                           ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.search,
-                                size: 20,
-                                color: AppColors.textMuted,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Rechercher un lieu...',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textMuted,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      _mapIconBtn(
-                        Icons.history,
-                        () => context.push('/home/carte/history'),
-                        semanticLabel: 'Historique des balades',
-                      ),
-                      const SizedBox(width: 8),
-                      _mapIconBtn(
-                        Icons.pets,
-                        () => context.push(AppRoutes.lostMode),
-                        semanticLabel: 'Mode chien perdu',
-                      ),
+                      if (_showSearchResults) _buildSearchResultsPanel(),
                     ],
                   ),
                 ),
@@ -608,6 +672,160 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSearchField() {
+    return Semantics(
+      textField: true,
+      label: 'Rechercher un lieu sur la carte',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: AppColors.cardBg,
+          border: Border.all(color: AppColors.border, width: 2),
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [AppDimensions.cardShadowSm],
+        ),
+        child: Row(
+          children: [
+            Semantics(
+              button: true,
+              label: 'Lancer la recherche',
+              child: GestureDetector(
+                onTap: () => _performSearch(_searchController.text),
+                child: Icon(
+                  Icons.search,
+                  size: 20,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextField(
+                controller: _searchController,
+                focusNode: _searchFocusNode,
+                textInputAction: TextInputAction.search,
+                onSubmitted: _performSearch,
+                onChanged: (_) => setState(() {}),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.text,
+                ),
+                decoration: InputDecoration(
+                  isDense: true,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  hintText: 'Rechercher un lieu...',
+                  hintStyle: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ),
+            ),
+            if (_searching)
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.orange,
+                ),
+              )
+            else if (_searchController.text.isNotEmpty)
+              Semantics(
+                button: true,
+                label: 'Effacer la recherche',
+                child: GestureDetector(
+                  onTap: _clearSearch,
+                  child: Icon(
+                    Icons.close,
+                    size: 18,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchResultsPanel() {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      constraints: const BoxConstraints(maxHeight: 260),
+      decoration: BoxDecoration(
+        color: AppColors.cardBg,
+        border: Border.all(color: AppColors.border, width: 2),
+        borderRadius: AppDimensions.borderRadiusSm,
+        boxShadow: [AppDimensions.cardShadowSm],
+      ),
+      child: _searchError != null
+          ? Padding(
+              padding: const EdgeInsets.all(14),
+              child: Text(
+                _searchError!,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textMuted,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            )
+          : ListView.separated(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              itemCount: _searchResults.length,
+              separatorBuilder: (_, _) =>
+                  Container(height: 1, color: AppColors.border),
+              itemBuilder: (context, index) {
+                final result = _searchResults[index];
+                return Semantics(
+                  button: true,
+                  label: result.locality != null
+                      ? 'Centrer la carte sur ${result.name}, ${result.locality}'
+                      : 'Centrer la carte sur ${result.name}',
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _selectSearchResult(result),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              result.name,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            if (result.locality != null)
+                              Text(
+                                result.locality!,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textMuted,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 

@@ -13,6 +13,7 @@ import 'domain/interfaces/repositories/i_alert_repository.dart';
 import 'domain/interfaces/repositories/i_collar_repository.dart';
 import 'domain/interfaces/repositories/i_vet_record_repository.dart';
 import 'domain/interfaces/services/i_notification_service.dart';
+import 'domain/interfaces/services/i_geocoding_service.dart';
 import 'domain/interfaces/services/i_health_data_service.dart';
 import 'domain/interfaces/services/i_location_service.dart';
 import 'domain/interfaces/services/i_mqtt_service.dart';
@@ -36,6 +37,7 @@ import 'infrastructure/services/fcm_notification_service.dart';
 import 'infrastructure/services/health_connect_service.dart';
 import 'infrastructure/services/location_service.dart';
 import 'infrastructure/services/mqtt_service.dart';
+import 'infrastructure/services/nominatim_geocoding_service.dart';
 import 'infrastructure/storage/secure_storage.dart';
 
 /// GetIt. Auth = REST (Dio + SecureStorage). Données = Firestore si [firebaseAvailable], sinon vide / no-op.
@@ -105,6 +107,9 @@ void setupDependencies({required bool firebaseAvailable}) {
   getIt.registerLazySingleton<ICollarRepository>(() => CollarRepositoryImpl());
   getIt.registerLazySingleton<IVetRecordRepository>(
     () => VetRecordRepositoryImpl(),
+  );
+  getIt.registerLazySingleton<IGeocodingService>(
+    () => NominatimGeocodingService(),
   );
 
   // Use cases
