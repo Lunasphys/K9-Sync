@@ -94,8 +94,9 @@ export class UserController {
   /**
    * RGPD art. 20 (portabilité) — export de toutes les données personnelles
    * de l'utilisateur authentifié : profil, chiens qu'il possède, et pour
-   * chacun leur télémétrie (GPS, santé, activité), leurs alertes et les
-   * accès partagés existants. Un seul JSON structuré, pas de ZIP/CSV.
+   * chacun leur télémétrie (GPS, santé, activité), leurs alertes, leur zone
+   * de geofencing, leur carnet vétérinaire, leurs balades, et les accès
+   * partagés existants. Un seul JSON structuré, pas de ZIP/CSV.
    *
    * Scope volontairement limité aux chiens dont il est `owner` — un chien
    * partagé avec lui (famille/viewer) appartient aux données de son
@@ -121,6 +122,7 @@ export class UserController {
       where: { id: { in: dogIds } },
       include: {
         collar: true,
+        geofenceZone: true,
         alerts: { orderBy: { createdAt: 'desc' } },
         dogUsers: {
           include: {
@@ -134,7 +136,7 @@ export class UserController {
       .map((dog) => dog.collar?.id)
       .filter((id): id is string => id !== undefined);
 
-    const [gpsLocations, healthRecords, activityRecords] = await Promise.all([
+    const [gpsLocations, healthRecords, activityRecords, trails, vetRecords] = await Promise.all([
       prisma.gpsLocation.findMany({
         where: { collarId: { in: collarIds } },
         orderBy: { recordedAt: 'desc' },
@@ -146,6 +148,14 @@ export class UserController {
       prisma.activityRecord.findMany({
         where: { collarId: { in: collarIds } },
         orderBy: { recordedAt: 'desc' },
+      }),
+      prisma.trail.findMany({
+        where: { collarId: { in: collarIds } },
+        orderBy: { startedAt: 'desc' },
+      }),
+      prisma.vetRecord.findMany({
+        where: { dogId: { in: dogIds } },
+        orderBy: { date: 'desc' },
       }),
     ]);
 
@@ -176,6 +186,7 @@ export class UserController {
           createdAt: dog.createdAt,
           updatedAt: dog.updatedAt,
           collar: dog.collar,
+          geofenceZone: dog.geofenceZone,
           sharedAccess: dog.dogUsers.map((du) => ({
             userId: du.userId,
             email: du.user.email,
@@ -190,6 +201,8 @@ export class UserController {
           activityRecords: collarId
             ? activityRecords.filter((a) => a.collarId === collarId)
             : [],
+          trails: collarId ? trails.filter((t) => t.collarId === collarId) : [],
+          vetRecords: vetRecords.filter((v) => v.dogId === dog.id),
         };
       }),
     };

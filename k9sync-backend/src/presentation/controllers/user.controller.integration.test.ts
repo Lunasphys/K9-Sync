@@ -326,6 +326,22 @@ test('GET /users/me/export returns only the authenticated user\'s own data', asy
   await prisma.alert.create({
     data: { dogId: dog.id, type: 'health', title: 'Export test alert' },
   });
+  await prisma.geofenceZone.create({
+    data: { dogId: dog.id, latitude: 45.1, longitude: 4.1, radiusM: 50 },
+  });
+  await prisma.vetRecord.create({
+    data: { dogId: dog.id, title: 'Export vet check', date: new Date() },
+  });
+  await prisma.trail.create({
+    data: {
+      collarId: collar.id,
+      startedAt: new Date(),
+      endedAt: new Date(),
+      distanceM: 100,
+      durationS: 60,
+      pointsCount: 2,
+    },
+  });
 
   // Another user's dog — must never leak into this user's export
   const otherDog = await prisma.dog.create({ data: { name: 'OtherDog' } });
@@ -337,6 +353,22 @@ test('GET /users/me/export returns only the authenticated user\'s own data', asy
   });
   await prisma.gpsLocation.create({
     data: { collarId: otherCollar.id, latitude: 1, longitude: 1, recordedAt: new Date() },
+  });
+  await prisma.geofenceZone.create({
+    data: { dogId: otherDog.id, latitude: 1, longitude: 1, radiusM: 50 },
+  });
+  await prisma.vetRecord.create({
+    data: { dogId: otherDog.id, title: 'Other vet check', date: new Date() },
+  });
+  await prisma.trail.create({
+    data: {
+      collarId: otherCollar.id,
+      startedAt: new Date(),
+      endedAt: new Date(),
+      distanceM: 50,
+      durationS: 30,
+      pointsCount: 1,
+    },
   });
 
   const reply = fakeReply();
@@ -351,6 +383,9 @@ test('GET /users/me/export returns only the authenticated user\'s own data', asy
       healthRecords: unknown[];
       activityRecords: unknown[];
       alerts: unknown[];
+      geofenceZone: { radiusM: number } | null;
+      vetRecords: Array<{ title: string }>;
+      trails: Array<{ distanceM: number }>;
     }>;
   };
 
@@ -366,6 +401,14 @@ test('GET /users/me/export returns only the authenticated user\'s own data', asy
   assert.equal(payload.dogs[0].healthRecords.length, 1);
   assert.equal(payload.dogs[0].activityRecords.length, 1);
   assert.equal(payload.dogs[0].alerts.length, 1);
+
+  // ... and its geofencing zone, vet record book, and trail history
+  assert.ok(payload.dogs[0].geofenceZone);
+  assert.equal(payload.dogs[0].geofenceZone?.radiusM, 50);
+  assert.equal(payload.dogs[0].vetRecords.length, 1);
+  assert.equal(payload.dogs[0].vetRecords[0].title, 'Export vet check');
+  assert.equal(payload.dogs[0].trails.length, 1);
+  assert.equal(payload.dogs[0].trails[0].distanceM, 100);
 
   // Never contains the other user's dog or its telemetry
   const dogIds = payload.dogs.map((d) => d.id);
