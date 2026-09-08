@@ -11,6 +11,7 @@ import 'domain/interfaces/repositories/i_gps_repository.dart';
 import 'domain/interfaces/repositories/i_health_repository.dart';
 import 'domain/interfaces/repositories/i_alert_repository.dart';
 import 'domain/interfaces/repositories/i_collar_repository.dart';
+import 'domain/interfaces/repositories/i_vet_record_repository.dart';
 import 'domain/interfaces/services/i_notification_service.dart';
 import 'domain/interfaces/services/i_health_data_service.dart';
 import 'domain/interfaces/services/i_location_service.dart';
@@ -30,6 +31,7 @@ import 'infrastructure/repositories/gps_repository_impl.dart';
 import 'infrastructure/repositories/health_repository_impl.dart';
 import 'infrastructure/repositories/alert_repository_impl.dart';
 import 'infrastructure/repositories/collar_repository_impl.dart';
+import 'infrastructure/repositories/vet_record_repository_impl.dart';
 import 'infrastructure/services/fcm_notification_service.dart';
 import 'infrastructure/services/health_connect_service.dart';
 import 'infrastructure/services/location_service.dart';
@@ -101,6 +103,9 @@ void setupDependencies({required bool firebaseAvailable}) {
     ),
   );
   getIt.registerLazySingleton<ICollarRepository>(() => CollarRepositoryImpl());
+  getIt.registerLazySingleton<IVetRecordRepository>(
+    () => VetRecordRepositoryImpl(),
+  );
 
   // Use cases
   getIt.registerLazySingleton<SyncOfflineHealthUseCase>(
