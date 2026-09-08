@@ -2,6 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { getPrisma } from '../../config/database.js';
 import { logger } from '../../shared/logger.js';
 import { pushNotifications } from '../../shared/push_notifications.js';
+import { requireDogAccess } from '../../shared/middleware/dog_access.middleware.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -9,20 +10,6 @@ import { pushNotifications } from '../../shared/push_notifications.js';
 async function getCollarId(dogId: string): Promise<string | null> {
   const collar = await getPrisma().collar.findFirst({ where: { dogId } });
   return collar?.id ?? null;
-}
-
-async function requireDogAccess(userId: string, dogId: string) {
-  const access = await getPrisma().dogUser.findFirst({
-    where: {
-      userId,
-      dogId,
-    },
-  });
-  if (!access) {
-    const err: any = new Error('Forbidden');
-    err.statusCode = 403;
-    throw err;
-  }
 }
 
 // ── GET /dogs/:dogId/health/latest ────────────────────────────────────────────

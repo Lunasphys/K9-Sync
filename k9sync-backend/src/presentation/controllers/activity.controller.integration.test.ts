@@ -8,7 +8,7 @@ import { randomUUID } from 'node:crypto';
 import bcrypt from 'bcrypt';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { initPrisma, getPrisma } from '../../config/database.js';
-import { syncActivity, getSleepSummary } from './activity.controller.js';
+import { syncActivity, getSleepSummary, getActivitySummary } from './activity.controller.js';
 import { pushNotifications } from '../../shared/push_notifications.js';
 
 initPrisma(process.env.DATABASE_URL ?? '');
@@ -58,6 +58,24 @@ async function createOwnerWithCollar(dogName: string) {
     data: { serialNumber: `ACT-${randomUUID()}`, dogId: dog.id },
   });
   return { owner, dog, collar };
+}
+
+async function createDogWithAccess(role: 'family' | 'dog_sitter', expiresAt?: Date) {
+  const hash = await bcrypt.hash('irrelevant', 4);
+  const user = await prisma.user.create({
+    data: {
+      email: `activity-${role}-${randomUUID()}@test.local`,
+      passwordHash: hash,
+      firstName: 'Test',
+      lastName: role,
+    },
+  });
+  const dog = await prisma.dog.create({ data: { name: `ActivityDog-${randomUUID()}` } });
+  await prisma.dogUser.create({ data: { dogId: dog.id, userId: user.id, role, expiresAt } });
+  const collar = await prisma.collar.create({
+    data: { serialNumber: `ACT-ACCESS-${randomUUID()}`, dogId: dog.id },
+  });
+  return { user, dog, collar };
 }
 
 after(async () => {
@@ -152,6 +170,32 @@ test('GET /dogs/:dogId/sleep aggregates sleep phase records within the requested
   // cleanup
   await prisma.dog.delete({ where: { id: dog.id } });
   await prisma.user.delete({ where: { id: owner.id } });
+});
+
+test('GET /dogs/:dogId/activity refuses a dog_sitter whose access has expired', async () => {
+  const { user, dog } = await createDogWithAccess('dog_sitter', new Date(Date.now() - 60 * 60 * 1000));
+
+  await assert.rejects(
+    () => getActivitySummary(fakeRequest(user.id, { dogId: dog.id }), fakeReply() as unknown as FastifyReply),
+    (err: unknown) => {
+      assert.equal((err as { statusCode?: number }).statusCode, 403);
+      return true;
+    },
+  );
+
+  await prisma.dog.delete({ where: { id: dog.id } });
+  await prisma.user.delete({ where: { id: user.id } });
+});
+
+test('GET /dogs/:dogId/activity allows a dog_sitter whose access is still within its window', async () => {
+  const { user, dog } = await createDogWithAccess('dog_sitter', new Date(Date.now() + 60 * 60 * 1000));
+
+  const reply = fakeReply();
+  await getActivitySummary(fakeRequest(user.id, { dogId: dog.id }), reply as unknown as FastifyReply);
+  assert.equal(reply.statusCode, 200);
+
+  await prisma.dog.delete({ where: { id: dog.id } });
+  await prisma.user.delete({ where: { id: user.id } });
 });
 
 test('GET /dogs/:dogId/sleep returns an empty breakdown when there is no data yet', async () => {

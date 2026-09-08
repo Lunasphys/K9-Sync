@@ -46,10 +46,10 @@ export async function buildApp() {
     }
 
     // Some call sites still throw a plain Error/object with a bolted-on
-    // .statusCode instead of a proper AppError subclass (e.g. requireDogAccess
-    // in dog.routes.ts / dog.controller.ts: `const err: any = new Error(...);
-    // err.statusCode = 403;`). Respect that status code too — otherwise a
-    // legitimate 4xx gets reported to the client as a 500 "Unhandled error".
+    // .statusCode instead of a proper AppError subclass (e.g. the JSON
+    // content-type parser above on a malformed body). Respect that status
+    // code too — otherwise a legitimate 4xx gets reported to the client as
+    // a 500 "Unhandled error".
     const adHocStatus = (error as { statusCode?: unknown })?.statusCode;
     if (
       typeof adHocStatus === 'number' &&

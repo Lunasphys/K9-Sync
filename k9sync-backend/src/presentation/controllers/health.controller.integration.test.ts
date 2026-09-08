@@ -8,7 +8,7 @@ import { randomUUID } from 'node:crypto';
 import bcrypt from 'bcrypt';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { initPrisma, getPrisma } from '../../config/database.js';
-import { syncHealth } from './health.controller.js';
+import { syncHealth, getHealthLatest } from './health.controller.js';
 import { pushNotifications } from '../../shared/push_notifications.js';
 
 initPrisma(process.env.DATABASE_URL ?? '');
@@ -55,6 +55,27 @@ async function createOwnerWithCollar(dogName: string) {
   return { owner, dog, collar };
 }
 
+async function createDogWithAccess(role: 'family' | 'dog_sitter', expiresAt?: Date) {
+  const hash = await bcrypt.hash('irrelevant', 4);
+  const user = await prisma.user.create({
+    data: {
+      email: `health-${role}-${randomUUID()}@test.local`,
+      passwordHash: hash,
+      firstName: 'Test',
+      lastName: role,
+    },
+  });
+  const dog = await prisma.dog.create({ data: { name: `HealthDog-${randomUUID()}` } });
+  await prisma.dogUser.create({ data: { dogId: dog.id, userId: user.id, role, expiresAt } });
+  const collar = await prisma.collar.create({
+    data: { serialNumber: `HEALTH-${randomUUID()}`, dogId: dog.id },
+  });
+  await prisma.healthRecord.create({
+    data: { collarId: collar.id, heartRate: 90, recordedAt: new Date() },
+  });
+  return { user, dog, collar };
+}
+
 after(async () => {
   await prisma.$disconnect();
 });
@@ -86,6 +107,32 @@ test('syncHealth triggers a push notification when an anomaly is detected', asyn
   // cleanup
   await prisma.dog.delete({ where: { id: dog.id } });
   await prisma.user.delete({ where: { id: owner.id } });
+});
+
+test('GET /dogs/:dogId/health/latest refuses a dog_sitter whose access has expired', async () => {
+  const { user, dog } = await createDogWithAccess('dog_sitter', new Date(Date.now() - 60 * 60 * 1000));
+
+  await assert.rejects(
+    () => getHealthLatest(fakeRequest(user.id, { dogId: dog.id }), fakeReply() as unknown as FastifyReply),
+    (err: unknown) => {
+      assert.equal((err as { statusCode?: number }).statusCode, 403);
+      return true;
+    },
+  );
+
+  await prisma.dog.delete({ where: { id: dog.id } });
+  await prisma.user.delete({ where: { id: user.id } });
+});
+
+test('GET /dogs/:dogId/health/latest allows a dog_sitter whose access is still within its window', async () => {
+  const { user, dog } = await createDogWithAccess('dog_sitter', new Date(Date.now() + 60 * 60 * 1000));
+
+  const reply = fakeReply();
+  await getHealthLatest(fakeRequest(user.id, { dogId: dog.id }), reply as unknown as FastifyReply);
+  assert.equal(reply.statusCode, 200);
+
+  await prisma.dog.delete({ where: { id: dog.id } });
+  await prisma.user.delete({ where: { id: user.id } });
 });
 
 test('syncHealth does not trigger a push notification for a normal record', async (t) => {

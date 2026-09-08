@@ -1,7 +1,7 @@
 // Integration test — exercises the real Fastify HTTP layer (body/content-type
 // parsing, error handler) via app.inject(), not just the controller in
 // isolation. The /auth/logout tests below don't need Postgres, but the
-// ad-hoc-error-handler test does (creates a real user + dog).
+// dog-access tests do (create a real user + dog).
 // Run manually: npm run test:integration
 import './load-env.js';
 import { test, after } from 'node:test';
@@ -83,20 +83,20 @@ test('POST /auth/logout with genuinely malformed (non-empty) JSON is rejected wi
   }
 });
 
-test('a route using the ad-hoc "err.statusCode = 403" pattern (requireDogAccess in dog.routes.ts) returns a real 403, not 500', async () => {
+test('GET /dogs/:dogId/alerts returns a real 403, not 500, for a user with no access to the dog', async () => {
   const app = await makeApp();
   try {
     const hash = await bcrypt.hash('irrelevant', 4);
     const user = await prisma.user.create({
       data: {
-        email: `adhoc-403-${randomUUID()}@test.local`,
+        email: `no-access-403-${randomUUID()}@test.local`,
         passwordHash: hash,
         firstName: 'No',
         lastName: 'Access',
       },
     });
     // A dog this user has no DogUser row for at all.
-    const dog = await prisma.dog.create({ data: { name: 'AdHocForbiddenDog' } });
+    const dog = await prisma.dog.create({ data: { name: 'ForbiddenAlertsDog' } });
     const token = jwt.sign({ sub: user.id }, process.env.JWT_ACCESS_SECRET ?? '', {
       expiresIn: '15m',
     });
@@ -109,11 +109,52 @@ test('a route using the ad-hoc "err.statusCode = 403" pattern (requireDogAccess 
 
     assert.equal(res.statusCode, 403, 'must be a real 403, not a 500 "Unhandled error"');
     const body = JSON.parse(res.payload);
-    assert.equal(body.error.message, 'Forbidden');
+    assert.equal(body.error.code, 'FORBIDDEN');
 
     // cleanup
     await prisma.dog.delete({ where: { id: dog.id } });
     await prisma.user.delete({ where: { id: user.id } });
+  } finally {
+    await app.close();
+  }
+});
+
+test('GET /dogs/:dogId/alerts refuses a dog_sitter whose access has expired', async () => {
+  const app = await makeApp();
+  try {
+    const hash = await bcrypt.hash('irrelevant', 4);
+    const sitter = await prisma.user.create({
+      data: {
+        email: `alerts-expired-sitter-${randomUUID()}@test.local`,
+        passwordHash: hash,
+        firstName: 'Expired',
+        lastName: 'Sitter',
+      },
+    });
+    const dog = await prisma.dog.create({ data: { name: 'ExpiredSitterAlertsDog' } });
+    await prisma.dogUser.create({
+      data: {
+        dogId: dog.id,
+        userId: sitter.id,
+        role: 'dog_sitter',
+        expiresAt: new Date(Date.now() - 60 * 60 * 1000), // expired 1h ago
+      },
+    });
+    const token = jwt.sign({ sub: sitter.id }, process.env.JWT_ACCESS_SECRET ?? '', {
+      expiresIn: '15m',
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/v1/dogs/${dog.id}/alerts`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    assert.equal(res.statusCode, 403, 'an expired dog_sitter grant must not still read alerts');
+
+    // cleanup
+    await prisma.dog.delete({ where: { id: dog.id } });
+    await prisma.user.delete({ where: { id: sitter.id } });
   } finally {
     await app.close();
   }

@@ -2,38 +2,9 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { getPrisma } from '../../config/database.js';
 import { logger } from '../../shared/logger.js';
 import { ConflictError, ForbiddenError, ValidationError } from '../../shared/errors.js';
+import { requireDogAccess } from '../../shared/middleware/dog_access.middleware.js';
 import { inviteBodySchema } from '../schemas/dog.schema.js';
 import { pairCollarBodySchema } from '../schemas/collar.schema.js';
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-/** Verify req.userId has access to dogId. Returns the dogUser row or throws. */
-async function requireDogAccess(
-  userId: string,
-  dogId: string,
-  requireOwner = false,
-) {
-  const access = await getPrisma().dogUser.findFirst({
-    where: {
-      userId,
-      dogId,
-    },
-  });
-
-  if (!access) {
-    const err: any = new Error('Forbidden');
-    err.statusCode = 403;
-    throw err;
-  }
-
-  if (requireOwner && access.role !== 'owner') {
-    const err: any = new Error('Owner only');
-    err.statusCode = 403;
-    throw err;
-  }
-
-  return access;
-}
 
 // ── GET /dogs ─────────────────────────────────────────────────────────────────
 
@@ -129,7 +100,7 @@ export async function updateDog(
   reply: FastifyReply,
 ) {
   const { dogId } = req.params;
-  await requireDogAccess(req.userId, dogId, true); // owner only
+  await requireDogAccess(req.userId, dogId, { requireOwner: true });
 
   const { birthDate, name, breed, weight, sex, allergies, photoUrl } = req.body;
   const data: Record<string, unknown> = {};
@@ -166,7 +137,7 @@ export async function inviteToDog(
   reply: FastifyReply,
 ) {
   const { dogId } = req.params;
-  await requireDogAccess(req.userId, dogId, true); // owner only
+  await requireDogAccess(req.userId, dogId, { requireOwner: true });
 
   const body = inviteBodySchema.safeParse(req.body);
   if (!body.success) throw new ValidationError(body.error.flatten());
@@ -244,7 +215,7 @@ export async function revokeDogUser(
   reply: FastifyReply,
 ) {
   const { dogId, userId } = req.params;
-  await requireDogAccess(req.userId, dogId, true); // owner only
+  await requireDogAccess(req.userId, dogId, { requireOwner: true });
 
   const target = await getPrisma().dogUser.findFirst({ where: { dogId, userId } });
   if (!target) return reply.status(404).send({ error: 'Access not found' });
@@ -278,7 +249,7 @@ export async function pairCollar(
   reply: FastifyReply,
 ) {
   const { dogId } = req.params;
-  await requireDogAccess(req.userId, dogId, true); // owner only
+  await requireDogAccess(req.userId, dogId, { requireOwner: true });
 
   const body = pairCollarBodySchema.safeParse(req.body);
   if (!body.success) throw new ValidationError(body.error.flatten());

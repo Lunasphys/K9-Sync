@@ -13,17 +13,7 @@ import {
 } from '../controllers/dog.controller.js';
 import { getHealthLatest, syncHealth } from '../controllers/health.controller.js';
 import { upsertGeofence, deleteGeofence } from '../controllers/geofence.controller.js';
-
-async function requireDogAccess(userId: string, dogId: string) {
-  const access = await getPrisma().dogUser.findFirst({
-    where: { userId, dogId },
-  });
-  if (!access) {
-    const err: any = new Error('Forbidden');
-    err.statusCode = 403;
-    throw err;
-  }
-}
+import { requireDogAccess } from '../../shared/middleware/dog_access.middleware.js';
 
 export async function dogRoutes(app: FastifyInstance) {
   app.addHook('preHandler', jwtAuth);

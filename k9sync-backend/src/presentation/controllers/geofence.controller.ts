@@ -1,15 +1,9 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { getPrisma } from '../../config/database.js';
 import { logger } from '../../shared/logger.js';
-import { ForbiddenError, ValidationError, GeofenceRadiusTooSmallError } from '../../shared/errors.js';
+import { ValidationError, GeofenceRadiusTooSmallError } from '../../shared/errors.js';
+import { requireDogAccess } from '../../shared/middleware/dog_access.middleware.js';
 import { upsertGeofenceBodySchema, GEOFENCE_RADIUS_MIN_M } from '../schemas/geofence.schema.js';
-
-/** Owner-only, like the other dog-configuration endpoints (updateDog, pairCollar, invite). */
-async function requireDogOwner(userId: string, dogId: string) {
-  const access = await getPrisma().dogUser.findFirst({ where: { userId, dogId } });
-  if (!access) throw new ForbiddenError('no access to this dog');
-  if (access.role !== 'owner') throw new ForbiddenError('owner only');
-}
 
 // ── PUT /dogs/:dogId/geofence ───────────────────────────────────────────────
 
@@ -29,7 +23,7 @@ export async function upsertGeofence(
   reply: FastifyReply,
 ) {
   const { dogId } = req.params;
-  await requireDogOwner(req.userId, dogId);
+  await requireDogAccess(req.userId, dogId, { requireOwner: true });
 
   const body = upsertGeofenceBodySchema.safeParse(req.body);
   if (!body.success) throw new ValidationError(body.error.flatten());
@@ -56,7 +50,7 @@ export async function deleteGeofence(
   reply: FastifyReply,
 ) {
   const { dogId } = req.params;
-  await requireDogOwner(req.userId, dogId);
+  await requireDogAccess(req.userId, dogId, { requireOwner: true });
 
   // deleteMany, not delete: idempotent, no error if there was no zone yet.
   await getPrisma().geofenceZone.deleteMany({ where: { dogId } });

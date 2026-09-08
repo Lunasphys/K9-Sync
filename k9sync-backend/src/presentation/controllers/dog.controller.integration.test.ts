@@ -442,6 +442,70 @@ test('POST /dogs/:dogId/collar/pair refuses a second, different collar for a dog
   await prisma.user.delete({ where: { id: owner.id } });
 });
 
+test('GET /dogs/:dogId refuses a dog_sitter whose access has expired', async () => {
+  const { owner, dog } = await createOwnerWithDog('ExpiredSitterReadDog');
+  const hash = await bcrypt.hash('irrelevant', 4);
+  const sitter = await prisma.user.create({
+    data: {
+      email: `expired-sitter-${randomUUID()}@test.local`,
+      passwordHash: hash,
+      firstName: 'Expired',
+      lastName: 'Sitter',
+    },
+  });
+  await prisma.dogUser.create({
+    data: {
+      dogId: dog.id,
+      userId: sitter.id,
+      role: 'dog_sitter',
+      expiresAt: new Date(Date.now() - 60 * 60 * 1000), // expired 1h ago
+    },
+  });
+
+  await assert.rejects(
+    () => getDog(fakeRequest(sitter.id, { dogId: dog.id }), fakeReply() as unknown as FastifyReply),
+    (err: unknown) => {
+      assert.equal((err as { statusCode?: number }).statusCode, 403);
+      return true;
+    },
+  );
+
+  // cleanup
+  await prisma.dog.delete({ where: { id: dog.id } });
+  await prisma.user.delete({ where: { id: owner.id } });
+  await prisma.user.delete({ where: { id: sitter.id } });
+});
+
+test('GET /dogs/:dogId allows a dog_sitter whose access is still within its window', async () => {
+  const { owner, dog } = await createOwnerWithDog('ActiveSitterReadDog');
+  const hash = await bcrypt.hash('irrelevant', 4);
+  const sitter = await prisma.user.create({
+    data: {
+      email: `active-sitter-${randomUUID()}@test.local`,
+      passwordHash: hash,
+      firstName: 'Active',
+      lastName: 'Sitter',
+    },
+  });
+  await prisma.dogUser.create({
+    data: {
+      dogId: dog.id,
+      userId: sitter.id,
+      role: 'dog_sitter',
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+    },
+  });
+
+  const reply = fakeReply();
+  await getDog(fakeRequest(sitter.id, { dogId: dog.id }), reply as unknown as FastifyReply);
+  assert.equal(reply.statusCode, 200);
+
+  // cleanup
+  await prisma.dog.delete({ where: { id: dog.id } });
+  await prisma.user.delete({ where: { id: owner.id } });
+  await prisma.user.delete({ where: { id: sitter.id } });
+});
+
 test('POST /dogs/:dogId/collar/pair refuses when the caller is not the owner', async () => {
   const { owner, dog } = await createOwnerWithDog('NonOwnerPairDog');
   const hash = await bcrypt.hash('irrelevant', 4);

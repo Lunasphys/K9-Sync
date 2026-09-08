@@ -37,7 +37,7 @@ function fakeReply() {
   return reply;
 }
 
-async function createDogWithAccess(role: 'owner' | 'family' | 'dog_sitter') {
+async function createDogWithAccess(role: 'owner' | 'family' | 'dog_sitter', expiresAt?: Date) {
   const hash = await bcrypt.hash('irrelevant', 4);
   const user = await prisma.user.create({
     data: {
@@ -48,7 +48,7 @@ async function createDogWithAccess(role: 'owner' | 'family' | 'dog_sitter') {
     },
   });
   const dog = await prisma.dog.create({ data: { name: `TrailDog-${randomUUID()}` } });
-  await prisma.dogUser.create({ data: { dogId: dog.id, userId: user.id, role } });
+  await prisma.dogUser.create({ data: { dogId: dog.id, userId: user.id, role, expiresAt } });
   const collar = await prisma.collar.create({
     data: { serialNumber: `TRAIL-${randomUUID()}`, dogId: dog.id },
   });
@@ -277,4 +277,28 @@ test('a user without access to the dog is refused on create, list and detail', a
 
   await prisma.dog.delete({ where: { id: dog.id } });
   await prisma.user.deleteMany({ where: { id: { in: [owner.id, outsider.id] } } });
+});
+
+test('GET /dogs/:dogId/trails refuses a dog_sitter whose access has expired', async () => {
+  const { user, dog } = await createDogWithAccess('dog_sitter', new Date(Date.now() - 60 * 60 * 1000));
+
+  await assert.rejects(
+    () => getTrails(fakeRequest(user.id, { dogId: dog.id }), fakeReply() as unknown as FastifyReply),
+    (err: unknown) => {
+      assert.equal((err as { statusCode?: number }).statusCode, 403);
+      return true;
+    },
+  );
+
+  await cleanup(dog.id, user.id);
+});
+
+test('GET /dogs/:dogId/trails allows a dog_sitter whose access is still within its window', async () => {
+  const { user, dog } = await createDogWithAccess('dog_sitter', new Date(Date.now() + 60 * 60 * 1000));
+
+  const reply = fakeReply();
+  await getTrails(fakeRequest(user.id, { dogId: dog.id }), reply as unknown as FastifyReply);
+  assert.equal(reply.statusCode, 200);
+
+  await cleanup(dog.id, user.id);
 });

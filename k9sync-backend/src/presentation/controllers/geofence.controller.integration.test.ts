@@ -36,7 +36,7 @@ function fakeReply() {
   return reply;
 }
 
-async function createDogWithAccess(role: 'owner' | 'family' | 'dog_sitter') {
+async function createDogWithAccess(role: 'owner' | 'family' | 'dog_sitter', expiresAt?: Date) {
   const hash = await bcrypt.hash('irrelevant', 4);
   const user = await prisma.user.create({
     data: {
@@ -47,7 +47,7 @@ async function createDogWithAccess(role: 'owner' | 'family' | 'dog_sitter') {
     },
   });
   const dog = await prisma.dog.create({ data: { name: `GeofenceDog-${randomUUID()}` } });
-  await prisma.dogUser.create({ data: { dogId: dog.id, userId: user.id, role } });
+  await prisma.dogUser.create({ data: { dogId: dog.id, userId: user.id, role, expiresAt } });
   return { user, dog };
 }
 
@@ -159,6 +159,29 @@ test('DELETE /dogs/:dogId/geofence removes the zone and is idempotent when calle
   const reply2 = fakeReply();
   await deleteGeofence(fakeRequest(user.id, { dogId: dog.id }), reply2 as unknown as FastifyReply);
   assert.equal(reply2.statusCode, 204);
+
+  await cleanup(dog.id, user.id);
+});
+
+// Every real owner grant has expiresAt: null (only dog_sitter invites set it) — a
+// dog_sitter is refused here on role alone regardless of expiry. This test proves
+// the shared access check's expiry gate applies uniformly, not just to the
+// existence check, even on an owner-only route.
+test('PUT /dogs/:dogId/geofence refuses an owner grant that has (unusually) expired', async () => {
+  const { user, dog } = await createDogWithAccess('owner', new Date(Date.now() - 60 * 60 * 1000));
+
+  await assert.rejects(
+    () =>
+      upsertGeofence(
+        fakeRequest(user.id, { dogId: dog.id }, { latitude: 45.7578, longitude: 4.832, radiusM: 100 }),
+        fakeReply() as unknown as FastifyReply,
+      ),
+    (err: unknown) => {
+      assert.equal((err as { statusCode?: number }).statusCode, 403);
+      return true;
+    },
+  );
+  assert.equal(await prisma.geofenceZone.count({ where: { dogId: dog.id } }), 0);
 
   await cleanup(dog.id, user.id);
 });
