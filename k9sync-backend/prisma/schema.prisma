@@ -75,6 +75,7 @@ model Dog {
   alerts         Alert[]
   pendingInvites PendingInvite[]
   geofenceZone   GeofenceZone?
+  vetRecords     VetRecord[]
 }
 
 model DogUser {
@@ -238,4 +239,22 @@ model Alert {
 
   dog Dog @relation(fields: [dogId], references: [id], onDelete: Cascade)
   @@index([dogId])
+}
+
+// Carnet vétérinaire — version simplifiée : rendez-vous/rappels génériques
+// (titre libre, pas de type vaccin/antiparasitaire/etc.), pas de récurrence
+// automatique. `done` distingue passé/à venir indépendamment de `date`, pour
+// qu'un rendez-vous manqué ou avancé reste correctement classé.
+model VetRecord {
+  id        String   @id @default(uuid())
+  dogId     String   @map("dog_id")
+  title     String
+  date      DateTime
+  done      Boolean  @default(false)
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  dog Dog @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  @@index([dogId, date])
 }

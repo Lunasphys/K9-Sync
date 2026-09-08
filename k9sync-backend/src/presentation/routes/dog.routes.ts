@@ -13,6 +13,12 @@ import {
 } from '../controllers/dog.controller.js';
 import { getHealthLatest, syncHealth } from '../controllers/health.controller.js';
 import { upsertGeofence, deleteGeofence } from '../controllers/geofence.controller.js';
+import {
+  createVetRecord,
+  getVetRecords,
+  updateVetRecord,
+  deleteVetRecord,
+} from '../controllers/vet_record.controller.js';
 import { requireDogAccess } from '../../shared/middleware/dog_access.middleware.js';
 
 export async function dogRoutes(app: FastifyInstance) {
@@ -37,6 +43,12 @@ export async function dogRoutes(app: FastifyInstance) {
 
   app.get('/dogs/:dogId/health/latest', getHealthLatest);
   app.post('/dogs/:dogId/health/sync', syncHealth);
+
+  // Carnet vétérinaire — owner/family gèrent, dog_sitter lit seulement
+  app.post('/dogs/:dogId/vet-records', createVetRecord);
+  app.get('/dogs/:dogId/vet-records', getVetRecords);
+  app.patch('/dogs/:dogId/vet-records/:recordId', updateVetRecord);
+  app.delete('/dogs/:dogId/vet-records/:recordId', deleteVetRecord);
 
   // Alerts
   app.get<{
