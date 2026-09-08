@@ -402,6 +402,13 @@ class _ActionsSection extends StatelessWidget {
               // PDF export — to implement
             },
           ),
+          const SizedBox(height: 8),
+          _ActionTile(
+            icon: '🏥',
+            label: 'Carnet vétérinaire',
+            subtitle: 'Rendez-vous et rappels',
+            onTap: () => context.push('/vet'),
+          ),
         ],
       ),
     );
