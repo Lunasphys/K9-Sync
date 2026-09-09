@@ -659,7 +659,10 @@ class _SleepEntryCard extends StatelessWidget {
                   children: [
                     const Text(
                       'Sommeil',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                     Text(
                       'Répartition éveillé / léger / profond',
@@ -731,53 +734,74 @@ class _HealthExportCardState extends State<_HealthExportCard> {
 
   @override
   Widget build(BuildContext context) {
+    final hasData = widget.history.isNotEmpty;
+    final disabled = _exporting || !hasData;
+
     return Semantics(
       button: true,
-      enabled: !_exporting,
+      enabled: !disabled,
       label: _exporting
           ? 'Export du rapport de santé en cours'
-          : 'Exporter le rapport de santé au format PDF, pour le vétérinaire',
-      child: GestureDetector(
-        onTap: _exporting ? null : () => _export(context),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.cardBg,
-            border: Border.all(color: AppColors.border, width: 2),
-            borderRadius: AppDimensions.borderRadius,
-            boxShadow: [AppDimensions.cardShadow],
-          ),
-          child: Row(
-            children: [
-              const Text('📄', style: TextStyle(fontSize: 20)),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Exporter le rapport santé',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
-                    ),
-                    Text(
-                      'PDF · résumé, historique et anomalies de cette session',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textMuted,
-                        fontWeight: FontWeight.w600,
+          : !hasData
+          ? 'Exporter le rapport de santé au format PDF — indisponible tant '
+                'qu\'aucune donnée n\'a été reçue durant cette session'
+          : 'Exporter le rapport de santé au format PDF, pour le vétérinaire — '
+                'couvre uniquement les données reçues depuis l\'ouverture de '
+                'l\'app, pas un historique complet',
+      child: Opacity(
+        opacity: hasData ? 1 : 0.5,
+        child: GestureDetector(
+          onTap: disabled ? null : () => _export(context),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.cardBg,
+              border: Border.all(color: AppColors.border, width: 2),
+              borderRadius: AppDimensions.borderRadius,
+              boxShadow: [AppDimensions.cardShadow],
+            ),
+            child: Row(
+              children: [
+                const Text('📄', style: TextStyle(fontSize: 20)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Exporter le rapport santé',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
-                    ),
-                  ],
+                      Text(
+                        hasData
+                            ? 'PDF · couvre les données reçues depuis '
+                                  'l\'ouverture de l\'app, pas un historique complet'
+                            : 'Disponible dès la première mesure reçue',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textMuted,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              _exporting
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Icon(Icons.ios_share, color: AppColors.textMuted, size: 20),
-            ],
+                _exporting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(
+                        Icons.ios_share,
+                        color: AppColors.textMuted,
+                        size: 20,
+                      ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1031,7 +1055,6 @@ class _SectionTitle extends StatelessWidget {
     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
   );
 }
-
 
 class _StatusDot extends StatelessWidget {
   final bool ok;
