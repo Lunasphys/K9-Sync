@@ -890,31 +890,15 @@ class _HrChart extends StatelessWidget {
             ),
           ),
           borderData: FlBorderData(show: false),
-          extraLinesData: ExtraLinesData(
-            horizontalLines: [
-              HorizontalLine(
-                y: 50,
-                color: Colors.blue.withValues(alpha: 0.5),
-                strokeWidth: 1,
-                dashArray: [4, 4],
-                label: HorizontalLineLabel(
-                  show: true,
-                  alignment: Alignment.topRight,
-                  labelResolver: (_) => '50',
-                  style: TextStyle(fontSize: 9, color: Colors.blue.shade400),
-                ),
-              ),
-              HorizontalLine(
-                y: 180,
-                color: Colors.red.withValues(alpha: 0.5),
-                strokeWidth: 1,
-                dashArray: [4, 4],
-                label: HorizontalLineLabel(
-                  show: true,
-                  alignment: Alignment.topRight,
-                  labelResolver: (_) => '180',
-                  style: const TextStyle(fontSize: 9, color: Colors.red),
-                ),
+          // Normal range shown as a soft band rather than dashed threshold
+          // lines — reads as "this is the safe zone" at a glance instead of
+          // two disconnected generic markers.
+          rangeAnnotations: RangeAnnotations(
+            horizontalRangeAnnotations: [
+              HorizontalRangeAnnotation(
+                y1: 50,
+                y2: 180,
+                color: AppColors.greenStatus.withValues(alpha: 0.08),
               ),
             ],
           ),
@@ -925,10 +909,6 @@ class _HrChart extends StatelessWidget {
               color: Colors.red.shade400,
               barWidth: 2.5,
               dotData: const FlDotData(show: false),
-              belowBarData: BarAreaData(
-                show: true,
-                color: Colors.red.withValues(alpha: 0.08),
-              ),
             ),
           ],
         ),
@@ -996,31 +976,15 @@ class _TempChart extends StatelessWidget {
             ),
           ),
           borderData: FlBorderData(show: false),
-          extraLinesData: ExtraLinesData(
-            horizontalLines: [
-              HorizontalLine(
-                y: 36.0,
-                color: Colors.blue.withValues(alpha: 0.5),
-                strokeWidth: 1,
-                dashArray: [4, 4],
-                label: HorizontalLineLabel(
-                  show: true,
-                  alignment: Alignment.topRight,
-                  labelResolver: (_) => '36°',
-                  style: TextStyle(fontSize: 9, color: Colors.blue.shade400),
-                ),
-              ),
-              HorizontalLine(
-                y: 39.5,
-                color: Colors.red.withValues(alpha: 0.5),
-                strokeWidth: 1,
-                dashArray: [4, 4],
-                label: HorizontalLineLabel(
-                  show: true,
-                  alignment: Alignment.topRight,
-                  labelResolver: (_) => '39.5°',
-                  style: const TextStyle(fontSize: 9, color: Colors.red),
-                ),
+          // Normal range shown as a soft band rather than dashed threshold
+          // lines — reads as "this is the safe zone" at a glance instead of
+          // two disconnected generic markers.
+          rangeAnnotations: RangeAnnotations(
+            horizontalRangeAnnotations: [
+              HorizontalRangeAnnotation(
+                y1: 36.0,
+                y2: 39.5,
+                color: AppColors.greenStatus.withValues(alpha: 0.08),
               ),
             ],
           ),
@@ -1031,10 +995,6 @@ class _TempChart extends StatelessWidget {
               color: AppColors.orange,
               barWidth: 2.5,
               dotData: const FlDotData(show: false),
-              belowBarData: BarAreaData(
-                show: true,
-                color: AppColors.orange.withValues(alpha: 0.08),
-              ),
             ),
           ],
         ),
