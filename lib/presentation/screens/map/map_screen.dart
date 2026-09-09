@@ -329,6 +329,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   @override
   Widget build(BuildContext context) {
     final savedTrails = ref.watch(trailListProvider);
+    final topInset = MediaQuery.paddingOf(context).top;
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: Column(
@@ -395,8 +396,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ),
 
                 // ── MQTT badge ─────────────────────────────────────────
+                // top offset mirrors the search bar's below — both need the
+                // status bar inset added, or this badge (and the follow
+                // button below) render underneath the search row instead of
+                // below it.
                 Positioned(
-                  top: 60,
+                  top: topInset + 60,
                   left: 16,
                   child: LiveBadge(
                     connected: _mqttConnected,
@@ -408,7 +413,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 // ── Follow button ──────────────────────────────────────
                 if (!_followDog)
                   Positioned(
-                    top: 60,
+                    top: topInset + 60,
                     right: 16,
                     child: Semantics(
                       button: true,
@@ -467,7 +472,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 // own, so a fixed top would land under the status bar and
                 // never receive taps there.
                 Positioned(
-                  top: MediaQuery.paddingOf(context).top + 12,
+                  top: topInset + 12,
                   left: 12,
                   right: 12,
                   child: Column(
