@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:k9sync/application/health/sync_offline_health_use_case.dart';
 import 'package:k9sync/core/debug/debug_logger.dart';
 import 'package:k9sync/core/theme/app_theme.dart';
+import 'package:k9sync/core/utils/health_pdf_export.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_auth_repository.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_dog_repository.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_health_repository.dart';
@@ -16,6 +18,8 @@ import 'package:k9sync/injection.dart';
 import 'package:k9sync/presentation/providers/health_provider.dart';
 import 'package:k9sync/presentation/router/route_guards.dart';
 import 'package:k9sync/presentation/widgets/common/live_badge.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 class HealthDashboardScreen extends ConsumerStatefulWidget {
   const HealthDashboardScreen({super.key});
@@ -283,6 +287,8 @@ class _Dashboard extends StatelessWidget {
         _ActivityCard(todayActivity: todayActivity),
         const SizedBox(height: 12),
         const _SleepEntryCard(),
+        const SizedBox(height: 12),
+        _HealthExportCard(dogName: dogName, history: history),
         const SizedBox(height: 16),
         if (history.length > 2) ...[
           _SectionTitle('Fréquence cardiaque — 20 dernières mesures'),
@@ -667,6 +673,110 @@ class _SleepEntryCard extends StatelessWidget {
                 ),
               ),
               Icon(Icons.chevron_right, color: AppColors.textMuted, size: 22),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── PDF export ────────────────────────────────────────────────────────────────
+
+/// Exports a PDF report built from the health readings received during this
+/// session (see [buildHealthPdf] — no backend endpoint returns historical
+/// health data, only the latest reading and a sync buffer).
+class _HealthExportCard extends StatefulWidget {
+  final String dogName;
+  final List<HealthSnapshot> history;
+  const _HealthExportCard({required this.dogName, required this.history});
+
+  @override
+  State<_HealthExportCard> createState() => _HealthExportCardState();
+}
+
+class _HealthExportCardState extends State<_HealthExportCard> {
+  bool _exporting = false;
+
+  Future<void> _export(BuildContext context) async {
+    if (_exporting) return;
+    setState(() => _exporting = true);
+    try {
+      final bytes = await buildHealthPdf(
+        dogName: widget.dogName,
+        history: widget.history,
+      );
+      final dir = await getTemporaryDirectory();
+      final file = File(
+        '${dir.path}/k9sync-sante-${DateTime.now().millisecondsSinceEpoch}.pdf',
+      );
+      await file.writeAsBytes(bytes);
+
+      if (!context.mounted) return;
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          subject: 'Rapport santé de ${widget.dogName}',
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Échec de l\'export : $e')));
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      enabled: !_exporting,
+      label: _exporting
+          ? 'Export du rapport de santé en cours'
+          : 'Exporter le rapport de santé au format PDF, pour le vétérinaire',
+      child: GestureDetector(
+        onTap: _exporting ? null : () => _export(context),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.cardBg,
+            border: Border.all(color: AppColors.border, width: 2),
+            borderRadius: AppDimensions.borderRadius,
+            boxShadow: [AppDimensions.cardShadow],
+          ),
+          child: Row(
+            children: [
+              const Text('📄', style: TextStyle(fontSize: 20)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Exporter le rapport santé',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+                    ),
+                    Text(
+                      'PDF · résumé, historique et anomalies de cette session',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textMuted,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _exporting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(Icons.ios_share, color: AppColors.textMuted, size: 20),
             ],
           ),
         ),

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:k9sync/core/theme/app_theme.dart';
 import 'package:k9sync/domain/entities/dog.dart';
 import 'package:k9sync/presentation/providers/dog_provider.dart';
+import 'package:k9sync/presentation/router/route_guards.dart';
 
 /// Dog profile screen — reads GET /dogs/:dogId via [dogProvider].
 /// Navigates to DogEditScreen on the edit button.
@@ -398,9 +399,10 @@ class _ActionsSection extends StatelessWidget {
             icon: '📄',
             label: 'Exporter les données santé',
             subtitle: 'Rapport PDF pour le vétérinaire',
-            onTap: () {
-              // PDF export — to implement
-            },
+            // The export itself lives on the Santé screen — it's built from
+            // the live session's readings (see _HealthExportCard), which
+            // this profile screen has no access to.
+            onTap: () => context.push(AppRoutes.homeSante),
           ),
           const SizedBox(height: 8),
           _ActionTile(
