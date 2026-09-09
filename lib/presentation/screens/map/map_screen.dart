@@ -456,8 +456,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   ),
 
                 // ── Search bar ─────────────────────────────────────────
+                // top offset includes the system status bar inset — this
+                // row sits above the map with no SafeArea/AppBar of its
+                // own, so a fixed top would land under the status bar and
+                // never receive taps there.
                 Positioned(
-                  top: 12,
+                  top: MediaQuery.paddingOf(context).top + 12,
                   left: 12,
                   right: 12,
                   child: Column(
