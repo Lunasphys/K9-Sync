@@ -44,6 +44,11 @@ abstract interface class IAuthRepository {
   /// enregistré), par type. Un type jamais soumis est absent de la map.
   Future<Map<String, bool>> getConsentStatus();
 
+  /// RGPD — détail complet (accepté, version, date d'enregistrement) du
+  /// dernier consentement soumis pour chaque type, pour l'écran
+  /// Confidentialité. Un type jamais soumis est absent de la map.
+  Future<Map<String, ConsentRecord>> getConsentDetails();
+
   /// Enregistre le token FCM de l'appareil courant pour l'utilisateur
   /// authentifié (un seul token par compte — le dernier appareil connecté
   /// gagne). À appeler à la connexion.
@@ -75,6 +80,20 @@ class ConsentSubmission {
     required this.type,
     required this.accepted,
     required this.version,
+  });
+}
+
+/// Latest recorded state of one consent type, as returned by
+/// GET /users/me/consents.
+class ConsentRecord {
+  final bool accepted;
+  final String version;
+  final DateTime recordedAt;
+
+  const ConsentRecord({
+    required this.accepted,
+    required this.version,
+    required this.recordedAt,
   });
 }
 

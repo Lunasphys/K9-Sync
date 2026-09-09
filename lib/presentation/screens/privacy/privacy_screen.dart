@@ -9,9 +9,27 @@ import 'package:share_plus/share_plus.dart';
 import 'package:k9sync/application/auth/delete_account_use_case.dart';
 import 'package:k9sync/core/errors/app_error.dart';
 import 'package:k9sync/core/theme/app_theme.dart';
+import 'package:k9sync/domain/enums/consent_type.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_auth_repository.dart';
 import 'package:k9sync/injection.dart';
 import 'package:k9sync/presentation/router/route_guards.dart';
+
+const _months = [
+  'jan.',
+  'fév.',
+  'mars',
+  'avr.',
+  'mai',
+  'juin',
+  'juil.',
+  'août',
+  'sept.',
+  'oct.',
+  'nov.',
+  'déc.',
+];
+
+String _formatDate(DateTime d) => '${d.day} ${_months[d.month - 1]} ${d.year}';
 
 /// Confidentialité : 4 sections RGPD — consentements, export, durées, suppression.
 class PrivacyScreen extends StatefulWidget {
@@ -24,6 +42,40 @@ class PrivacyScreen extends StatefulWidget {
 class _PrivacyScreenState extends State<PrivacyScreen> {
   bool _exporting = false;
   bool _deleting = false;
+
+  bool _loadingConsents = true;
+  String? _consentsError;
+  Map<String, ConsentRecord> _consents = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadConsents();
+  }
+
+  Future<void> _loadConsents() async {
+    setState(() {
+      _loadingConsents = true;
+      _consentsError = null;
+    });
+    try {
+      final consents = await getIt<IAuthRepository>().getConsentDetails();
+      if (!mounted) return;
+      setState(() {
+        _consents = consents;
+        _loadingConsents = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      final message = e is AppError
+          ? (e.userMessage ?? 'Impossible de charger vos consentements.')
+          : 'Impossible de charger vos consentements.';
+      setState(() {
+        _loadingConsents = false;
+        _consentsError = message;
+      });
+    }
+  }
 
   Future<void> _exportData(BuildContext context) async {
     if (_exporting) return;
@@ -195,6 +247,17 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     );
   }
 
+  // Lecture seule : ces trois consentements sont capturés à l'inscription
+  // (ConsentScreen) et ne peuvent pas être révoqués individuellement ici —
+  // aucune partie de l'app ne vérifie l'état du consentement avant de
+  // collecter GPS/santé, donc un toggle ici n'aurait aucun effet réel et
+  // recréerait le genre d'affordance trompeuse déjà retirée de cet écran.
+  String _consentDesc(ConsentRecord? record, String detail) {
+    if (record == null) return '$detail · Pas encore renseigné';
+    final status = record.accepted ? 'Accepté' : 'Refusé';
+    return '$detail · $status le ${_formatDate(record.recordedAt)} · v${record.version}';
+  }
+
   Widget _consentBlock(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -205,39 +268,79 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
           borderRadius: AppDimensions.borderRadiusSm,
           boxShadow: [AppDimensions.cardShadowSm],
         ),
-        child: Column(
-          children: [
-            _consentItem(
-              title: 'Conditions générales',
-              desc: 'Accepté le 14 jan. 2025 · v1.0',
-              checked: true,
-            ),
-            _divider(),
-            _consentItem(
-              title: 'Collecte données GPS',
-              desc: 'Inclut déplacements indirects du propriétaire · v1.0',
-              checked: true,
-            ),
-            _divider(),
-            _consentItem(
-              title: 'Données de santé animale',
-              desc: 'FC, température, activité · v1.0',
-              checked: true,
-            ),
-            _consentItem(
-              title: 'Fonctionnalités communautaires',
-              desc: 'Non activé · opt-in requis',
-              checked: false,
-              trailing: Switch(
-                value: false,
-                // Toggling isn't wired to anything yet — disabled (greyed
-                // out) rather than interactive with no effect.
-                onChanged: null,
-                activeTrackColor: AppColors.blue,
+        child: _loadingConsents
+            ? const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            : _consentsError != null
+            ? Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Text(
+                      _consentsError!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: _loadConsents,
+                      child: const Text('Réessayer'),
+                    ),
+                  ],
+                ),
+              )
+            : Column(
+                children: [
+                  _consentItem(
+                    title: 'Conditions générales',
+                    desc: _consentDesc(
+                      _consents[ConsentType.termsOfService.value],
+                      'CGU et politique de confidentialité',
+                    ),
+                    checked:
+                        _consents[ConsentType.termsOfService.value]?.accepted ??
+                        false,
+                  ),
+                  _divider(),
+                  _consentItem(
+                    title: 'Collecte données GPS',
+                    desc: _consentDesc(
+                      _consents[ConsentType.gpsDataCollection.value],
+                      'Inclut déplacements indirects du propriétaire',
+                    ),
+                    checked:
+                        _consents[ConsentType.gpsDataCollection.value]
+                            ?.accepted ??
+                        false,
+                  ),
+                  _divider(),
+                  _consentItem(
+                    title: 'Données de santé animale',
+                    desc: _consentDesc(
+                      _consents[ConsentType.healthDataCollection.value],
+                      'FC, température, activité',
+                    ),
+                    checked:
+                        _consents[ConsentType.healthDataCollection.value]
+                            ?.accepted ??
+                        false,
+                  ),
+                  _consentItem(
+                    title: 'Fonctionnalités communautaires',
+                    desc: 'Pas encore disponible — arrivera en opt-in à son lancement',
+                    checked: false,
+                    trailing: Switch(
+                      value: false,
+                      // Toggling isn't wired to anything yet — disabled
+                      // (greyed out) rather than interactive with no effect.
+                      onChanged: null,
+                      activeTrackColor: AppColors.blue,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }

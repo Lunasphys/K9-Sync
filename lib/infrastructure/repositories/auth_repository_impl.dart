@@ -215,6 +215,30 @@ class AuthRepositoryImpl implements IAuthRepository {
   }
 
   @override
+  Future<Map<String, ConsentRecord>> getConsentDetails() async {
+    if (!_isRest) {
+      throw UnsupportedError('Consents are only available in REST mode.');
+    }
+    final response = await getIt<Dio>().get<Map<String, dynamic>>(
+      ApiConstants.userConsents,
+    );
+    final raw =
+        (response.data?['consents'] as Map<String, dynamic>?) ??
+        <String, dynamic>{};
+    return raw.map((type, value) {
+      final v = value as Map<String, dynamic>;
+      return MapEntry(
+        type,
+        ConsentRecord(
+          accepted: v['accepted'] as bool,
+          version: v['version'] as String,
+          recordedAt: DateTime.parse(v['createdAt'] as String),
+        ),
+      );
+    });
+  }
+
+  @override
   Future<void> registerPushToken(String token) async {
     if (!_isRest) {
       throw UnsupportedError('Push token registration is only available in REST mode.');
