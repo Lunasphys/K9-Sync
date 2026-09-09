@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:k9sync/core/theme/app_theme.dart';
+import 'package:k9sync/core/utils/photo_url.dart';
 import 'package:k9sync/domain/entities/dog.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_dog_repository.dart';
 import 'package:k9sync/injection.dart';
@@ -132,10 +133,10 @@ class _DogCard extends StatelessWidget {
                     border: Border.all(color: AppColors.border, width: 2),
                     shape: BoxShape.circle,
                   ),
-                  child: dog.photoUrl != null && dog.photoUrl!.isNotEmpty
+                  child: resolvePhotoUrl(dog.photoUrl) != null
                       ? ClipOval(
                           child: Image.network(
-                            dog.photoUrl!,
+                            resolvePhotoUrl(dog.photoUrl)!,
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => const Center(
                               child: Text('🐕', style: TextStyle(fontSize: 28)),

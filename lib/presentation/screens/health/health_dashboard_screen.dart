@@ -10,6 +10,7 @@ import 'package:k9sync/application/health/sync_offline_health_use_case.dart';
 import 'package:k9sync/core/debug/debug_logger.dart';
 import 'package:k9sync/core/theme/app_theme.dart';
 import 'package:k9sync/core/utils/health_pdf_export.dart';
+import 'package:k9sync/core/utils/photo_url.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_auth_repository.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_dog_repository.dart';
 import 'package:k9sync/domain/interfaces/repositories/i_health_repository.dart';
@@ -37,6 +38,7 @@ class _HealthDashboardScreenState extends ConsumerState<HealthDashboardScreen>
   Timer? _ticker;
   String? _cachedDogId;
   String _dogName = 'Mon chien';
+  String? _dogPhotoUrl;
 
   @override
   void initState() {
@@ -124,7 +126,10 @@ class _HealthDashboardScreenState extends ConsumerState<HealthDashboardScreen>
     try {
       final dogs = await getIt<IDogRepository>().getDogs();
       if (dogs.isNotEmpty && mounted) {
-        setState(() => _dogName = dogs.first.name);
+        setState(() {
+          _dogName = dogs.first.name;
+          _dogPhotoUrl = dogs.first.photoUrl;
+        });
       }
     } catch (_) {}
   }
@@ -180,6 +185,7 @@ class _HealthDashboardScreenState extends ConsumerState<HealthDashboardScreen>
               history: state.history,
               todayActivity: state.todayActivity,
               dogName: _dogName,
+              dogPhotoUrl: _dogPhotoUrl,
             ),
     );
   }
@@ -231,12 +237,14 @@ class _Dashboard extends StatelessWidget {
   final List<HealthSnapshot> history;
   final DailyActivity todayActivity;
   final String dogName;
+  final String? dogPhotoUrl;
 
   const _Dashboard({
     required this.latest,
     required this.history,
     required this.todayActivity,
     required this.dogName,
+    this.dogPhotoUrl,
   });
 
   @override
@@ -252,6 +260,7 @@ class _Dashboard extends StatelessWidget {
           latest: latest,
           todayActivity: todayActivity,
           dogName: dogName,
+          dogPhotoUrl: dogPhotoUrl,
         ),
         const SizedBox(height: 16),
         if (latest.anomalyDetected) ...[
@@ -328,14 +337,17 @@ class _DogHeader extends StatelessWidget {
   final HealthSnapshot latest;
   final DailyActivity todayActivity;
   final String dogName;
+  final String? dogPhotoUrl;
   const _DogHeader({
     required this.latest,
     required this.todayActivity,
     required this.dogName,
+    this.dogPhotoUrl,
   });
 
   @override
   Widget build(BuildContext context) {
+    final resolvedUrl = resolvePhotoUrl(dogPhotoUrl);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -354,9 +366,19 @@ class _DogHeader extends StatelessWidget {
               border: Border.all(color: AppColors.border, width: 2),
               shape: BoxShape.circle,
             ),
-            child: const Center(
-              child: Text('🐕', style: TextStyle(fontSize: 28)),
-            ),
+            child: resolvedUrl != null
+                ? ClipOval(
+                    child: Image.network(
+                      resolvedUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Center(
+                        child: Text('🐕', style: TextStyle(fontSize: 28)),
+                      ),
+                    ),
+                  )
+                : const Center(
+                    child: Text('🐕', style: TextStyle(fontSize: 28)),
+                  ),
           ),
           const SizedBox(width: 14),
           Expanded(

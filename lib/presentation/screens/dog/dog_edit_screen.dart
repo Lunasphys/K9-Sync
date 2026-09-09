@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import 'package:k9sync/core/debug/debug_logger.dart';
 import 'package:k9sync/core/theme/app_theme.dart';
+import 'package:k9sync/core/utils/photo_url.dart';
 import 'package:k9sync/domain/entities/dog.dart';
 import 'package:k9sync/injection.dart';
 import 'package:k9sync/presentation/providers/dog_provider.dart';
@@ -425,9 +426,9 @@ class _PhotoPicker extends StatelessWidget {
                   ? const Center(child: CircularProgressIndicator())
                   : newPhoto != null
                   ? Image.file(newPhoto!, fit: BoxFit.cover)
-                  : existingUrl != null && existingUrl!.isNotEmpty
+                  : resolvePhotoUrl(existingUrl) != null
                   ? Image.network(
-                      existingUrl!,
+                      resolvePhotoUrl(existingUrl)!,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => const Center(
                         child: Text('🐕', style: TextStyle(fontSize: 36)),

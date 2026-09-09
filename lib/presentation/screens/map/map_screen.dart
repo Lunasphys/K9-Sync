@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:k9sync/core/debug/debug_logger.dart';
 import 'package:k9sync/core/theme/app_theme.dart';
+import 'package:k9sync/core/utils/photo_url.dart';
 import 'package:k9sync/domain/entities/geofence.dart';
 import 'package:k9sync/domain/entities/place_search_result.dart';
 import 'package:k9sync/domain/entities/trail.dart';
@@ -71,6 +72,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   bool _followDog = true;
 
   String _dogName = 'Mon chien';
+  String? _dogPhotoUrl;
   Geofence? _geofenceZone;
 
   // Place search
@@ -125,7 +127,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       final dogs = await getIt<IDogRepository>().getDogs();
       if (dogs.isEmpty || !mounted) return;
       final dog = dogs.first;
-      setState(() => _dogName = dog.name);
+      setState(() {
+        _dogName = dog.name;
+        _dogPhotoUrl = dog.photoUrl;
+      });
 
       // getDogs() doesn't include the geofence relation (only GET
       // /dogs/:dogId does) — a second call to seed the permanent zone
@@ -384,6 +389,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       _AnimatedDogMarkerLayer(
                         target: LatLng(_lastGps!.lat, _lastGps!.lng),
                         live: _mqttConnected,
+                        photoUrl: _dogPhotoUrl,
                       ),
                   ],
                 ),
@@ -562,9 +568,22 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         shape: BoxShape.circle,
                         boxShadow: [AppDimensions.cardShadowSm],
                       ),
-                      child: const Center(
-                        child: Text('🐕', style: TextStyle(fontSize: 24)),
-                      ),
+                      child: resolvePhotoUrl(_dogPhotoUrl) != null
+                          ? ClipOval(
+                              child: Image.network(
+                                resolvePhotoUrl(_dogPhotoUrl)!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => const Center(
+                                  child: Text(
+                                    '🐕',
+                                    style: TextStyle(fontSize: 24),
+                                  ),
+                                ),
+                              ),
+                            )
+                          : const Center(
+                              child: Text('🐕', style: TextStyle(fontSize: 24)),
+                            ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -889,8 +908,13 @@ class LatLngTween extends Tween<LatLng> {
 class _AnimatedDogMarkerLayer extends StatelessWidget {
   final LatLng target;
   final bool live;
+  final String? photoUrl;
 
-  const _AnimatedDogMarkerLayer({required this.target, required this.live});
+  const _AnimatedDogMarkerLayer({
+    required this.target,
+    required this.live,
+    this.photoUrl,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -910,17 +934,19 @@ class _AnimatedDogMarkerLayer extends StatelessWidget {
           ],
         );
       },
-      child: _DogMarker(live: live),
+      child: _DogMarker(live: live, photoUrl: photoUrl),
     );
   }
 }
 
 class _DogMarker extends StatelessWidget {
   final bool live;
-  const _DogMarker({required this.live});
+  final String? photoUrl;
+  const _DogMarker({required this.live, this.photoUrl});
 
   @override
   Widget build(BuildContext context) {
+    final resolvedUrl = resolvePhotoUrl(photoUrl);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -933,9 +959,19 @@ class _DogMarker extends StatelessWidget {
             shape: BoxShape.circle,
             boxShadow: [AppDimensions.cardShadow],
           ),
-          child: const Center(
-            child: Text('🐕', style: TextStyle(fontSize: 26)),
-          ),
+          child: resolvedUrl != null
+              ? ClipOval(
+                  child: Image.network(
+                    resolvedUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => const Center(
+                      child: Text('🐕', style: TextStyle(fontSize: 26)),
+                    ),
+                  ),
+                )
+              : const Center(
+                  child: Text('🐕', style: TextStyle(fontSize: 26)),
+                ),
         ),
         const SizedBox(height: 3),
         Container(
