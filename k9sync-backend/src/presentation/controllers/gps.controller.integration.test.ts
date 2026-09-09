@@ -8,13 +8,17 @@ import { randomUUID } from 'node:crypto';
 import bcrypt from 'bcrypt';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { initPrisma, getPrisma } from '../../config/database.js';
-import { getGpsLatest } from './gps.controller.js';
+import { getGpsLatest, getGpsHistory } from './gps.controller.js';
 
 initPrisma(process.env.DATABASE_URL ?? '');
 const prisma = getPrisma();
 
-function fakeRequest(userId: string, params: Record<string, string>): FastifyRequest {
-  return { userId, params } as unknown as FastifyRequest;
+function fakeRequest(
+  userId: string,
+  params: Record<string, string>,
+  query: Record<string, string> = {},
+): FastifyRequest {
+  return { userId, params, query } as unknown as FastifyRequest;
 }
 
 function fakeReply() {
@@ -67,8 +71,37 @@ async function cleanup(dogId: string, userId: string) {
   await prisma.user.delete({ where: { id: userId } });
 }
 
+// A freshly-created dog that has never had a collar paired — the state a
+// brand-new user is in right after adding their dog.
+async function createDogWithoutCollar() {
+  const hash = await bcrypt.hash('irrelevant', 4);
+  const user = await prisma.user.create({
+    data: {
+      email: `gps-nocollar-${randomUUID()}@test.local`,
+      passwordHash: hash,
+      firstName: 'Test',
+      lastName: 'Owner',
+    },
+  });
+  const dog = await prisma.dog.create({ data: { name: `GpsDogNoCollar-${randomUUID()}` } });
+  await prisma.dogUser.create({ data: { dogId: dog.id, userId: user.id, role: 'owner' } });
+  return { user, dog };
+}
+
 after(async () => {
   await prisma.$disconnect();
+});
+
+test('GET /dogs/:dogId/gps/history returns an empty list, not a 404, for a freshly-created dog with no collar paired', async () => {
+  const { user, dog } = await createDogWithoutCollar();
+
+  const reply = fakeReply();
+  await getGpsHistory(fakeRequest(user.id, { dogId: dog.id }), reply as unknown as FastifyReply);
+
+  assert.equal(reply.statusCode, 200);
+  assert.deepEqual(reply.payload, []);
+
+  await cleanup(dog.id, user.id);
 });
 
 test('GET /dogs/:dogId/gps/latest refuses a dog_sitter whose access has expired', async () => {

@@ -51,8 +51,11 @@ export async function getTrails(
   const { dogId } = req.params;
   await requireDogAccess(req.userId, dogId);
 
+  // A dog with no collar paired yet simply has no trails — that's a normal
+  // initial state, not a missing/forbidden resource, so this stays a 200
+  // with an empty list rather than a 404.
   const collarId = await getCollarId(dogId);
-  if (!collarId) return reply.status(404).send({ error: 'No collar paired' });
+  if (!collarId) return reply.send([]);
 
   const trails = await getPrisma().trail.findMany({
     where: { collarId },

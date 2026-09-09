@@ -60,6 +60,23 @@ async function createOwnerWithCollar(dogName: string) {
   return { owner, dog, collar };
 }
 
+// A freshly-created dog that has never had a collar paired — the state a
+// brand-new user is in right after adding their dog.
+async function createOwnerWithoutCollar(dogName: string) {
+  const hash = await bcrypt.hash('irrelevant', 4);
+  const owner = await prisma.user.create({
+    data: {
+      email: `owner-nocollar-${randomUUID()}@test.local`,
+      passwordHash: hash,
+      firstName: 'Owner',
+      lastName: 'User',
+    },
+  });
+  const dog = await prisma.dog.create({ data: { name: dogName } });
+  await prisma.dogUser.create({ data: { dogId: dog.id, userId: owner.id, role: 'owner' } });
+  return { owner, dog };
+}
+
 async function createDogWithAccess(role: 'family' | 'dog_sitter', expiresAt?: Date) {
   const hash = await bcrypt.hash('irrelevant', 4);
   const user = await prisma.user.create({
@@ -80,6 +97,39 @@ async function createDogWithAccess(role: 'family' | 'dog_sitter', expiresAt?: Da
 
 after(async () => {
   await prisma.$disconnect();
+});
+
+test('GET /dogs/:dogId/activity/summary returns a zeroed summary, not a 404, for a freshly-created dog with no collar paired', async () => {
+  const { owner, dog } = await createOwnerWithoutCollar('ActivitySummaryNoCollarDog');
+
+  const reply = fakeReply();
+  await getActivitySummary(fakeRequest(owner.id, { dogId: dog.id }), reply as unknown as FastifyReply);
+
+  assert.equal(reply.statusCode, 200);
+  assert.deepEqual(reply.payload, {
+    date: (reply.payload as { date: string }).date,
+    totalSteps: 0,
+    activeMinutes: 0,
+    restMinutes: 0,
+    anomalyCount: 0,
+    recordCount: 0,
+  });
+
+  await prisma.dog.delete({ where: { id: dog.id } });
+  await prisma.user.delete({ where: { id: owner.id } });
+});
+
+test('GET /dogs/:dogId/activity/sleep returns an empty breakdown, not a 404, for a freshly-created dog with no collar paired', async () => {
+  const { owner, dog } = await createOwnerWithoutCollar('ActivitySleepNoCollarDog');
+
+  const reply = fakeReply();
+  await getSleepSummary(fakeRequest(owner.id, { dogId: dog.id }), reply as unknown as FastifyReply);
+
+  assert.equal(reply.statusCode, 200);
+  assert.deepEqual(reply.payload, { days: 1, totalRecords: 0, phases: [] });
+
+  await prisma.dog.delete({ where: { id: dog.id } });
+  await prisma.user.delete({ where: { id: owner.id } });
 });
 
 test('syncActivity triggers a push notification when an anomaly is detected', async (t) => {

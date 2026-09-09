@@ -55,6 +55,23 @@ async function createDogWithAccess(role: 'owner' | 'family' | 'dog_sitter', expi
   return { user, dog, collar };
 }
 
+// A freshly-created dog that has never had a collar paired — the state a
+// brand-new user is in right after adding their dog.
+async function createDogWithoutCollar(role: 'owner' | 'family' | 'dog_sitter' = 'owner') {
+  const hash = await bcrypt.hash('irrelevant', 4);
+  const user = await prisma.user.create({
+    data: {
+      email: `trail-nocollar-${randomUUID()}@test.local`,
+      passwordHash: hash,
+      firstName: 'Test',
+      lastName: role,
+    },
+  });
+  const dog = await prisma.dog.create({ data: { name: `TrailDogNoCollar-${randomUUID()}` } });
+  await prisma.dogUser.create({ data: { dogId: dog.id, userId: user.id, role } });
+  return { user, dog };
+}
+
 async function createUserWithoutAccess() {
   const hash = await bcrypt.hash('irrelevant', 4);
   return prisma.user.create({
@@ -135,6 +152,18 @@ test('GET /dogs/:dogId/trails lists trail summaries, most recent first', async (
   assert.equal(list.length, 2);
   assert.equal(list[0].id, (newer.payload as { id: string }).id, 'most recent trail must come first');
   assert.equal(list[1].id, (older.payload as { id: string }).id);
+
+  await cleanup(dog.id, user.id);
+});
+
+test('GET /dogs/:dogId/trails returns an empty list, not a 404, for a freshly-created dog with no collar paired', async () => {
+  const { user, dog } = await createDogWithoutCollar();
+
+  const reply = fakeReply();
+  await getTrails(fakeRequest(user.id, { dogId: dog.id }), reply as unknown as FastifyReply);
+
+  assert.equal(reply.statusCode, 200);
+  assert.deepEqual(reply.payload, []);
 
   await cleanup(dog.id, user.id);
 });

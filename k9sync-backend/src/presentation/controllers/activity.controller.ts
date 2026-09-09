@@ -93,14 +93,26 @@ export async function getActivitySummary(
   const { date } = req.query;
   await requireDogAccess(req.userId, dogId);
 
-  const collarId = await getCollarId(dogId);
-  if (!collarId) return reply.status(404).send({ error: 'No collar paired' });
-
   const day = date ? new Date(date) : new Date();
   const startOfDay = new Date(day);
   startOfDay.setHours(0, 0, 0, 0);
   const endOfDay = new Date(day);
   endOfDay.setHours(23, 59, 59, 999);
+
+  // No collar paired yet means no activity recorded — a normal initial
+  // state for a freshly-created dog, not a missing resource, so this
+  // returns a zeroed summary rather than a 404.
+  const collarId = await getCollarId(dogId);
+  if (!collarId) {
+    return reply.send({
+      date: day.toISOString().split('T')[0],
+      totalSteps: 0,
+      activeMinutes: 0,
+      restMinutes: 0,
+      anomalyCount: 0,
+      recordCount: 0,
+    });
+  }
 
   const result = await getPrisma().activityRecord.aggregate({
     where: {
@@ -148,12 +160,16 @@ export async function getSleepSummary(
   const { dogId } = req.params;
   await requireDogAccess(req.userId, dogId);
 
-  const collarId = await getCollarId(dogId);
-  if (!collarId) return reply.status(404).send({ error: 'No collar paired' });
-
   const days = req.query.days
     ? Math.min(Math.max(parseInt(req.query.days, 10), 1), 30)
     : 1;
+
+  // No collar paired yet means no sleep data — a normal initial state for
+  // a freshly-created dog, not a missing resource, so this returns an
+  // empty breakdown rather than a 404.
+  const collarId = await getCollarId(dogId);
+  if (!collarId) return reply.send({ days, totalRecords: 0, phases: [] });
+
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
   const grouped = await getPrisma().activityRecord.groupBy({

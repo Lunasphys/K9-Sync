@@ -44,8 +44,10 @@ export async function getGpsHistory(
   const { from, to, limit } = req.query;
   await requireDogAccess(req.userId, dogId);
 
+  // No collar paired yet means no history — a normal initial state for a
+  // freshly-created dog, not a missing resource, so return an empty list.
   const collarId = await getCollarId(dogId);
-  if (!collarId) return reply.status(404).send({ error: 'No collar paired' });
+  if (!collarId) return reply.send([]);
 
   const locations = await getPrisma().gpsLocation.findMany({
     where: {
