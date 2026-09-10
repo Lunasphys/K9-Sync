@@ -131,7 +131,12 @@ class DogRepositoryImpl implements IDogRepository {
         data: {
           'email': email,
           'role': role.value,
-          if (expiresAt != null) 'expiresAt': expiresAt.toIso8601String(),
+          // See vet_record_repository_impl.dart — the backend's zod schema
+          // requires a strict UTC datetime (trailing Z); a local DateTime's
+          // toIso8601String() omits it and gets rejected as "Invalid
+          // request body".
+          if (expiresAt != null)
+            'expiresAt': expiresAt.toUtc().toIso8601String(),
         },
       );
       final status = response.data?['status'] as String?;

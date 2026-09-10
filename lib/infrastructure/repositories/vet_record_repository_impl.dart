@@ -34,7 +34,11 @@ class VetRecordRepositoryImpl implements IVetRecordRepository {
         '/dogs/$dogId/vet-records',
         data: {
           'title': title,
-          'date': date.toIso8601String(),
+          // The backend requires a strict UTC datetime string (trailing Z).
+          // date is a local DateTime (from showDatePicker) — toIso8601String()
+          // on a non-UTC DateTime omits the offset entirely, which the
+          // server's zod schema then rejects as "Invalid datetime".
+          'date': date.toUtc().toIso8601String(),
           if (notes != null && notes.isNotEmpty) 'notes': notes,
         },
       );
@@ -58,7 +62,7 @@ class VetRecordRepositoryImpl implements IVetRecordRepository {
         '/dogs/$dogId/vet-records/$recordId',
         data: {
           if (title != null) 'title': title,
-          if (date != null) 'date': date.toIso8601String(),
+          if (date != null) 'date': date.toUtc().toIso8601String(),
           if (done != null) 'done': done,
           if (notes != null) 'notes': notes,
         },
