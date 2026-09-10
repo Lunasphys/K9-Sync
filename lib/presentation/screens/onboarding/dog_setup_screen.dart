@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -12,16 +13,17 @@ import 'package:k9sync/domain/interfaces/repositories/i_dog_repository.dart';
 import 'package:k9sync/injection.dart';
 import 'package:k9sync/presentation/router/route_guards.dart';
 import 'package:k9sync/presentation/screens/dog/dog_breeds.dart';
+import 'package:k9sync/presentation/screens/dog/dog_list_screen.dart';
 
 /// Post-register onboarding — creates the first dog profile.
-class DogSetupScreen extends StatefulWidget {
+class DogSetupScreen extends ConsumerStatefulWidget {
   const DogSetupScreen({super.key});
 
   @override
-  State<DogSetupScreen> createState() => _DogSetupScreenState();
+  ConsumerState<DogSetupScreen> createState() => _DogSetupScreenState();
 }
 
-class _DogSetupScreenState extends State<DogSetupScreen> {
+class _DogSetupScreenState extends ConsumerState<DogSetupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
 
@@ -135,7 +137,10 @@ class _DogSetupScreenState extends State<DogSetupScreen> {
           photoUrl: _photoUrl,
         ),
       );
-      if (mounted) context.go(AppRoutes.homeAccueil);
+      if (mounted) {
+        ref.invalidate(dogsProvider);
+        context.go(AppRoutes.homeAccueil);
+      }
     } catch (e) {
       DebugLogger.log(
         'DOG_SETUP',
