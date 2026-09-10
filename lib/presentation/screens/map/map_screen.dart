@@ -96,7 +96,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
   List<PlaceSearchResult> _searchResults = [];
   bool _showSearchResults = false;
 
-  static const _collarSerial = 'SIM001';
   static const _defaultCenter = LatLng(45.7578, 4.8320);
 
   @override
@@ -106,8 +105,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       vsync: this,
       duration: _moveAnimDuration,
     )..addListener(_onMoveTick);
-    _initMqtt();
-    _loadDogAndLastKnownPosition();
+    _loadDogAndConnect();
     // Refresh "Il y a Xs" label every second
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted && _lastGps != null) setState(() {});
@@ -159,21 +157,25 @@ class _MapScreenState extends ConsumerState<MapScreen>
     _moveAnimCtrl.forward(from: 0);
   }
 
-  void _initMqtt() {
+  void _initMqtt(String collarSerial) {
     final mqtt = getIt<IMqttService>();
     _connectionStateSub = mqtt.connectionState.listen((connected) {
       if (!mounted) return;
       setState(() => _mqttConnected = connected);
       if (connected) _subscribeToTopics(mqtt);
     });
-    mqtt.connect(collarSerial: _collarSerial);
+    mqtt.connect(collarSerial: collarSerial);
   }
 
-  // Loads the dog's name and, if no live MQTT position has arrived yet,
-  // seeds the map with the last known position from the backend — so the
-  // screen shows "dernière position il y a Xmin" instead of a contentless
-  // "waiting for signal" the moment there's actually something to say.
-  Future<void> _loadDogAndLastKnownPosition() async {
+  // Loads the dog's name and paired collar, then connects MQTT using that
+  // collar's actual serial number — previously hardcoded to 'SIM001'
+  // regardless of which dog/collar was really paired, so a second dog on a
+  // different collar (e.g. SIM002) never received any live data. Also
+  // seeds the map with the last known position from the backend if no
+  // live MQTT position has arrived yet, so the screen shows "dernière
+  // position il y a Xmin" instead of a contentless "waiting for signal"
+  // the moment there's actually something to say.
+  Future<void> _loadDogAndConnect() async {
     try {
       final dogs = await getIt<IDogRepository>().getDogs();
       if (dogs.isEmpty || !mounted) return;
@@ -183,14 +185,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
         _dogPhotoUrl = dog.photoUrl;
       });
 
-      // getDogs() doesn't include the geofence relation (only GET
-      // /dogs/:dogId does) — a second call to seed the permanent zone
-      // circle, same "show it as soon as we know it" spirit as the GPS seed
-      // below.
-      getIt<IDogRepository>().getDogById(dog.id).then((full) {
-        if (!mounted || full == null) return;
-        setState(() => _geofenceZone = full.geofenceZone);
-      });
+      // getDogs() doesn't include the collar/geofence relations (only GET
+      // /dogs/:dogId does) — fetch the full dog once for both.
+      final full = await getIt<IDogRepository>().getDogById(dog.id);
+      if (!mounted || full == null) return;
+      setState(() => _geofenceZone = full.geofenceZone);
+
+      final collarSerial = full.collar?.serialNumber;
+      if (collarSerial != null) _initMqtt(collarSerial);
 
       if (_lastGps != null) return; // MQTT already delivered a live point
       final last = await getIt<IGpsRepository>().getLatestLocation(dog.id);
@@ -774,7 +776,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
           color: AppColors.cardBg,
           border: Border.all(color: AppColors.border, width: 2),
           borderRadius: BorderRadius.circular(30),
-          boxShadow: [AppDimensions.cardShadowSm],
+          // No cardShadowSm here unlike elsewhere in the app — the
+          // sticker-style offset shadow reads as a confusing double
+          // outline against the map's busy tile background (streets,
+          // colors) behind it. A single clean frame instead.
         ),
         child: Row(
           children: [
@@ -805,7 +810,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 ),
                 decoration: InputDecoration(
                   isDense: true,
+                  filled: false,
+                  // The app's InputDecorationTheme sets enabledBorder and
+                  // focusedBorder separately from border — Flutter paints
+                  // those in preference to `border` when set, so leaving
+                  // them unset here let the theme's own black rounded-rect
+                  // outline show up inside this field's pill-shaped
+                  // Container border. All three need to be none.
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   hintText: 'Rechercher un lieu...',
                   hintStyle: TextStyle(
@@ -992,7 +1006,12 @@ class _AnimatedDogMarkerLayer extends StatelessWidget {
             Marker(
               point: animation.value,
               width: 60,
-              height: 72,
+              // 48 (avatar) + 3 (gap) + ~17 (status pill) = ~68px in theory,
+              // but the pill's text line height varies a couple px with the
+              // device's font metrics/text scale — 72 was tight enough to
+              // overflow by 1px on some phones. Extra headroom here is
+              // inert (Marker isn't clipped), just avoids the overflow.
+              height: 76,
               child: child!,
             ),
           ],
