@@ -27,14 +27,89 @@ TOPIC_STATUS = topic("status")
 TOPIC_ALERT = topic("alert")
 
 
-def simulate_walk(step):
-    """Simulate a walk in a growing spiral around the base position."""
-    angle = step * 0.1
-    radius = 0.001 + step * 0.00003
-    lat = BASE_LAT + radius * math.sin(angle)
-    lng = BASE_LNG + radius * math.cos(angle)
-    noise = random.uniform(-0.00005, 0.00005)
-    return lat + noise, lng + noise
+EARTH_RADIUS_M = 6371000.0
+
+
+def _meters_per_degree_lat():
+    return 111320.0
+
+
+def _meters_per_degree_lng(lat_deg):
+    return 111320.0 * math.cos(math.radians(lat_deg))
+
+
+def _haversine_m(lat1, lng1, lat2, lng2):
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lng2 - lng1)
+    a = math.sin(dphi / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dlambda / 2) ** 2
+    return 2 * EARTH_RADIUS_M * math.asin(math.sqrt(a))
+
+
+def _bearing_to(lat, lng, target_lat, target_lng):
+    """Compass bearing in degrees from (lat, lng) to (target_lat, target_lng)."""
+    dlng = math.radians(target_lng - lng)
+    lat1 = math.radians(lat)
+    lat2 = math.radians(target_lat)
+    y = math.sin(dlng) * math.cos(lat2)
+    x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dlng)
+    return math.degrees(math.atan2(y, x)) % 360
+
+
+def _shortest_angle_diff(a, b):
+    """Smallest signed delta from angle a to angle b, in degrees, within [-180, 180]."""
+    return (b - a + 180) % 360 - 180
+
+
+class WalkSimulator:
+    """Moves the collar at a believable dog-walking pace instead of an
+    unbounded spiral. The distance covered between two consecutive GPS
+    points is derived from a real speed (km/h) and the actual publish
+    interval — so changing --interval keeps the same walking pace instead
+    of changing how "fast" the dog looks, which is what made the old
+    spiral (whose radius grew with the step count, not with elapsed time)
+    look like it was accelerating into a sprint.
+    """
+
+    # Loosely-leashed dog walk pace — comfortably below a jog (~8+ km/h).
+    BASE_SPEED_KMH = 4.5
+    MAX_TURN_DEG = 18.0  # how sharply the dog can change heading per step
+    WANDER_RADIUS_M = 300.0  # beyond this, gently curve back toward base
+    GPS_NOISE_M = 0.8  # small receiver jitter, well under a real walking step
+
+    def __init__(self, speed_multiplier=1.0):
+        self.lat = BASE_LAT
+        self.lng = BASE_LNG
+        self.heading = random.uniform(0, 360)
+        self.speed_mps = (self.BASE_SPEED_KMH * speed_multiplier) * 1000 / 3600
+
+    def step(self, interval_s):
+        turn = random.uniform(-self.MAX_TURN_DEG, self.MAX_TURN_DEG)
+
+        dist_from_base = _haversine_m(self.lat, self.lng, BASE_LAT, BASE_LNG)
+        if dist_from_base > self.WANDER_RADIUS_M:
+            bearing_home = _bearing_to(self.lat, self.lng, BASE_LAT, BASE_LNG)
+            turn += _shortest_angle_diff(self.heading, bearing_home) * 0.35
+
+        self.heading = (self.heading + turn) % 360
+
+        distance_m = self.speed_mps * interval_s
+        heading_rad = math.radians(self.heading)
+        dlat = (distance_m * math.cos(heading_rad)) / _meters_per_degree_lat()
+        dlng = (distance_m * math.sin(heading_rad)) / _meters_per_degree_lng(self.lat)
+
+        self.lat += dlat
+        self.lng += dlng
+
+        # Tiny GPS jitter on top of the real step — realistic receiver
+        # noise, not the dominant motion (the old code's +/-0.00005 deg
+        # noise was ~5.5m, comparable to or bigger than a whole step).
+        noise_lat = random.uniform(-self.GPS_NOISE_M, self.GPS_NOISE_M) / _meters_per_degree_lat()
+        noise_lng = (
+            random.uniform(-self.GPS_NOISE_M, self.GPS_NOISE_M) / _meters_per_degree_lng(self.lat)
+        )
+
+        return self.lat + noise_lat, self.lng + noise_lng
 
 
 class HealthSimulator:
@@ -81,7 +156,7 @@ class HealthSimulator:
         }
 
 
-def run(dog_id, duration, interval):
+def run(dog_id, duration, interval, speed_multiplier):
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"simulator_{SERIAL}")
 
     connected = False
@@ -109,12 +184,19 @@ def run(dog_id, duration, interval):
         return
 
     health = HealthSimulator()
+    walker = WalkSimulator(speed_multiplier=speed_multiplier)
     step = 0
     start = time.time()
 
+    effective_kmh = WalkSimulator.BASE_SPEED_KMH * speed_multiplier
+    step_distance_m = walker.speed_mps * interval
     print(f"[K9 Sync Simulator] Starting — collar={SERIAL} dog={dog_id}")
     print(f"[K9 Sync Simulator] GPS topic : {TOPIC_GPS}")
     print(f"[K9 Sync Simulator] Health topic : {TOPIC_HEALTH}")
+    print(
+        f"[K9 Sync Simulator] Walking pace: {effective_kmh:.1f} km/h "
+        f"(~{step_distance_m:.1f}m every {interval}s)"
+    )
 
     # Publish initial status
     client.publish(TOPIC_STATUS, json.dumps({
@@ -128,7 +210,7 @@ def run(dog_id, duration, interval):
 
     while time.time() - start < duration:
         ts = datetime.now(timezone.utc).isoformat()
-        lat, lng = simulate_walk(step)
+        lat, lng = walker.step(interval)
         h = health.get_health(step)
 
         gps_payload = {
@@ -176,6 +258,15 @@ if __name__ == "__main__":
     parser.add_argument("--dog-id", required=True, help="Dog UUID")
     parser.add_argument("--duration", type=int, default=3600, help="Duration in seconds")
     parser.add_argument("--interval", type=int, default=3, help="Publish interval in seconds")
+    parser.add_argument(
+        "--speed-multiplier",
+        type=float,
+        default=1.0,
+        help=(
+            "Scales the walking pace (default ~4.5 km/h). "
+            "E.g. 2.0 for a brisker walk on a shorter demo, without looking artificial."
+        ),
+    )
     args = parser.parse_args()
 
-    run(args.dog_id, args.duration, args.interval)
+    run(args.dog_id, args.duration, args.interval, args.speed_multiplier)
