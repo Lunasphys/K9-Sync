@@ -71,54 +71,72 @@ class _SplashScreenState extends State<SplashScreen>
       body: FadeTransition(
         opacity: _fade,
         child: SafeArea(
-          child: Column(
+          // Logo/title block is centered on the full screen via [Center]
+          // rather than living inside a Column flanked by two equal
+          // Spacers — with the loading spinner as a sibling fixed-height
+          // element below (not mirrored above), the old Column layout
+          // wasn't actually symmetric: the spinner's height shifted the
+          // logo block above true center, more so on shorter screens.
+          // Centering it directly and pinning the spinner independently
+          // keeps both correct regardless of screen size.
+          child: Stack(
             children: [
-              const Spacer(flex: 2),
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: AppColors.orange,
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: AppColors.border, width: 2),
+                        boxShadow: [AppDimensions.cardShadow],
+                      ),
+                      child: const Center(
+                        child: Text('🐾', style: TextStyle(fontSize: 48)),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
 
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: AppColors.orange,
-                  borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: AppColors.border, width: 2),
-                  boxShadow: [AppDimensions.cardShadow],
-                ),
-                child: const Center(
-                  child: Text('🐾', style: TextStyle(fontSize: 48)),
+                    const Text(
+                      'K9 Sync',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Le compagnon connecté de votre chien',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textMuted,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 20),
-
-              const Text(
-                'K9 Sync',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.5,
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 48,
+                child: Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.orange,
+                      ),
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Le compagnon connecté de votre chien',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textMuted,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-
-              const Spacer(flex: 2),
-
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.orange),
-                ),
-              ),
-              const SizedBox(height: 48),
             ],
           ),
         ),
