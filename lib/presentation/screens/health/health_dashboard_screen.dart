@@ -29,7 +29,6 @@ class HealthDashboardScreen extends ConsumerStatefulWidget {
 
 class _HealthDashboardScreenState extends ConsumerState<HealthDashboardScreen>
     with WidgetsBindingObserver {
-  static const _collarSerial = 'SIM001';
   StreamSubscription<bool>? _connectionSub;
   bool _mqttConnected = false;
   Timer? _ticker;
@@ -41,22 +40,41 @@ class _HealthDashboardScreenState extends ConsumerState<HealthDashboardScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _initMqtt();
-    _loadDogName();
-    _loadLastKnownHealth();
+    _loadDogAndConnect();
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
   }
 
-  // Seeds the dashboard with the last known health record from the backend
-  // so it shows real (if possibly stale) data instead of "En attente des
-  // données..." the moment there's actually something to show.
-  Future<void> _loadLastKnownHealth() async {
-    final dogId = await _getDogId();
-    if (dogId == null || !mounted) return;
+  // Loads the dog's name/photo and paired collar, then connects MQTT using
+  // that collar's actual serial number — previously hardcoded to 'SIM001'
+  // regardless of which dog/collar was really paired, so a second dog on a
+  // different collar (e.g. SIM002) never received any live data. Also
+  // seeds the dashboard with the last known health record from the
+  // backend so it shows real (if possibly stale) data instead of "En
+  // attente des données..." the moment there's actually something to show.
+  Future<void> _loadDogAndConnect() async {
     try {
-      final record = await getIt<IHealthRepository>().getLatestHealth(dogId);
+      final dogs = await getIt<IDogRepository>().getDogs();
+      if (dogs.isEmpty || !mounted) return;
+      final dog = dogs.first;
+      _cachedDogId = dog.id;
+      setState(() {
+        _dogName = dog.name;
+        _dogPhotoUrl = dog.photoUrl;
+      });
+
+      // getDogs() doesn't include the collar relation (only GET
+      // /dogs/:dogId does).
+      final full = await getIt<IDogRepository>().getDogById(dog.id);
+      if (!mounted || full == null) return;
+
+      final collarSerial = full.collar?.serialNumber;
+      if (collarSerial != null) _initMqtt(collarSerial);
+
+      final record = await getIt<IHealthRepository>().getLatestHealth(
+        dog.id,
+      );
       if (record == null || !mounted) return;
       ref
           .read(healthProvider.notifier)
@@ -109,26 +127,14 @@ class _HealthDashboardScreenState extends ConsumerState<HealthDashboardScreen>
     }
   }
 
-  void _initMqtt() {
+  void _initMqtt(String collarSerial) {
     final mqtt = getIt<IMqttService>();
     _connectionSub = mqtt.connectionState.listen((connected) {
       if (!mounted) return;
       setState(() => _mqttConnected = connected);
       if (connected) _subscribeHealth(mqtt);
     });
-    mqtt.connect(collarSerial: _collarSerial);
-  }
-
-  Future<void> _loadDogName() async {
-    try {
-      final dogs = await getIt<IDogRepository>().getDogs();
-      if (dogs.isNotEmpty && mounted) {
-        setState(() {
-          _dogName = dogs.first.name;
-          _dogPhotoUrl = dogs.first.photoUrl;
-        });
-      }
-    } catch (_) {}
+    mqtt.connect(collarSerial: collarSerial);
   }
 
   void _subscribeHealth(IMqttService mqtt) {

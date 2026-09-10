@@ -33,3 +33,4 @@ void main() async {
   getIt<IAuthRepository>();
   runApp(const K9SyncApp());
 }
+
