@@ -171,6 +171,11 @@ class WelcomeLoginScreen extends StatelessWidget {
   Widget _buildHero(BuildContext context) {
     return Stack(
       alignment: Alignment.center,
+      // The "SALUT !" badge below is intentionally positioned outside this
+      // Stack's bounds (top: -10, right: -20) to look like a sticker
+      // peeking past the avatar circle — Stack's default Clip.hardEdge
+      // was cutting it off at the edge instead.
+      clipBehavior: Clip.none,
       children: [
         Container(
           width: 200,
