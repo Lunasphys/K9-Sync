@@ -11,20 +11,13 @@ import paho.mqtt.client as mqtt
 
 BROKER = "127.0.0.1"
 PORT = 1883
-SERIAL = "SIM001"
+DEFAULT_SERIAL = "SIM001"
 
 BASE_LAT, BASE_LNG = 45.7578, 4.8320
 
 
-def topic(t):
-    return f"k9sync/collar/{SERIAL}/{t}"
-
-
-TOPIC_GPS = topic("gps")
-TOPIC_HEALTH = topic("health")
-TOPIC_ACTIVITY = topic("activity")
-TOPIC_STATUS = topic("status")
-TOPIC_ALERT = topic("alert")
+def topic(serial, t):
+    return f"k9sync/collar/{serial}/{t}"
 
 
 EARTH_RADIUS_M = 6371000.0
@@ -156,8 +149,13 @@ class HealthSimulator:
         }
 
 
-def run(dog_id, duration, interval, speed_multiplier):
-    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"simulator_{SERIAL}")
+def run(dog_id, duration, interval, speed_multiplier, serial=DEFAULT_SERIAL):
+    topic_gps = topic(serial, "gps")
+    topic_health = topic(serial, "health")
+    topic_status = topic(serial, "status")
+    topic_alert = topic(serial, "alert")
+
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"simulator_{serial}")
 
     connected = False
 
@@ -190,17 +188,17 @@ def run(dog_id, duration, interval, speed_multiplier):
 
     effective_kmh = WalkSimulator.BASE_SPEED_KMH * speed_multiplier
     step_distance_m = walker.speed_mps * interval
-    print(f"[K9 Sync Simulator] Starting — collar={SERIAL} dog={dog_id}")
-    print(f"[K9 Sync Simulator] GPS topic : {TOPIC_GPS}")
-    print(f"[K9 Sync Simulator] Health topic : {TOPIC_HEALTH}")
+    print(f"[K9 Sync Simulator] Starting — collar={serial} dog={dog_id}")
+    print(f"[K9 Sync Simulator] GPS topic : {topic_gps}")
+    print(f"[K9 Sync Simulator] Health topic : {topic_health}")
     print(
         f"[K9 Sync Simulator] Walking pace: {effective_kmh:.1f} km/h "
         f"(~{step_distance_m:.1f}m every {interval}s)"
     )
 
     # Publish initial status
-    client.publish(TOPIC_STATUS, json.dumps({
-        "serial": SERIAL,
+    client.publish(topic_status, json.dumps({
+        "serial": serial,
         "dogId": dog_id,
         "batteryLevel": 87,
         "firmwareVersion": "1.0.0-sim",
@@ -214,33 +212,33 @@ def run(dog_id, duration, interval, speed_multiplier):
         h = health.get_health(step)
 
         gps_payload = {
-            "collarSerial": SERIAL,
+            "collarSerial": serial,
             "dogId": dog_id,
             "latitude": round(lat, 7),
             "longitude": round(lng, 7),
             "accuracy": round(random.uniform(2.5, 8.0), 2),
             "recordedAt": ts,
         }
-        client.publish(TOPIC_GPS, json.dumps(gps_payload), qos=1)
+        client.publish(topic_gps, json.dumps(gps_payload), qos=1)
 
         health_payload = {
-            "collarSerial": SERIAL,
+            "collarSerial": serial,
             "dogId": dog_id,
             **h,
             "recordedAt": ts,
         }
-        client.publish(TOPIC_HEALTH, json.dumps(health_payload), qos=1)
+        client.publish(topic_health, json.dumps(health_payload), qos=1)
 
         if h["anomalyDetected"]:
             alert_payload = {
-                "collarSerial": SERIAL,
+                "collarSerial": serial,
                 "dogId": dog_id,
                 "type": h["anomalyType"],
                 "message": f"Anomaly detected: {h['anomalyType']} — HR={h['heartRate']}bpm",
                 "severity": "high",
                 "triggeredAt": ts,
             }
-            client.publish(TOPIC_ALERT, json.dumps(alert_payload), qos=2)
+            client.publish(topic_alert, json.dumps(alert_payload), qos=2)
             print(f"[ALERT] {h['anomalyType']} — HR={h['heartRate']}bpm")
 
         print(f"[Step {step:04d}] GPS=({lat:.5f},{lng:.5f}) HR={h['heartRate']}bpm Steps={h['steps']}")
@@ -259,6 +257,16 @@ if __name__ == "__main__":
     parser.add_argument("--duration", type=int, default=3600, help="Duration in seconds")
     parser.add_argument("--interval", type=int, default=3, help="Publish interval in seconds")
     parser.add_argument(
+        "--serial",
+        default=DEFAULT_SERIAL,
+        help=(
+            f"Collar serial number (default {DEFAULT_SERIAL}). Use a different "
+            "value (e.g. SIM002) to run a second instance for another dog "
+            "paired to that serial — each serial needs its own simulator "
+            "process publishing to its own MQTT topic."
+        ),
+    )
+    parser.add_argument(
         "--speed-multiplier",
         type=float,
         default=1.0,
@@ -269,4 +277,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    run(args.dog_id, args.duration, args.interval, args.speed_multiplier)
+    run(args.dog_id, args.duration, args.interval, args.speed_multiplier, args.serial)
