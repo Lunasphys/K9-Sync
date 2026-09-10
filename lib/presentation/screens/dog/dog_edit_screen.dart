@@ -13,6 +13,7 @@ import 'package:k9sync/domain/entities/dog.dart';
 import 'package:k9sync/injection.dart';
 import 'package:k9sync/presentation/providers/dog_provider.dart';
 import 'package:k9sync/presentation/screens/dog/dog_breeds.dart';
+import 'package:k9sync/presentation/screens/dog/dog_list_screen.dart';
 
 /// Dog edit screen — PATCH /dogs/:dogId via [dogProvider.notifier.save].
 class DogEditScreen extends ConsumerStatefulWidget {
@@ -156,6 +157,7 @@ class _DogEditScreenState extends ConsumerState<DogEditScreen> {
 
     if (!mounted) return;
     if (ok) {
+      ref.invalidate(dogsProvider);
       context.pop();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
