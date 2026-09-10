@@ -3,10 +3,13 @@ abstract final class ApiConstants {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
     // Previous value: 'https://api.k9sync.app/v1' (prod)
-    // 10.0.2.2 is the Android emulator's special alias for the host
-    // machine's localhost — points to the local backend (npm run dev,
-    // port 3002) for local testing on the emulator.
-    defaultValue: 'http://10.0.2.2:3002/v1',
+    // 10.0.2.2 is the Android emulator's alias for the host machine's
+    // localhost. For a physical device, use `adb reverse tcp:3002
+    // tcp:3002` and point it at 127.0.0.1 instead — LAN-IP delivery over
+    // Wi-Fi was unreliable (MQTT connected/subscribed fine but never
+    // delivered published messages — a Docker Desktop/WSL2 networking
+    // issue, not an app bug; see MQTT_BROKER_URL below).
+    defaultValue: 'http://127.0.0.1:3002/v1',
   );
   static const int timeoutMs = 10000;
 
