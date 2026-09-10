@@ -3,10 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:k9sync/core/theme/app_theme.dart';
+import 'package:k9sync/core/utils/health_pdf_export.dart';
 import 'package:k9sync/core/utils/photo_url.dart';
 import 'package:k9sync/domain/entities/dog.dart';
 import 'package:k9sync/presentation/providers/dog_provider.dart';
-import 'package:k9sync/presentation/router/route_guards.dart';
+import 'package:k9sync/presentation/providers/health_provider.dart';
 
 /// Dog profile screen — reads GET /dogs/:dogId via [dogProvider].
 /// Navigates to DogEditScreen on the edit button.
@@ -83,7 +84,7 @@ class _ProfileBody extends StatelessWidget {
         const SizedBox(height: 16),
         _AllergiesSection(allergies: dog.allergies),
         const SizedBox(height: 16),
-        _ActionsSection(dogId: dog.id),
+        _ActionsSection(dogId: dog.id, dogName: dog.name),
       ],
     );
   }
@@ -363,12 +364,38 @@ class _AllergyChip extends StatelessWidget {
 
 // ── Actions section ───────────────────────────────────────────────────────────
 
-class _ActionsSection extends StatelessWidget {
+class _ActionsSection extends ConsumerStatefulWidget {
   final String dogId;
-  const _ActionsSection({required this.dogId});
+  final String dogName;
+  const _ActionsSection({required this.dogId, required this.dogName});
+
+  @override
+  ConsumerState<_ActionsSection> createState() => _ActionsSectionState();
+}
+
+class _ActionsSectionState extends ConsumerState<_ActionsSection> {
+  bool _exporting = false;
+
+  // Calls the export logic directly instead of routing through the Santé
+  // tab — healthProvider is a single global provider (not scoped per
+  // screen), so this profile screen can read its history itself.
+  Future<void> _exportHealthPdf() async {
+    if (_exporting) return;
+    setState(() => _exporting = true);
+    final history = ref.read(healthProvider).history;
+    await exportAndShareHealthPdf(
+      context: context,
+      dogName: widget.dogName,
+      history: history,
+    );
+    if (mounted) setState(() => _exporting = false);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final dogId = widget.dogId;
+    final hasHealthData = ref.watch(healthProvider).history.isNotEmpty;
+
     return _Card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -399,11 +426,12 @@ class _ActionsSection extends StatelessWidget {
           _ActionTile(
             icon: '📄',
             label: 'Exporter les données santé',
-            subtitle: 'Rapport PDF pour le vétérinaire',
-            // The export itself lives on the Santé screen — it's built from
-            // the live session's readings (see _HealthExportCard), which
-            // this profile screen has no access to.
-            onTap: () => context.push(AppRoutes.homeSante),
+            subtitle: _exporting
+                ? 'Export en cours...'
+                : hasHealthData
+                ? 'Rapport PDF pour le vétérinaire'
+                : 'Disponible dès la première mesure reçue',
+            onTap: _exportHealthPdf,
           ),
           const SizedBox(height: 8),
           _ActionTile(

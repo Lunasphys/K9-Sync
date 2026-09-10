@@ -1,7 +1,11 @@
+import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:share_plus/share_plus.dart';
 
 import '../../presentation/providers/health_provider.dart';
 
@@ -116,4 +120,40 @@ Future<Uint8List> buildHealthPdf({
   );
 
   return doc.save();
+}
+
+/// Builds the PDF, writes it to a temp file and opens the share sheet —
+/// the full export action behind any "Exporter le rapport santé" button.
+/// Shows a SnackBar on failure (requires a [ScaffoldMessenger] ancestor).
+///
+/// [healthProvider] is a single global provider, not scoped per dog or per
+/// screen, so any screen that already has the dog's name can call this
+/// directly with [HealthState.history] — no need to navigate to the Santé
+/// tab first just to reach the data.
+Future<void> exportAndShareHealthPdf({
+  required BuildContext context,
+  required String dogName,
+  required List<HealthSnapshot> history,
+}) async {
+  try {
+    final bytes = await buildHealthPdf(dogName: dogName, history: history);
+    final dir = await getTemporaryDirectory();
+    final file = File(
+      '${dir.path}/k9sync-sante-${DateTime.now().millisecondsSinceEpoch}.pdf',
+    );
+    await file.writeAsBytes(bytes);
+
+    if (!context.mounted) return;
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path)],
+        subject: 'Rapport santé de $dogName',
+      ),
+    );
+  } catch (e) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Échec de l\'export : $e')));
+  }
 }

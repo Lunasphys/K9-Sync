@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -19,8 +18,6 @@ import 'package:k9sync/injection.dart';
 import 'package:k9sync/presentation/providers/health_provider.dart';
 import 'package:k9sync/presentation/router/route_guards.dart';
 import 'package:k9sync/presentation/widgets/common/live_badge.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 class HealthDashboardScreen extends ConsumerStatefulWidget {
   const HealthDashboardScreen({super.key});
@@ -726,32 +723,12 @@ class _HealthExportCardState extends State<_HealthExportCard> {
   Future<void> _export(BuildContext context) async {
     if (_exporting) return;
     setState(() => _exporting = true);
-    try {
-      final bytes = await buildHealthPdf(
-        dogName: widget.dogName,
-        history: widget.history,
-      );
-      final dir = await getTemporaryDirectory();
-      final file = File(
-        '${dir.path}/k9sync-sante-${DateTime.now().millisecondsSinceEpoch}.pdf',
-      );
-      await file.writeAsBytes(bytes);
-
-      if (!context.mounted) return;
-      await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(file.path)],
-          subject: 'Rapport santé de ${widget.dogName}',
-        ),
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Échec de l\'export : $e')));
-    } finally {
-      if (mounted) setState(() => _exporting = false);
-    }
+    await exportAndShareHealthPdf(
+      context: context,
+      dogName: widget.dogName,
+      history: widget.history,
+    );
+    if (mounted) setState(() => _exporting = false);
   }
 
   @override
