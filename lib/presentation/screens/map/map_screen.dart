@@ -54,7 +54,8 @@ class MapScreen extends ConsumerStatefulWidget {
   ConsumerState<MapScreen> createState() => _MapScreenState();
 }
 
-class _MapScreenState extends ConsumerState<MapScreen> {
+class _MapScreenState extends ConsumerState<MapScreen>
+    with SingleTickerProviderStateMixin {
   _GpsPoint? _lastGps;
   bool _mqttConnected = false;
   StreamSubscription<bool>? _connectionStateSub;
@@ -70,6 +71,18 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   final _mapController = MapController();
   bool _followDog = true;
+
+  // Drives both the marker glide and the "Suivre" camera pan from the
+  // same interpolated value, so they move together instead of the marker
+  // sliding smoothly while the camera jumps beside it.
+  late final AnimationController _moveAnimCtrl;
+  Animation<LatLng>? _moveAnim;
+  static const _moveAnimDuration = Duration(milliseconds: 2500);
+
+  // Consumer-grade GPS jitter is a few meters even standing still — below
+  // this, a "new" point isn't a real step and shouldn't re-trigger the
+  // marker/camera animation.
+  static const _noiseThresholdMeters = 2.0;
 
   String _dogName = 'Mon chien';
   String? _dogPhotoUrl;
@@ -89,6 +102,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   @override
   void initState() {
     super.initState();
+    _moveAnimCtrl = AnimationController(
+      vsync: this,
+      duration: _moveAnimDuration,
+    )..addListener(_onMoveTick);
     _initMqtt();
     _loadDogAndLastKnownPosition();
     // Refresh "Il y a Xs" label every second
@@ -104,8 +121,42 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     _connectionStateSub?.cancel();
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _moveAnimCtrl.dispose();
     getIt<IMqttService>().disconnect();
     super.dispose();
+  }
+
+  // Camera follows the exact same interpolated value the marker renders —
+  // called on every animation tick, not through setState (MapController.move
+  // pushes to FlutterMap's own camera stream, no rebuild needed here).
+  void _onMoveTick() {
+    if (!_followDog) return;
+    final pos = _moveAnim?.value;
+    if (pos != null) _mapController.move(pos, _mapController.camera.zoom);
+  }
+
+  // Places the marker/camera immediately, no glide — used only for the
+  // very first position (seed from backend or first MQTT point), where
+  // there is nothing to animate from yet.
+  void _snapTo(LatLng target) {
+    _moveAnim = LatLngTween(
+      begin: target,
+      end: target,
+    ).animate(_moveAnimCtrl);
+    // Triggers _onMoveTick synchronously, which places the camera too.
+    _moveAnimCtrl.value = 1;
+  }
+
+  // Glides marker + camera together from wherever they currently are to
+  // the new target over [_moveAnimDuration]. Retargeting mid-flight (a new
+  // point arriving before the previous glide finished) starts from the
+  // live interpolated position, not the old target — no backward snap.
+  void _animateTo(LatLng target) {
+    final from = _moveAnim?.value ?? target;
+    _moveAnim = LatLngTween(begin: from, end: target).animate(
+      CurvedAnimation(parent: _moveAnimCtrl, curve: Curves.easeInOut),
+    );
+    _moveAnimCtrl.forward(from: 0);
   }
 
   void _initMqtt() {
@@ -152,6 +203,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           recordedAt: last.recordedAt,
         );
       });
+      _snapTo(LatLng(last.latitude, last.longitude));
     } catch (_) {}
   }
 
@@ -161,9 +213,18 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         final json = jsonDecode(payload) as Map<String, dynamic>;
         final point = _GpsPoint.fromJson(json);
         if (!mounted) return;
+
+        final ll = LatLng(point.lat, point.lng);
+        final previous = _lastGps;
+        // No previous fix yet -> treat as real movement (first point seeds
+        // via _snapTo below, not this path, but keep the check honest).
+        final movedEnough =
+            previous == null ||
+            const Distance()(LatLng(previous.lat, previous.lng), ll) >=
+                _noiseThresholdMeters;
+
         setState(() {
           _lastGps = point;
-          final ll = LatLng(point.lat, point.lng);
 
           // Only record points when a trail is active
           if (_isTracking) {
@@ -177,11 +238,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               _autoEndTrail,
             );
           }
-
-          if (_followDog) {
-            _mapController.move(ll, _mapController.camera.zoom);
-          }
         });
+
+        if (_moveAnim == null) {
+          _snapTo(ll);
+        } else if (movedEnough) {
+          _animateTo(ll);
+        }
+        // else: GPS noise while stationary — leave marker/camera parked.
       } catch (e) {
         DebugLogger.collar('GPS parse error: $e');
       }
@@ -386,9 +450,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                           ),
                         ],
                       ),
-                    if (_lastGps != null)
+                    if (_lastGps != null && _moveAnim != null)
                       _AnimatedDogMarkerLayer(
-                        target: LatLng(_lastGps!.lat, _lastGps!.lng),
+                        animation: _moveAnim!,
                         live: _mqttConnected,
                         photoUrl: _dogPhotoUrl,
                       ),
@@ -422,10 +486,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         onTap: () {
                           setState(() => _followDog = true);
                           if (_lastGps != null) {
-                            _mapController.move(
-                              LatLng(_lastGps!.lat, _lastGps!.lng),
-                              _mapController.camera.zoom,
-                            );
+                            _animateTo(LatLng(_lastGps!.lat, _lastGps!.lng));
                           }
                         },
                         child: Container(
@@ -906,32 +967,30 @@ class LatLngTween extends Tween<LatLng> {
   }
 }
 
-/// Animates the dog marker between successive GPS points over 3s instead of
-/// jumping straight to the new position. [TweenAnimationBuilder] retargets
-/// automatically from wherever it currently is whenever [target] changes —
-/// passing begin == end here is intentional, only the very first build uses it.
+/// Renders the dog marker at [animation]'s current value — the very same
+/// [Animation] that also drives the "Suivre" camera pan (see
+/// [_MapScreenState._onMoveTick]), so the marker glide and the camera pan
+/// are always perfectly in sync instead of drifting apart.
 class _AnimatedDogMarkerLayer extends StatelessWidget {
-  final LatLng target;
+  final Animation<LatLng> animation;
   final bool live;
   final String? photoUrl;
 
   const _AnimatedDogMarkerLayer({
-    required this.target,
+    required this.animation,
     required this.live,
     this.photoUrl,
   });
 
   @override
   Widget build(BuildContext context) {
-    return TweenAnimationBuilder<LatLng>(
-      tween: LatLngTween(begin: target, end: target),
-      duration: const Duration(seconds: 3),
-      curve: Curves.easeInOut,
-      builder: (context, animatedPoint, child) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
         return MarkerLayer(
           markers: [
             Marker(
-              point: animatedPoint,
+              point: animation.value,
               width: 60,
               height: 72,
               child: child!,
