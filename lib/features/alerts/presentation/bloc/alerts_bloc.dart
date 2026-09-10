@@ -15,7 +15,6 @@ part 'alerts_state.dart';
 
 class AlertsBloc extends Bloc<AlertsEvent, AlertsState> {
   StreamSubscription<bool>? _connectionSub;
-  static const _collarSerial = 'SIM001';
 
   final IAlertRepository _alertRepo = getIt<IAlertRepository>();
 
@@ -37,12 +36,24 @@ class AlertsBloc extends Bloc<AlertsEvent, AlertsState> {
     _initMqtt();
   }
 
-  void _initMqtt() {
+  // Connects using the dog's actual paired collar serial — previously
+  // hardcoded to 'SIM001', which meant this bloc (constructed once,
+  // staying alive for the whole session like MapScreen/HealthDashboard-
+  // Screen do) reconnected the single shared IMqttService to SIM001 on
+  // every rebuild, silently stealing the connection back from whichever
+  // dog/collar the Carte or Santé tab had just correctly connected to.
+  Future<void> _initMqtt() async {
+    final dogId = await _getDogId();
+    if (dogId == null) return;
+    final dog = await getIt<IDogRepository>().getDogById(dogId);
+    final collarSerial = dog?.collar?.serialNumber;
+    if (collarSerial == null) return;
+
     final mqtt = getIt<IMqttService>();
     _connectionSub = mqtt.connectionState.listen((connected) {
       if (connected) _subscribeAlerts(mqtt);
     });
-    mqtt.connect(collarSerial: _collarSerial);
+    mqtt.connect(collarSerial: collarSerial);
   }
 
   void _subscribeAlerts(IMqttService mqtt) {
