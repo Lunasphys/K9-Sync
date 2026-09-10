@@ -10,6 +10,7 @@ import '../../domain/interfaces/services/i_mqtt_service.dart';
 class MqttService implements IMqttService {
   MqttServerClient? _client;
   String? _collarSerial;
+  bool _connecting = false;
 
   final List<StreamSubscription> _subscriptions = [];
 
@@ -30,9 +31,32 @@ class MqttService implements IMqttService {
 
   @override
   Future<void> connect({required String collarSerial}) async {
+    // Carte, Santé and Alertes each call connect() independently on init,
+    // expecting to share one connection. Without this guard, every call
+    // spun up a brand-new MqttServerClient/socket even when already
+    // connected to the right collar — the newer client silently orphaned
+    // whichever screen had subscribed through the older one, which then
+    // stopped receiving messages after the very first one ("takes the
+    // first GPS/health reading, then nothing").
+    if (_collarSerial == collarSerial) {
+      if (isConnected) {
+        // Tell this caller's freshly-attached connectionState listener
+        // right away — it otherwise waits forever for a "connected" event
+        // that already happened before it started listening.
+        _connectionController.add(true);
+        return;
+      }
+      if (_connecting) return; // a connect for this collar is already in flight
+    }
+
     _collarSerial = collarSerial;
     _reconnecting = false;
-    await _doConnect();
+    _connecting = true;
+    try {
+      await _doConnect();
+    } finally {
+      _connecting = false;
+    }
   }
 
   // Internal connect — called on first connect and on each retry
@@ -41,11 +65,13 @@ class MqttService implements IMqttService {
 
     final broker = String.fromEnvironment(
       'MQTT_BROKER_URL',
-      // Previous value: '192.168.1.113' (a stale LAN IP from a prior dev
-      // machine — unreachable from the emulator/anywhere else).
       // 10.0.2.2 is the Android emulator's alias for the host machine's
-      // localhost, where Mosquitto runs (docker compose, port 1883).
-      defaultValue: '10.0.2.2',
+      // localhost, where Mosquitto runs (docker compose, port 1883). For
+      // a physical device, use `adb reverse tcp:1883 tcp:1883` and point
+      // it at 127.0.0.1 instead — LAN-IP delivery over Wi-Fi connected
+      // and subscribed fine but never actually delivered published
+      // messages (Docker Desktop/WSL2 networking issue, not an app bug).
+      defaultValue: '127.0.0.1',
     );
     const port = 1883;
     final clientId =
